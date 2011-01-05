@@ -1,19 +1,3 @@
-/***************************************************************************
-                          Gui.h  -  description
-                             -------------------
-    copyright            : (C) 2010 by Mehmet Kocaturk
-    email                : mehmet.kocaturk@boun.edu.tr
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
 #include "Global.h"
 
 #include <gtk/gtk.h>
@@ -38,6 +22,7 @@ GtkWidget *pause_button;
 GtkWidget *threshold_button;
 GtkWidget *name_file_button;
 GtkWidget *filter_button;
+GtkWidget *highpass_4th_button;
 
 GtkDataboxGraph *graph;	
 GtkDataboxGraph *graph_spike_shape;
@@ -46,7 +31,7 @@ int GraphIdx;
 char *strThreshold;
 GtkWidget *entryThreshold;
 
-const char *strAddFileName;
+char *strAddFileName;
 GtkWidget *entryAddFileName;
 
 int disp_chan;
@@ -60,6 +45,7 @@ GPtrArray* Y_spikes_ptr;
 int Y_spikes_idx;
 
 FILE *fp;
+FILE *fp_sorted;
 int rec_data;
 int disp_paused;
 
@@ -75,6 +61,7 @@ GdkColor color_spike_shape;
 void create_gui(void);
 gboolean timeout_callback(gpointer user_data) ;
 gboolean filter_button_func (GtkDatabox * box);
+gboolean highpass_4th_button_func (GtkDatabox * box);
 gboolean ch_slct_func (GtkDatabox * box);
 gboolean pause_button_func (GtkDatabox * box);
 gboolean record_but_func (GtkDatabox * box);

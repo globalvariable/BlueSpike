@@ -1,20 +1,4 @@
-/***************************************************************************
-                          Gui.c  -  description
-                             -------------------
-    copyright            : (C) 2010 by Mehmet Kocaturk
-    email                : mehmet.kocaturk@boun.edu.tr
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
-#include "Gui.h"
+ #include "Gui.h"
 
 
 void create_gui(void)
@@ -39,7 +23,7 @@ void create_gui(void)
 	color_spike_shape.red = 65535;
 	color_spike_shape.green = 65535;
 	color_spike_shape.blue = 65535;
-
+	strAddFileName = g_new0 (char, 70);
 	strAddFileName = "none";
 
 	int i;
@@ -127,14 +111,26 @@ void create_gui(void)
 	gtk_widget_set_size_request(clear_button, 100, 30);
 	gtk_box_pack_start (GTK_BOX (vbox1), clear_button, FALSE, FALSE, 5);
 
-	filter_button = gtk_button_new_with_label("Turn-on Filter");
-	gtk_widget_set_size_request(filter_button, 300, 30);
-	gtk_box_pack_start (GTK_BOX (vbox1), filter_button, FALSE, FALSE, 5);
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, FALSE, FALSE, 0);
+
+	filter_button = gtk_button_new_with_label("Turn Filter ON");
+	gtk_widget_set_size_request(filter_button, 80, 30);
+	gtk_box_pack_start (GTK_BOX (hbox1), filter_button, TRUE, TRUE, 0);
+
+	highpass_4th_button = gtk_button_new_with_label("Turn 4th Order ON");
+	gtk_widget_set_size_request(highpass_4th_button, 80, 30);
+	gtk_box_pack_start (GTK_BOX (hbox1), highpass_4th_button, TRUE, TRUE, 0);
 
 	if (buff->filter_on)
 		gtk_button_set_label (filter_button,"Turn Filter OFF");
 	else
 		gtk_button_set_label (filter_button,"Turn Filter ON");
+
+	if (buff->highpass_4th_on)
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order OFF");
+	else
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order ON");
 
 
 	hbox1 = gtk_hbox_new(FALSE, 0);
@@ -182,6 +178,7 @@ void create_gui(void)
 
 
 	g_signal_connect_swapped(G_OBJECT(filter_button), "clicked", G_CALLBACK(filter_button_func), G_OBJECT(box_signal));
+	g_signal_connect_swapped(G_OBJECT(highpass_4th_button), "clicked", G_CALLBACK(highpass_4th_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(ch_slct_button), "clicked", G_CALLBACK(ch_slct_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(pause_button), "clicked", G_CALLBACK(pause_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(record_button), "clicked", G_CALLBACK(record_but_func), G_OBJECT(box_signal));
@@ -319,13 +316,31 @@ gboolean timeout_callback(gpointer user_data)
 			{
 				for (j=0; j<NUM_OF_CHAN; j++)
 					fprintf(fp, " %.0f\t", buff->scan[back+i-NUM_OF_SAMP_IN_BUFF].data[j]);
-					fprintf(fp, " %d\n", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].Status.AllStatus);				
+				fprintf(fp, " %d\t", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].Status.AllStatus);	
+				fprintf(fp, " %d\n", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].ShortInt_Status0);
+
+				if ((buff->sorting_on) && (buff->filter_on))
+				{
+					for (j=0; j<NUM_OF_CHAN; j++)
+						fprintf(fp_sorted, " %d\t", buff->sorted_spike_data[back+i-NUM_OF_SAMP_IN_BUFF].data[j]);
+					fprintf(fp, " %d\t", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].Status.AllStatus);	
+					fprintf(fp, " %d\n", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].ShortInt_Status0);				
+				}								
 			}
 			else
 			{
 				for (j=0; j<NUM_OF_CHAN; j++)
 					fprintf(fp, " %.0f\t", buff->scan[back+i].data[j]);
-					fprintf(fp, " %d\n", buff->Environment[back+i].Status.AllStatus);					
+				fprintf(fp, " %d\t", buff->Environment[back+i].Status.AllStatus);
+				fprintf(fp, " %d\n", buff->Environment[back+i].ShortInt_Status0);
+
+				if ((buff->sorting_on) && (buff->filter_on))
+				{
+					for (j=0; j<NUM_OF_CHAN; j++)
+						fprintf(fp_sorted, " %d\t", buff->sorted_spike_data[back+i].data[j]);
+					fprintf(fp, " %d\t", buff->Environment[back+i].Status.AllStatus);
+					fprintf(fp, " %d\n", buff->Environment[back+i].ShortInt_Status0);				
+				}														
 			}
 		}	
 	}
@@ -346,6 +361,21 @@ gboolean filter_button_func (GtkDatabox * box)
 	{
 		buff->filter_on = 1;
 		gtk_button_set_label (filter_button,"Turn Filter OFF");
+	}
+		
+}
+
+gboolean highpass_4th_button_func (GtkDatabox * box)
+{
+	if (buff->highpass_4th_on)
+	{
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order ON");
+		buff->highpass_4th_on = 0;
+	}
+	else
+	{
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order OFF");
+		buff->highpass_4th_on = 1;
 	}
 		
 }
@@ -409,7 +439,7 @@ gboolean record_but_func (GtkDatabox * box)
 	time_str[24]='_';
 	time_str[25]='_';
 
-	char strFileName[70];
+	char strFileName[100];
 	
 	if (!rec_data)
 	{
@@ -417,6 +447,12 @@ gboolean record_but_func (GtkDatabox * box)
 		strcat(strFileName, time_str+4);
 		strcat(strFileName, strAddFileName);
 		fp = fopen(strFileName, "w");
+		
+		strcpy(strFileName, "/home/kocaturk/SPIKE_DATA/Sorted/");	
+		strcat(strFileName, time_str+4);
+		strcat(strFileName, strAddFileName);
+		fp_sorted = fopen(strFileName, "w");
+
 		gtk_button_set_label (record_button,"Release");
 		rec_data = 1;
 	}
@@ -426,6 +462,9 @@ gboolean record_but_func (GtkDatabox * box)
 		if (fp != NULL)
 			fclose(fp);
 		fp = NULL;	
+		if (fp_sorted != NULL)
+			fclose(fp_sorted);
+		fp_sorted = NULL;
 		gtk_button_set_label (record_button,"Record");		
 	}
 	return TRUE;

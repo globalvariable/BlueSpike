@@ -1,19 +1,3 @@
-/***************************************************************************
-                          Gui.h  -  description
-                             -------------------
-    copyright            : (C) 2010 by Mehmet Kocaturk
-    email                : mehmet.kocaturk@boun.edu.tr
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
 #include "Global.h"
 
 #include <gtk/gtk.h>
@@ -54,9 +38,19 @@ GtkWidget *clear_nonsorted_button;
 GtkWidget *pause_button;
 GtkWidget *diff_button;
 GtkWidget *sorting_onoff_button;
+GtkWidget *save_template_button;
+GtkWidget *load_template_button;
 
 char *strDiff;
 GtkWidget *entryDiff;
+
+char *strAddFileName;
+GtkWidget *entryAddFileName;
+
+char *strLoadFileName;
+GtkWidget *entryLoadFileName;
+
+FILE *fp;
 
 GtkDataboxGraph *graph_all_spike;
 GtkDataboxGraph *graph_sorted_all_spike;
@@ -124,3 +118,5 @@ gboolean clear_unit_but_func (GtkDatabox * box);
 gboolean diff_but_func (GtkDatabox * box);
 gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selectionValues);
 gboolean sorting_onoff_but_func (GtkDatabox * box);
+gboolean save_template_but_func (GtkDatabox * box);
+gboolean load_template_but_func (GtkDatabox * box);

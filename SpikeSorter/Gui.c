@@ -1,19 +1,3 @@
-/***************************************************************************
-                          Gui.c  -  description
-                             -------------------
-    copyright            : (C) 2010 by Mehmet Kocaturk
-    email                : mehmet.kocaturk@boun.edu.tr
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
  #include "Gui.h"
 
 
@@ -102,7 +86,7 @@ void create_gui(void)
  	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
   	gtk_window_set_default_size(GTK_WINDOW(window), 1200, 900);
-  	gtk_window_set_title(GTK_WINDOW(window), "BlueSpike");
+  	gtk_window_set_title(GTK_WINDOW(window), "SpikeSorter");
   	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
 
@@ -260,6 +244,33 @@ void create_gui(void)
 	vbox2 = gtk_vbox_new(TRUE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox1), vbox2, TRUE, TRUE, 0);
 
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+	strAddFileName = g_new0 (char, 20);
+	strAddFileName = "none";
+	save_template_button = gtk_button_new_with_label("Save Template");
+	gtk_widget_set_size_request(save_template_button, 30, 30);	
+  	gtk_box_pack_start (GTK_BOX (hbox1), save_template_button, TRUE, TRUE, 0);
+
+        entryAddFileName = gtk_entry_new();
+        gtk_box_pack_start(GTK_BOX(hbox1),entryAddFileName, TRUE,TRUE,0);
+ 	gtk_entry_set_editable(entryAddFileName,TRUE);
+
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+	strLoadFileName = g_new0 (char, 100);;
+	load_template_button = gtk_button_new_with_label("Load Template");
+	gtk_widget_set_size_request(save_template_button, 30, 30);	
+  	gtk_box_pack_start (GTK_BOX (hbox1), load_template_button, TRUE, TRUE, 0);
+
+        entryLoadFileName = gtk_entry_new();
+        gtk_box_pack_start(GTK_BOX(hbox1),entryLoadFileName, TRUE,TRUE,0);
+ 	gtk_entry_set_editable(entryLoadFileName,TRUE);
+
+
+
 	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
 	{
 		Y_all_spike = g_ptr_array_index(Y_all_spikes_ptr,i);
@@ -346,6 +357,8 @@ void create_gui(void)
 	g_signal_connect_swapped(G_OBJECT(clear_unit_button), "clicked", G_CALLBACK(clear_unit_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(diff_button), "clicked", G_CALLBACK(diff_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(sorting_onoff_button), "clicked", G_CALLBACK(sorting_onoff_but_func), G_OBJECT(box_all_spike));
+	g_signal_connect_swapped(G_OBJECT(save_template_button), "clicked", G_CALLBACK(save_template_but_func), G_OBJECT(box_all_spike));
+	g_signal_connect_swapped(G_OBJECT(load_template_button), "clicked", G_CALLBACK(load_template_but_func), G_OBJECT(box_all_spike));	
 	GtkWidget **nil;
    	g_signal_connect (G_OBJECT (box_all_spike), "selection-finalized", G_CALLBACK (rect_selection_func), nil);
  	gtk_widget_show_all(window);
@@ -800,4 +813,127 @@ gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selec
 	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_2), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
 
 }
+
+
+gboolean save_template_but_func (GtkDatabox * box)
+{
+	strAddFileName = gtk_entry_get_text(GTK_ENTRY(entryAddFileName));
+
+	time_t rawtime;
+	struct tm * timeinfo;
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	char * time_str = asctime (timeinfo);
+	time_str[7]='_';
+	time_str[10]='_';
+	time_str[13]='_';
+	time_str[16]='_';
+	time_str[19]='_';
+	time_str[24]='_';
+	time_str[25]='_';
+
+	char strFileName[70];
+
+	strcpy(strFileName, "/home/kocaturk/SPIKE_DATA/templates/");	
+	strcat(strFileName, time_str+4);
+	strcat(strFileName, strAddFileName);
+	fp = fopen(strFileName, "w");
+
+	int i,j,k;
+
+	for (i=0; i<NUM_OF_CHAN; i++)
+	{
+		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+		{
+			for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+			{
+				fprintf(fp, "%.2f\n", buff->spike_template.template[i][j][k]);
+			}
+		}
+	}
+	
+	for (i=0; i<NUM_OF_CHAN; i++)
+	{
+		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+		{
+			fprintf(fp, "%.0f\n", buff->spike_template.diff_thres[i][j]);
+		}
+	}
+
+	for (i=0; i<NUM_OF_CHAN; i++)
+	{
+		fprintf(fp, "%.0f\n", buff->Threshold[i]);
+	}
+
+	fclose(fp);
+	return TRUE;	
+}
+
+gboolean load_template_but_func (GtkDatabox * box)
+{
+	char strFileName[70];
+	strcpy(strFileName, "/home/kocaturk/SPIKE_DATA/templates/");
+
+	strLoadFileName = gtk_entry_get_text(GTK_ENTRY(entryLoadFileName));
+	strcat(strFileName, strLoadFileName);
+
+	int i,j,k;
+
+	fp = fopen(strFileName, "r");
+	if ( fp != NULL )
+	{
+		char line [20];  
+		for (i=0; i<NUM_OF_CHAN; i++)
+		{
+			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+			{
+				for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+				{
+      					fgets(line, sizeof line, fp );
+					buff->spike_template.template[i][j][k] = atof(line);
+				}
+			}
+		}
+		for (i=0; i<NUM_OF_CHAN; i++)
+		{
+			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+			{
+      				fgets(line, sizeof line, fp );
+				buff->spike_template.diff_thres[i][j] = atof(line);
+			}
+		}
+
+		for (i=0; i<NUM_OF_CHAN; i++)
+		{
+		      	fgets(line, sizeof line, fp );				
+			buff->Threshold[i]= atof(line);
+		}
+	
+		fclose (fp);
+	}
+	else
+	{
+		perror (strFileName); 
+	}
+
+	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+	{
+		Y_spike_0_template[i] = buff->spike_template.template[disp_chan][0][i];
+	}
+	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+	{
+		Y_spike_1_template[i] = buff->spike_template.template[disp_chan][1][i];
+	}
+	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+	{
+		Y_spike_2_template[i] = buff->spike_template.template[disp_chan][2][i];
+	}
+
+	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_0), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
+	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_1), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
+	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_2), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
+
+	sprintf(strDiff, "%.0f" , buff->spike_template.diff_thres[disp_chan][selected_spike_unit]);
+	gtk_entry_set_text (GTK_ENTRY(entryDiff), strDiff);
+}		
 

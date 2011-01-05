@@ -49,7 +49,8 @@ static comedi_t* ni6070_comedi_dev;
 static unsigned ni6070_comedi_chanlist[NUM_OF_CHAN];
 static int ni6070_comedi_configure(void);
 static int ni6070_comedi_init(void);
-static void dsp(void);
+static void highpass_2nd_order(void);
+static void highpass_4th_order(void);
 static void threshold_spikes(void);
 static void template_matching(void);
 void *ptr = NULL;
@@ -85,7 +86,9 @@ typedef struct{
 			unsigned Bit7:1;
 		};
 		unsigned AllStatus;
-	} Status;	 	
+	} Status;
+	short int ShortInt_Status0;
+	short int ShortInt_Status1;		 	
 } ExpEnv; 
 
 
@@ -121,6 +124,7 @@ typedef struct buff_data
 	template_matching_data spike_template; 	
 	bool sorting_on;
 	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];
+	bool highpass_4th_on;
 } buff_data_struct;
 
 static buff_data_struct *buff;
@@ -160,7 +164,10 @@ static void fun(int t)
 				buff->Environment[buff->scan_number_write] = buff->Curr_Environment;
 				if (buff->filter_on)
 				{
-					dsp();
+					if (buff->highpass_4th_on)
+						highpass_4th_order();
+					else
+						highpass_2nd_order();
 					threshold_spikes();
 					if(buff->sorting_on)
 					{
@@ -321,7 +328,7 @@ static int ni6070_comedi_init(void)
 	return 0;
 }
 
-static void dsp(void)
+static void highpass_2nd_order(void)
 {
 	int i;
 
@@ -329,11 +336,11 @@ static void dsp(void)
 	{
 		for (i=0;i<NUM_OF_CHAN; i++)
 		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.9835 * buff->scan[0].data[i]) +
-										(-1.967 * buff->scan[39999].data[i]) +
-										(0.9835 * buff->scan[39998].data[i]) - 
-										(-1.9667 * buff->filtered_scan[39999].data[i])-
-										(0.9672 * buff->filtered_scan[39998].data[i]) ;
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.983477203353836 * buff->scan[0].data[i]) +
+										(-1.96695440670767 * buff->scan[39999].data[i]) +
+										(0.983477203353836 * buff->scan[39998].data[i]) - 
+										(-1.96668138526349 * buff->filtered_scan[39999].data[i])-
+										(0.967227428151861 * buff->filtered_scan[39998].data[i]) ;
  		}		
 	}
 
@@ -341,11 +348,11 @@ static void dsp(void)
 	{
 		for (i=0;i<NUM_OF_CHAN; i++)
 		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.9835 * buff->scan[1].data[i]) +
-										(-1.967 * buff->scan[0].data[i]) +
-										(0.9835 * buff->scan[39999].data[i]) - 
-										(-1.9667 * buff->filtered_scan[0].data[i])-
-										(0.9672 * buff->filtered_scan[39999].data[i]) ;
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.983477203353836 * buff->scan[1].data[i]) +
+										(-1.96695440670767 * buff->scan[0].data[i]) +
+										(0.983477203353836 * buff->scan[39999].data[i]) - 
+										(-1.96668138526349 * buff->filtered_scan[0].data[i])-
+										(0.967227428151861 * buff->filtered_scan[39999].data[i]) ;
  		}
 	}
 	else 
@@ -353,13 +360,96 @@ static void dsp(void)
 		for (i=0;i<NUM_OF_CHAN; i++)
 		{
 
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.9835 * buff->scan[buff->scan_number_write].data[i]) +
-										(-1.967 * buff->scan[buff->scan_number_write-1].data[i]) +
-										(0.9835 * buff->scan[buff->scan_number_write-2].data[i]) - 
-										(-1.9667 * buff->filtered_scan[buff->scan_number_write-1].data[i]) -
-										(0.9672 * buff->filtered_scan[buff->scan_number_write-2].data[i]) ;
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.983477203353836 * buff->scan[buff->scan_number_write].data[i]) +
+										(-1.96695440670767 * buff->scan[buff->scan_number_write-1].data[i]) +
+										(0.983477203353836 * buff->scan[buff->scan_number_write-2].data[i]) - 
+										(-1.96668138526349 * buff->filtered_scan[buff->scan_number_write-1].data[i]) -
+										(0.967227428151861 * buff->filtered_scan[buff->scan_number_write-2].data[i]) ;
 
 		}		
+	}
+}
+
+static void highpass_4th_order(void)
+{
+	int i;
+
+	if (buff->scan_number_write == 0)
+	{
+		for (i=0;i<NUM_OF_CHAN; i++)
+		{
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[0].data[i]) +
+										(-3.87873225632879 * buff->scan[39999].data[i]) +
+										(5.81809838449319 * buff->scan[39998].data[i]) + 
+										(-3.87873225632879 * buff->scan[39997].data[i]) +
+ 										(0.969683064082198 * buff->scan[39996].data[i]) -
+										(-3.93843036181940 * buff->filtered_scan[39999].data[i])-
+										(5.81717941734966 * buff->filtered_scan[39998].data[i])- 
+										(-3.81903400137827 * buff->filtered_scan[39997].data[i])-
+										(0.940285244767841 * buff->filtered_scan[39996].data[i]);
+ 		}		
+	}
+	else if (buff->scan_number_write == 1)
+	{
+		for (i=0;i<NUM_OF_CHAN; i++)
+		{
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[1].data[i]) +
+										(-3.87873225632879 * buff->scan[0].data[i]) +
+										(5.81809838449319 * buff->scan[39999].data[i]) + 
+										(-3.87873225632879 * buff->scan[39998].data[i]) +
+ 										(0.969683064082198 * buff->scan[39997].data[i]) -
+										(-3.93843036181940 * buff->filtered_scan[0].data[i])-
+										(5.81717941734966 * buff->filtered_scan[39999].data[i])- 
+										(-3.81903400137827 * buff->filtered_scan[39998].data[i])-
+										(0.940285244767841 * buff->filtered_scan[39997].data[i]);
+ 		}
+	}
+	else if (buff->scan_number_write == 2)
+	{
+		for (i=0;i<NUM_OF_CHAN; i++)
+		{
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[2].data[i]) +
+										(-3.87873225632879 * buff->scan[1].data[i]) +
+										(5.81809838449319 * buff->scan[0].data[i]) + 
+										(-3.87873225632879 * buff->scan[39999].data[i]) +
+ 										(0.969683064082198 * buff->scan[39998].data[i]) -
+										(-3.93843036181940 * buff->filtered_scan[1].data[i])-
+										(5.81717941734966 * buff->filtered_scan[0].data[i])- 
+										(-3.81903400137827 * buff->filtered_scan[39999].data[i])-
+										(0.940285244767841 * buff->filtered_scan[39998].data[i]);
+ 		}
+	}
+	else if (buff->scan_number_write == 3)
+	{
+		for (i=0;i<NUM_OF_CHAN; i++)
+		{
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[3].data[i]) +
+										(-3.87873225632879 * buff->scan[2].data[i]) +
+										(5.81809838449319 * buff->scan[1].data[i]) + 
+										(-3.87873225632879 * buff->scan[0].data[i]) +
+ 										(0.969683064082198 * buff->scan[39999].data[i]) -
+										(-3.93843036181940 * buff->filtered_scan[2].data[i])-
+										(5.81717941734966 * buff->filtered_scan[1].data[i])- 
+										(-3.81903400137827 * buff->filtered_scan[0].data[i])-
+										(0.940285244767841 * buff->filtered_scan[39999].data[i]);
+ 		}
+	}
+	else 
+	{
+
+		for (i=0;i<NUM_OF_CHAN; i++)
+		{
+			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[buff->scan_number_write].data[i]) +
+										(-3.87873225632879 * buff->scan[buff->scan_number_write-1].data[i]) +
+										(5.81809838449319 * buff->scan[buff->scan_number_write-2].data[i]) + 
+										(-3.87873225632879 * buff->scan[buff->scan_number_write-3].data[i]) +
+ 										(0.969683064082198 * buff->scan[buff->scan_number_write-4].data[i]) -
+										(-3.93843036181940 * buff->filtered_scan[buff->scan_number_write-1].data[i])-
+										(5.81717941734966 * buff->filtered_scan[buff->scan_number_write-2].data[i])- 
+										(-3.81903400137827 * buff->filtered_scan[buff->scan_number_write-3].data[i])-
+										(0.940285244767841 * buff->filtered_scan[buff->scan_number_write-4].data[i]);
+ 		}
+		
 	}
 }
 
@@ -447,7 +537,11 @@ static void template_matching(void)
 				buff->sorted_spike_data[buff->scan_number_write].data[chan]=3;
 			}
 			else
-				buff->sorted_spike_data[buff->scan_number_write].data[chan]=0;			
+				buff->sorted_spike_data[buff->scan_number_write].data[chan]=9;			
+		}
+		else
+		{
+			buff->sorted_spike_data[buff->scan_number_write].data[chan] = 0;
 		}
 	}
 }

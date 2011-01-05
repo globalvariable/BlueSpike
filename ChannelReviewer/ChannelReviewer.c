@@ -1,19 +1,3 @@
-/***************************************************************************
-                          ChannelReviewer.c  -  description
-                             -------------------
-    copyright            : (C) 2010 by Mehmet Kocaturk
-    email                : mehmet.kocaturk@boun.edu.tr
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <rtai_shm.h>
@@ -65,7 +49,9 @@ typedef struct{
 			unsigned Bit7:1;
 		};
 		unsigned AllStatus;
-	} Status;	 	
+	} Status;
+	short int ShortInt_Status0;
+	short int ShortInt_Status1;	 	
 } ExpEnv; 
 
 typedef struct sample_data
@@ -99,7 +85,8 @@ typedef struct buff_data
 	ExpEnv Curr_Environment;
 	template_matching_data spike_template; 	
 	bool sorting_on;
-	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];	
+	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];
+	bool highpass_4th_on;
 } buff_data_struct;
 
 buff_data_struct *buff;
