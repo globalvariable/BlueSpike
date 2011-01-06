@@ -1,7 +1,7 @@
 /***************************************************************************
                           KernelSpike.c  -  description
                              -------------------
-    copyright            : (C) 2010 by Mehmet Kocaturk
+    copyright            : (C) 2011 by Mehmet Kocaturk
     email                : mehmet.kocaturk@boun.edu.tr
  ***************************************************************************/
 
