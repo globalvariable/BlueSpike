@@ -1,0 +1,79 @@
+////////////////////////////////////////////////////////////////
+
+    			BlueSpike
+
+Real-Time Data Acquisition and Neural Spike Processing Software
+
+////////////////////////////////////////////////////////////////
+
+BlueSpike is an electrophysiology tool to perform real-time data 
+acquisition, visualization and sorting of neuronal spikes. It 
+continuously acquires data every 1 ms and realizes digital signal 
+processing on retrieved data. 
+
+KernelSpike:
+* is a kernel module.
+* provides data acquisition and signal processing every 1 ms. 
+* currently supports one data acquisition card with 16 channel 
+  (i.e. NI-6070E).
+* realizes 2nd or 4th order Butterworth digital high-pass 
+  filtering (cut-off 150 Hz) which is managed by SpikeViewer.
+* performs spike detection process on every channel. The threshold 
+  parameter for spikes is adjusted by using SpikeViewer.
+* performs spike sorting (currently only template matching) which 
+  is managed by using SpikeSorter.
+ 
+SpikeViewever:
+* runs in user-space.
+* starts/stops of data recording for raw and sorted data. The file 
+  name is generated automatically according to the starting time 
+  of the recording. It also appends a user defined phrase to the 
+  data file name. 
+* visualizes the neuronal activity related to the selected channel 
+  with a refresh rate of 10 fps. 
+* submits threshold parameter for spike detection which is 
+  performed by KernelSpike. 
+* turns on/off 2nd and 4th order digital high-pass filters. 
+* visualizes detected spikes related to the selected channel.
+
+SpikeSorter:
+* runs in user-space.
+* turns on/off spike sorting.
+* supports up to 3 spikes per channel.  
+* enables selection of spikes using mouse on spike viewing window 
+  (top-left graph) to obtain a spike template for template matching 
+  algorithm. The determined spike template is later on plotted on 
+  the selected spike unit window. (Note: Before selecting the 
+  spikes by drawing a rectangle on spike viewing window, the 
+  visualization should be paused by clicking on Pause button.) 
+* submits the difference parameter (Diff) for each unit to adjust 
+  the specificity of template matcher. 
+* visualizes the sorted spikes on the related unit window. The 
+  non-sorted spikes appear on non-sorted spike window (top-right 
+  graph).
+
+Channel Reviewer:
+* runs in user-space.
+* visualizes multiple spike channels with a refresh rate of 10 fps. 
+* is especially useful during implantation of microwire arrays to 
+  ensure placement microwire array in the targeted brain structure.
+
+**********************************************
+Dependencies:
+
+This tool 
+
+RTAI(www.rtai.org):
+* works on an RTAI-Linux platform and uses RTAI libraries.
+* is developed on Linux Kernel-2.6.29.4 with RTAI-3.7.1.
+
+COMEDI(www.comedi.org):
+* uses COMEDI libraries for real-time data acquisition.
+* is developed by using comedi-0.7.76 & comedilib-0.8.1 
+* is developed by using National-Instruments NI-6070E data 
+  acquisition card.
+
+GtkDatabox (http://sourceforge.net/projects/gtkdatabox/)
+* uses GtkDatabox libraries for visualization of retrieved data.
+* is developed by using GtkDatabox-0.9.9.1
+
