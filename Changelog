@@ -1,4 +1,8 @@
 
+	(13 Jan 2011)	
+	* Added Status Flags for RTAI Environment
+	* Resolved bugs in code related to recording in 'Gui.c' of SpikeViewer.
+
 * 0.3  (6 Jan 2011)
 	* Added README file and License file (COPYING) to repository
 

@@ -108,6 +108,31 @@ typedef struct templ_data
 	float diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 } template_matching_data;
 
+typedef struct{
+	union
+	{
+		struct{
+			unsigned Bit0:1;
+			unsigned Bit1:1;
+			unsigned Bit2:1;
+			unsigned Bit3:1;
+			unsigned Bit4:1;
+			unsigned Bit5:1;
+			unsigned Bit6:1;						
+			unsigned Bit7:1;
+			unsigned Bit8:1;
+			unsigned Bit9:1;
+			unsigned Bit10:1;
+			unsigned Bit11:1;
+			unsigned Bit12:1;
+			unsigned Bit13:1;
+			unsigned Bit14:1;						
+			unsigned Bit15:1;
+		};
+		unsigned AllFlags;
+	} StatusFlags;
+} StaFlag; 
+
 typedef struct buff_data 
 {
 	int scan_number_write;
@@ -125,6 +150,8 @@ typedef struct buff_data
 	bool sorting_on;
 	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];
 	bool highpass_4th_on;
+	StaFlag	RTStatusFlags[NUM_OF_SAMP_IN_BUFF];
+	StaFlag	Curr_RTStatusFlags;	
 } buff_data_struct;
 
 static buff_data_struct *buff;
@@ -162,6 +189,7 @@ static void fun(int t)
 			if(chan_number==NUM_OF_CHAN)
 			{
 				buff->Environment[buff->scan_number_write] = buff->Curr_Environment;
+				buff->RTStatusFlags[buff->scan_number_write] = buff->Curr_RTStatusFlags;				
 				if (buff->filter_on)
 				{
 					if (buff->highpass_4th_on)
