@@ -1,4 +1,7 @@
 
+	24 Jan 2011
+	* Added a normalization parameter for spike sorting. 
+
 	(13 Jan 2011)	
 	* Added Status Flags for RTAI Environment
 	* Resolved bugs in code related to recording in 'Gui.c' of SpikeViewer.

@@ -106,6 +106,7 @@ typedef struct templ_data
 {
 	float template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
 	float diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	float template_absavg[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 } template_matching_data;
 
 typedef struct{
@@ -551,6 +552,10 @@ static void template_matching(void)
 					else
 						diff[chan_temp_num] = diff[chan_temp_num] + abs(buff->filtered_scan[buff->scan_number_write-idx].data[chan]-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1]);
 				}
+				diff[chan_temp_num] = diff[chan_temp_num]/NUM_OF_SAMP_PER_SPIKE;
+				if (buff->spike_template.template_absavg[chan][chan_temp_num]>0)
+					diff[chan_temp_num] = diff[chan_temp_num]/buff->spike_template.template_absavg[chan][chan_temp_num];
+					
 			}
 			if ((diff[0]<buff->spike_template.diff_thres[chan][0]) && (diff[0] < diff [1]) && (diff[0] < diff[2]))
 			{

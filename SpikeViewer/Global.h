@@ -79,6 +79,7 @@ typedef struct templ_data
 {
 	float template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
 	float diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	float template_absavg[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 } template_matching_data;
 
 typedef struct{
