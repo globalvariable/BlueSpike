@@ -822,16 +822,10 @@ gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selec
 				Y_spike_2_template[i] = buff->spike_template.template[disp_chan][selected_spike_unit][i];						
 		}
 	}
-	
-	float templt_avg;
-	templt_avg = 0;
+
 	if (idx > 0)
 	{
-		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
-		{
-			templt_avg = templt_avg + abs(buff->spike_template.template[disp_chan][selected_spike_unit][i]);
-		}
-		buff->spike_template.template_absavg[disp_chan][selected_spike_unit] = templt_avg/NUM_OF_SAMP_PER_SPIKE;
+		buff->spike_template.template_absavg[disp_chan][selected_spike_unit] = buff->spike_template.template[disp_chan][selected_spike_unit][19];
 	}
  	g_ptr_array_free(Y_spikes_in_range_array,FALSE);
 	g_free(Y_mean);

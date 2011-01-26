@@ -552,7 +552,7 @@ static void template_matching(void)
 					else
 						diff[chan_temp_num] = diff[chan_temp_num] + abs(buff->filtered_scan[buff->scan_number_write-idx].data[chan]-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1]);
 				}
-				diff[chan_temp_num] = diff[chan_temp_num]/NUM_OF_SAMP_PER_SPIKE;
+				diff[chan_temp_num] = diff[chan_temp_num];
 				if (buff->spike_template.template_absavg[chan][chan_temp_num]>0)
 					diff[chan_temp_num] = diff[chan_temp_num]/buff->spike_template.template_absavg[chan][chan_temp_num];
 					
