@@ -52,7 +52,7 @@ SpikeSorter:
   non-sorted spikes appear on non-sorted spike window (top-right 
   graph).
 
-Channel Reviewer:
+ChannelReviewer:
 * runs in user-space.
 * visualizes multiple spike channels with a refresh rate of 10 fps. 
 * is especially useful during implantation of microwire arrays to 
