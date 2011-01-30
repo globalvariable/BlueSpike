@@ -15,7 +15,7 @@ KernelSpike:
 * is a kernel module.
 * provides data acquisition and signal processing every 1 ms. 
 * currently supports one data acquisition card with 16 channel 
-  (i.e. NI-6070E).
+  (i.e. NI-6070E) with a sampling rate of 40 KHz per channel.
 * realizes 2nd or 4th order Butterworth digital high-pass 
   filtering (cut-off 150 Hz) which is managed by SpikeViewer.
 * performs spike detection process on every channel. The threshold 
@@ -23,7 +23,7 @@ KernelSpike:
 * performs spike sorting (currently only template matching) which 
   is managed by using SpikeSorter.
  
-SpikeViewever:
+SpikeViewer:
 * runs in user-space.
 * starts/stops of data recording for raw and sorted data. The file 
   name is generated automatically according to the starting time 
