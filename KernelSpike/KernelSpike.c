@@ -57,7 +57,6 @@ void *ptr = NULL;
 static int size, chan_number;
 static int front, back;
 
-
 typedef struct{
 	union
 	{
@@ -104,9 +103,14 @@ typedef struct spk_data
 
 typedef struct templ_data
 {
-	float template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-	float diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
-	float template_absavg[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	double template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];   //mean
+	double S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE]; //covariance
+	double  inv_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];
+	double sqrt_det_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	double log_det_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];	
+	double diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	bool sorting_on[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	bool include_unit[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 } template_matching_data;
 
 typedef struct{
@@ -535,8 +539,14 @@ static void threshold_spikes(void)
 
 static void template_matching(void)
 {
-	int chan,chan_temp_num,idx;
-	float diff[NUM_OF_TEMP_PER_CHAN];
+	int chan,chan_temp_num,idx, i , j;
+	double g_x[NUM_OF_TEMP_PER_CHAN];
+	double diff[NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
+	double diff_temporary[NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
+
+	double exponent[NUM_OF_TEMP_PER_CHAN];	
+	double probabl[NUM_OF_TEMP_PER_CHAN];	
+
 	for (chan=0;chan<NUM_OF_CHAN; chan++)
 	{
 
@@ -544,30 +554,58 @@ static void template_matching(void)
 		{
 			for (chan_temp_num=0;chan_temp_num<NUM_OF_TEMP_PER_CHAN; chan_temp_num++)
 			{	
-				diff[chan_temp_num] = 0;		
-				for (idx=0;idx<NUM_OF_SAMP_PER_SPIKE;idx++)
+				g_x[chan_temp_num] = -100000000.0;	
+				if (buff->spike_template.sorting_on[chan][chan_temp_num])
 				{
-					if (buff->scan_number_write-idx < 0)
-						diff[chan_temp_num] = diff[chan_temp_num] + abs(buff->filtered_scan[buff->scan_number_write-idx+NUM_OF_SAMP_IN_BUFF].data[chan]-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1]);
-					else
-						diff[chan_temp_num] = diff[chan_temp_num] + abs(buff->filtered_scan[buff->scan_number_write-idx].data[chan]-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1]);
+					g_x[chan_temp_num] = 0.0;
+					for (idx=0;idx<NUM_OF_SAMP_PER_SPIKE;idx++)
+					{
+						if (buff->scan_number_write-idx < 0)
+							diff[chan_temp_num][idx] = ((double)buff->filtered_scan[buff->scan_number_write-idx+NUM_OF_SAMP_IN_BUFF].data[chan])-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1];
+						else
+							diff[chan_temp_num][idx] =((double) buff->filtered_scan[buff->scan_number_write-idx].data[chan])-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1];
+					}
+					for (i=0; i <NUM_OF_SAMP_PER_SPIKE;i++)
+					{
+						diff_temporary[chan_temp_num][i] = 0;
+					}
+					for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+					{
+						for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
+						{
+							diff_temporary[chan_temp_num][i] = diff_temporary[chan_temp_num][i] + (diff[chan_temp_num][j]* buff->spike_template.inv_S[chan][chan_temp_num][i][j]);
+						}
+					}
+							
+					for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+					{
+						g_x[chan_temp_num] = g_x[chan_temp_num] + (diff_temporary[chan_temp_num][i] * diff[chan_temp_num][i]);
+					}
+					exponent[chan_temp_num] = exp((-0.5)*g_x[chan_temp_num]);
+					probabl[chan_temp_num] = (1.133976225112738364E-24/(buff->spike_template. sqrt_det_S[chan][chan_temp_num]))*exponent[chan_temp_num];       //   ( 1/ (   ((2*pi)^(d/2)) * (det_S^(1/2)) ) * exp( (-1/2) * (x-u)' * (S^ (-1)) - (x-u) ) 
+					g_x[chan_temp_num] = 0 - (buff->spike_template. log_det_S[chan][chan_temp_num]) - (g_x[chan_temp_num]);
 				}
-				diff[chan_temp_num] = diff[chan_temp_num];
-				if (buff->spike_template.template_absavg[chan][chan_temp_num]>0)
-					diff[chan_temp_num] = diff[chan_temp_num]/buff->spike_template.template_absavg[chan][chan_temp_num];
-					
 			}
-			if ((diff[0]<buff->spike_template.diff_thres[chan][0]) && (diff[0] < diff [1]) && (diff[0] < diff[2]))
+			if ((g_x[0] > g_x[1]) && (g_x[0] > g_x[2]) && (probabl[0]> buff->spike_template.diff_thres[chan][0]) )
 			{
-				buff->sorted_spike_data[buff->scan_number_write].data[chan]=1;
+				if (buff->spike_template.include_unit[chan][0])
+					buff->sorted_spike_data[buff->scan_number_write].data[chan]=1;
+				else
+					buff->sorted_spike_data[buff->scan_number_write].data[chan]=4;
 			}
-			else if ((diff[1]<buff->spike_template.diff_thres[chan][1]) && (diff[1] < diff [0]) && (diff[1] < diff[2]))
+			else if ((g_x[1] > g_x[0]) && (g_x[1] > g_x[2]) && (probabl[1]> buff->spike_template.diff_thres[chan][1]))
 			{
-				buff->sorted_spike_data[buff->scan_number_write].data[chan]=2;
+				if (buff->spike_template.include_unit[chan][1])
+					buff->sorted_spike_data[buff->scan_number_write].data[chan]=2;
+				else
+					buff->sorted_spike_data[buff->scan_number_write].data[chan]=5;
 			}
-			else if ((diff[2]<buff->spike_template.diff_thres[chan][2]) && (diff[2] < diff [0]) && (diff[2] < diff[1]))
+			else if ((g_x[2] > g_x[0]) && (g_x[2] > g_x[1]) && (probabl[2]> buff->spike_template.diff_thres[chan][2]) )
 			{
-				buff->sorted_spike_data[buff->scan_number_write].data[chan]=3;
+				if (buff->spike_template.include_unit[chan][2])
+					buff->sorted_spike_data[buff->scan_number_write].data[chan]=3;
+				else
+					buff->sorted_spike_data[buff->scan_number_write].data[chan]=6;
 			}
 			else
 				buff->sorted_spike_data[buff->scan_number_write].data[chan]=9;			

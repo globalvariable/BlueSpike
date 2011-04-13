@@ -13,13 +13,14 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
-
 #include <stdlib.h>
 #include <stdbool.h>
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 
 #include <rtai_comedi.h>
+
+#include <meschach/matrix.h>
 
 #define SHMSIZ  0
 #define NUM_OF_CHAN 16 
@@ -29,8 +30,9 @@
 
 #define INIT_POINT_OF_SPIKE 59
 #define NUM_OF_SAMP_PER_SPIKE 60
-#define SPIKE_MEM_TO_DISPLAY 30 
+#define SPIKE_MEM_TO_DISPLAY 150
 #define NUM_OF_TEMP_PER_CHAN 3
+#define MIN_SPIKE_NUM_FOR_TEMPLATE 80
 
 typedef struct{
 	union
@@ -77,9 +79,14 @@ typedef struct spk_data
 
 typedef struct templ_data
 {
-	float template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-	float diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
-	float template_absavg[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	double template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];   //mean
+	double S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE]; //covariance
+	double  inv_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];
+	double sqrt_det_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	double log_det_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	double diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	bool sorting_on[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
+	bool include_unit[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 } template_matching_data;
 
 typedef struct{

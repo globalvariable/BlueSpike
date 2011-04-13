@@ -21,6 +21,8 @@
 #include <gtkdatabox_ruler.h>
 #include <gtkdatabox_lines.h>
 
+
+
 // Variables
 GtkWidget *databox_all_spike;
 GtkWidget *databox_sorted_all_spike;
@@ -54,6 +56,9 @@ GtkWidget *clear_nonsorted_button;
 GtkWidget *pause_button;
 GtkWidget *diff_button;
 GtkWidget *sorting_onoff_button;
+GtkWidget *unit_sorting_onoff_button;
+GtkWidget *include_unit_onoff_button;
+GtkWidget *spike_filter_mode_button;
 GtkWidget *save_template_button;
 GtkWidget *load_template_button;
 
@@ -112,6 +117,8 @@ int Y_spikes_2_idx;
 int Y_spikes_nonsorted_idx;
 
 int disp_paused;
+int spike_filter_mode;
+float x_upper, x_lower, y_upper, y_lower;   // for rectangle to select spikes
 
 GdkColor color_bg;
 GdkColor color_all_spike;
@@ -134,5 +141,8 @@ gboolean clear_unit_but_func (GtkDatabox * box);
 gboolean diff_but_func (GtkDatabox * box);
 gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selectionValues);
 gboolean sorting_onoff_but_func (GtkDatabox * box);
+gboolean unit_sorting_onoff_but_func (GtkDatabox * box);
+gboolean include_unit_onoff_but_func (GtkDatabox * box);
+gboolean spike_filter_mode_but_func (GtkDatabox * box);
 gboolean save_template_but_func (GtkDatabox * box);
 gboolean load_template_but_func (GtkDatabox * box);
