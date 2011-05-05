@@ -712,7 +712,7 @@ gboolean spk_unit_slct_func (GtkDatabox * box)
 	if (gtk_combo_box_get_active (GTK_COMBO_BOX(combo_spike)) >= 0)
 	{
 		selected_spike_unit = gtk_combo_box_get_active (GTK_COMBO_BOX(combo_spike));
-		sprintf(strDiff, "%Ef" , buff->spike_template.diff_thres[disp_chan][selected_spike_unit]);
+		sprintf(strDiff, "%E" , buff->spike_template.diff_thres[disp_chan][selected_spike_unit]);
 		gtk_entry_set_text (GTK_ENTRY(entryDiff), strDiff);
 		sprintf(str_selected_unit, "%d" , selected_spike_unit+1);
 		gtk_label_set_text( lbl_selected_unit, str_selected_unit );
