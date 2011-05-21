@@ -156,18 +156,25 @@ typedef struct buff_data
 	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];
 	bool highpass_4th_on;
 	StaFlag	RTStatusFlags[NUM_OF_SAMP_IN_BUFF];
-	StaFlag	Curr_RTStatusFlags;	
+	StaFlag	Curr_RTStatusFlags;
+	int jitter[1000];	
 } buff_data_struct;
 
 static buff_data_struct *buff;
 
 static void fun(int t)
 {
+	int ret,i, chan_iter;
+	int num_byte;
+	int cpu_time_prev = 0;
+	int jitter_counter = 0;
 	while (1) 
 	{
-		int ret,i, chan_iter;
-		int num_byte;
 		rt_task_wait_period();
+		buff->jitter[jitter_counter] = rt_get_cpu_time_ns() - cpu_time_prev;
+		jitter_counter++;
+		if (jitter_counter == 1000)
+			jitter_counter = 0;		
 		comedi_poll(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
 		num_byte= comedi_get_buffer_contents(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
 		front = front + num_byte;
