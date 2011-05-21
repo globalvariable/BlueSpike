@@ -157,7 +157,8 @@ typedef struct buff_data
 	bool highpass_4th_on;
 	StaFlag	RTStatusFlags[NUM_OF_SAMP_IN_BUFF];
 	StaFlag	Curr_RTStatusFlags;
-	int jitter[1000];	
+	int jitter[1000];
+	int jitter_idx;	
 } buff_data_struct;
 
 static buff_data_struct *buff;
@@ -166,15 +167,20 @@ static void fun(int t)
 {
 	int ret,i, chan_iter;
 	int num_byte;
-	int cpu_time_prev = 0;
+	int cpu_time_prev;
+	int cpu_time_curr;
 	int jitter_counter = 0;
+	cpu_time_prev = rt_get_cpu_time_ns();
 	while (1) 
 	{
 		rt_task_wait_period();
-		buff->jitter[jitter_counter] = rt_get_cpu_time_ns() - cpu_time_prev;
-		jitter_counter++;
-		if (jitter_counter == 1000)
-			jitter_counter = 0;		
+		cpu_time_curr = rt_get_cpu_time_ns();
+		buff->jitter[buff->jitter_idx] = cpu_time_curr - cpu_time_prev;
+		cpu_time_prev = cpu_time_curr;
+		buff->jitter_idx++;
+		if (buff->jitter_idx == 1000)
+			buff->jitter_idx = 0;	
+			
 		comedi_poll(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
 		num_byte= comedi_get_buffer_contents(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
 		front = front + num_byte;
@@ -233,8 +239,8 @@ static void fun(int t)
 					}
 				}
 				chan_number=0;
-				(buff->scan_number_write)++;
 				buff->scan_number_read = buff->scan_number_write;
+				(buff->scan_number_write)++;
 				if ((buff->scan_number_write) == NUM_OF_SAMP_IN_BUFF) 
 				{
 					(buff->scan_number_write) = 0;

@@ -136,6 +136,7 @@ typedef struct buff_data
 	StaFlag	RTStatusFlags[NUM_OF_SAMP_IN_BUFF];
 	StaFlag	Curr_RTStatusFlags;
 	int jitter[1000];
+	int jitter_idx;	
 } buff_data_struct;
 
 buff_data_struct *buff;
@@ -301,7 +302,7 @@ gboolean timeout_callback(gpointer user_data)
 	
    	gint i;
 
-	front = buff->scan_number_write;
+	front = buff->scan_number_read;
 	if (front < back)
 		size = front + NUM_OF_SAMP_IN_BUFF - back;
 	else

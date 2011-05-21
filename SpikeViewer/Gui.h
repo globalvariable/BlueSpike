@@ -50,6 +50,18 @@ GtkWidget *entryThreshold;
 char *strAddFileName;
 GtkWidget *entryAddFileName;
 
+GtkWidget *lbl_jitter;
+GtkWidget *lbl_jitter_20_us;
+GtkWidget *lbl_jitter_50_us;
+GtkWidget *lbl_jitter_100_us;
+
+int num_jitter_20_us;
+int num_jitter_50_us;
+int num_jitter_100_us;
+
+int jitter_buff_front;
+int jitter_buff_back;
+
 int disp_chan;
 int front, back, size;
 float *X;
@@ -84,3 +96,4 @@ gboolean record_but_func (GtkDatabox * box);
 gboolean name_file_but_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
+void update_jitter_monitor(void);

@@ -414,7 +414,7 @@ gboolean timeout_callback(gpointer user_data)
 
    	gint i,spike_view_cntr, spike_filter_cntr;
 
-	front = buff->scan_number_write;
+	front = buff->scan_number_read;
 	if (front < back)
 		size = front + NUM_OF_SAMP_IN_BUFF - back;
 	else

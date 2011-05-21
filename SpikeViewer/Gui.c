@@ -60,7 +60,7 @@ void create_gui(void)
 	
 
 	GtkWidget *window;
-	GtkWidget *hbox, *hbox1, *vbox, *vbox1, *button, *lbl;
+	GtkWidget *hbox, *hbox1, *vbox, *vbox1, *vbox2, *button, *lbl;
 	GtkDataboxGraph *graph;
 
  	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -120,8 +120,12 @@ void create_gui(void)
   	gtk_box_pack_start (GTK_BOX (vbox1), databox_signal, TRUE, TRUE, 0);
   	gtk_widget_modify_bg (GTK_DATABOX (box_signal), GTK_STATE_NORMAL, &color_bg_signal);
 
-	vbox1 = gtk_vbox_new(FALSE, 0);
+	vbox1 = gtk_vbox_new(FALSE, 20);
   	gtk_box_pack_start (GTK_BOX (hbox), vbox1, FALSE, FALSE, 0);
+
+	gtk_databox_create_box_with_scrollbars_and_rulers (&box_spike_shape, &databox_spike_shape,TRUE, TRUE, TRUE, TRUE);
+  	gtk_box_pack_start (GTK_BOX (vbox1), databox_spike_shape, TRUE, TRUE, 20);
+  	gtk_widget_modify_bg (GTK_DATABOX (box_spike_shape), GTK_STATE_NORMAL, &color_bg_spike_shape);
 
 	clear_button = gtk_button_new_with_label("Clear Screen");
 	gtk_widget_set_size_request(clear_button, 100, 30);
@@ -150,7 +154,7 @@ void create_gui(void)
 
 
 	hbox1 = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, FALSE, FALSE, 50);
+  	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, FALSE, FALSE, 10);
 
 
         lbl = gtk_label_new("Threshold (ADC Code): ");
@@ -170,11 +174,47 @@ void create_gui(void)
 	strThreshold = thres;
 	sprintf(strThreshold, "%.0f" , buff->Threshold[0]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), strThreshold);
-	
 
-	gtk_databox_create_box_with_scrollbars_and_rulers (&box_spike_shape, &databox_spike_shape,TRUE, TRUE, TRUE, TRUE);
-  	gtk_box_pack_start (GTK_BOX (vbox1), databox_spike_shape, TRUE, TRUE, 100);
-  	gtk_widget_modify_bg (GTK_DATABOX (box_spike_shape), GTK_STATE_NORMAL, &color_bg_spike_shape);
+	vbox2 = gtk_vbox_new(FALSE, 20);
+  	gtk_box_pack_start (GTK_BOX (vbox1), vbox2, FALSE, FALSE, 50);
+	
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+        lbl = gtk_label_new("Jitter(ns): ");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl, FALSE,FALSE, 0);
+
+        lbl_jitter = gtk_label_new("0");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl_jitter, FALSE,FALSE, 0);
+
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+        lbl = gtk_label_new("Jitter( >20 us): ");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl, FALSE,FALSE, 0);
+
+        lbl_jitter_20_us = gtk_label_new("0");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl_jitter_20_us, FALSE,FALSE, 0);
+
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+        lbl = gtk_label_new("Jitter( >50 us): ");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl, FALSE,FALSE, 0);
+
+        lbl_jitter_50_us = gtk_label_new("0");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl_jitter_50_us, FALSE,FALSE, 0);
+
+	hbox1 = gtk_hbox_new(TRUE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox2), hbox1, FALSE, FALSE, 0);
+
+        lbl = gtk_label_new("Jitter( >100 us): ");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl, FALSE,FALSE, 0);
+
+        lbl_jitter_100_us = gtk_label_new("0");
+        gtk_box_pack_start(GTK_BOX(hbox1),lbl_jitter_100_us, FALSE,FALSE, 0);
+
+
 
    	graph = gtk_databox_grid_new (21, 21, &color_grid_signal, 0);
    	gtk_databox_graph_add (GTK_DATABOX (box_signal), graph);
@@ -216,7 +256,7 @@ gboolean timeout_callback(gpointer user_data)
 
    	gint i,j,spike_view_cntr;
 
-	front = buff->scan_number_write;
+	front = buff->scan_number_read;
 	if (front < back)
 		size = front + NUM_OF_SAMP_IN_BUFF - back;
 	else
@@ -318,6 +358,9 @@ gboolean timeout_callback(gpointer user_data)
 		graph = GTK_DATABOX_GRAPH(gtk_databox_lines_new (size, X, Y, &color_signal, 0));
 		gtk_databox_graph_add (GTK_DATABOX (databox), graph);
 		gtk_databox_set_total_limits (GTK_DATABOX (databox), -10., 4500., +2200, -2200);
+
+
+		update_jitter_monitor();
 
 	}
 
@@ -518,4 +561,57 @@ gboolean clear_screen_but_func (GtkDatabox * box)
 	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);	
 
 	return TRUE;	
+}
+
+void update_jitter_monitor (void)
+{
+	char str [20];
+	int i, size_jit;
+
+	jitter_buff_front = buff->jitter_idx;
+
+	if (jitter_buff_front < jitter_buff_back)
+		size_jit = jitter_buff_front + 1000 - jitter_buff_back;
+	else
+		size_jit = jitter_buff_front - jitter_buff_back;	
+
+
+	if (size_jit == 0)
+		return;  
+		
+	for (i = 0; i < size_jit; i++)
+	{			
+		if ((jitter_buff_back+i) >= 1000)
+		{
+			if (abs(buff->jitter[jitter_buff_back+i-1000]-1000000) > 100000)
+				  num_jitter_100_us++;
+			else if (abs(buff->jitter[jitter_buff_back+i-1000]-1000000) > 50000)
+				num_jitter_50_us++;
+			else if (abs(buff->jitter[jitter_buff_back+i-1000]-1000000) > 20000)
+				num_jitter_20_us++;
+		}
+		else
+		{
+			if (abs(buff->jitter[jitter_buff_back+i]-1000000) > 100000)
+				  num_jitter_100_us++;
+			else if (abs(buff->jitter[jitter_buff_back+i]-1000000) > 50000)
+				num_jitter_50_us++;
+			else if (abs(buff->jitter[jitter_buff_back+i]-1000000) > 20000)
+				num_jitter_20_us++;
+
+		}
+	}
+	sprintf(str, "%d" , (buff->jitter[jitter_buff_back] - 1000000));
+	gtk_label_set_text(lbl_jitter, str);
+	
+	jitter_buff_back = jitter_buff_front;
+
+	sprintf(str, "%d" , num_jitter_100_us);
+	gtk_label_set_text( lbl_jitter_100_us,str);
+	sprintf(str, "%d" , num_jitter_50_us);
+	gtk_label_set_text( lbl_jitter_50_us,str);
+	sprintf(str, "%d" , num_jitter_20_us);
+	gtk_label_set_text( lbl_jitter_20_us,str);
+
+	return;
 }
