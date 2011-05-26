@@ -32,6 +32,7 @@ GtkWidget *box_spike_shape;
 GtkWidget *combo;
 GtkWidget *ch_slct_button;
 GtkWidget *record_button;
+GtkWidget *delete_button;
 
 GtkWidget *clear_button;
 GtkWidget *pause_button;
@@ -39,6 +40,9 @@ GtkWidget *threshold_button;
 GtkWidget *name_file_button;
 GtkWidget *filter_button;
 GtkWidget *highpass_4th_button;
+
+char strFileName[150];
+char strFileNameSorted[150];
 
 GtkDataboxGraph *graph;	
 GtkDataboxGraph *graph_spike_shape;
@@ -93,6 +97,7 @@ gboolean highpass_4th_button_func (GtkDatabox * box);
 gboolean ch_slct_func (GtkDatabox * box);
 gboolean pause_button_func (GtkDatabox * box);
 gboolean record_but_func (GtkDatabox * box);
+gboolean delete_but_func (GtkDatabox * box);
 gboolean name_file_but_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);

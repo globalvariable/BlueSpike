@@ -89,12 +89,15 @@ void create_gui(void)
 
 	ch_slct_button = gtk_button_new_with_label("Select Ch");
 	record_button = gtk_button_new_with_label("Record");
+	delete_button = gtk_button_new_with_label("Delete");
 
 	gtk_widget_set_size_request(ch_slct_button, 70, 30);
 	gtk_widget_set_size_request(record_button, 100, 30);
+	gtk_widget_set_size_request(delete_button, 100, 30);
 	gtk_box_pack_start (GTK_BOX (hbox), ch_slct_button, FALSE, FALSE, 50);
-	gtk_box_pack_start (GTK_BOX (hbox), record_button, FALSE, FALSE, 0);
-
+	gtk_box_pack_start (GTK_BOX (hbox), record_button, FALSE, FALSE, 50);
+	gtk_box_pack_start (GTK_BOX (hbox), delete_button, FALSE, FALSE, 0);
+	gtk_widget_set_sensitive(delete_button, FALSE);
         lbl = gtk_label_new("Name Data File :");
         gtk_box_pack_start(GTK_BOX(hbox),lbl, FALSE,FALSE, 50);
 
@@ -238,6 +241,7 @@ void create_gui(void)
 	g_signal_connect_swapped(G_OBJECT(ch_slct_button), "clicked", G_CALLBACK(ch_slct_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(pause_button), "clicked", G_CALLBACK(pause_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(record_button), "clicked", G_CALLBACK(record_but_func), G_OBJECT(box_signal));
+	g_signal_connect_swapped(G_OBJECT(delete_button), "clicked", G_CALLBACK(delete_but_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(name_file_button), "clicked", G_CALLBACK(name_file_but_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(threshold_button), "clicked", G_CALLBACK(threshold_but_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(clear_button), "clicked", G_CALLBACK(clear_screen_but_func), G_OBJECT(box_signal));
@@ -500,7 +504,7 @@ gboolean record_but_func (GtkDatabox * box)
 	time_str[24]='_';
 	time_str[25]='_';
 
-	char strFileName[100];
+
 	
 	if (!rec_data)
 	{
@@ -509,12 +513,13 @@ gboolean record_but_func (GtkDatabox * box)
 		strcat(strFileName, strAddFileName);
 		fp = fopen(strFileName, "w");
 		
-		strcpy(strFileName, "/home/kocaturk/SPIKE_DATA/Sorted/");	
-		strcat(strFileName, time_str+4);
-		strcat(strFileName, strAddFileName);
-		fp_sorted = fopen(strFileName, "w");
+		strcpy(strFileNameSorted, "/home/kocaturk/SPIKE_DATA/Sorted/");	
+		strcat(strFileNameSorted, time_str+4);
+		strcat(strFileNameSorted, strAddFileName);
+		fp_sorted = fopen(strFileNameSorted, "w");
 
 		gtk_button_set_label (record_button,"Release");
+		gtk_widget_set_sensitive(delete_button, FALSE);
 		rec_data = 1;
 	}
 	else if (rec_data)
@@ -526,8 +531,17 @@ gboolean record_but_func (GtkDatabox * box)
 		if (fp_sorted != NULL)
 			fclose(fp_sorted);
 		fp_sorted = NULL;
-		gtk_button_set_label (record_button,"Record");		
+		gtk_button_set_label (record_button,"Record");	
+		gtk_widget_set_sensitive(delete_button, TRUE);	
 	}
+	return TRUE;
+}
+
+gboolean delete_but_func (GtkDatabox * box)
+{
+	gtk_widget_set_sensitive(delete_button, FALSE);
+	remove(strFileName);
+	remove(strFileNameSorted);
 	return TRUE;
 }
 
