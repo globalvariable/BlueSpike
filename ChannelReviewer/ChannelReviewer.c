@@ -283,6 +283,7 @@ void create_gui(void)
    	gtk_databox_graph_add (GTK_DATABOX (box4), graphgrid);
 	gtk_databox_set_total_limits (GTK_DATABOX (box4), -10., 4500., +2200, -2200);
 
+	back = buff->scan_number_read;
 
   	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 

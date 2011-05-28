@@ -235,6 +235,7 @@ void create_gui(void)
 
   	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
+	back = buff->scan_number_read;
 
 	g_signal_connect_swapped(G_OBJECT(filter_button), "clicked", G_CALLBACK(filter_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(highpass_4th_button), "clicked", G_CALLBACK(highpass_4th_button_func), G_OBJECT(box_signal));
