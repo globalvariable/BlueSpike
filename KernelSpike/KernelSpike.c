@@ -599,21 +599,21 @@ static void template_matching(void)
 					g_x[chan_temp_num] = 0 - (buff->spike_template. log_det_S[chan][chan_temp_num]) - (g_x[chan_temp_num]);
 				}
 			}
-			if ((g_x[0] >= g_x[1]) && (g_x[0] >= g_x[2]) && (probabl[0]>= buff->spike_template.diff_thres[chan][0]) )
+			if ((g_x[0] >= g_x[1]) && (g_x[0] >= g_x[2]) && (probabl[0]>= buff->spike_template.diff_thres[chan][0]) && (buff->spike_template.sorting_on[chan][0]))
 			{
 				if (buff->spike_template.include_unit[chan][0])
 					buff->sorted_spike_data[buff->scan_number_write].data[chan]=1;
 				else
 					buff->sorted_spike_data[buff->scan_number_write].data[chan]=4;
 			}
-			else if ((g_x[1] > g_x[0]) && (g_x[1] > g_x[2]) && (probabl[1]>= buff->spike_template.diff_thres[chan][1]))
+			else if ((g_x[1] > g_x[0]) && (g_x[1] > g_x[2]) && (probabl[1]>= buff->spike_template.diff_thres[chan][1]) && (buff->spike_template.sorting_on[chan][1]))
 			{
 				if (buff->spike_template.include_unit[chan][1])
 					buff->sorted_spike_data[buff->scan_number_write].data[chan]=2;
 				else
 					buff->sorted_spike_data[buff->scan_number_write].data[chan]=5;
 			}
-			else if ((g_x[2] > g_x[0]) && (g_x[2] > g_x[1]) && (probabl[2]>= buff->spike_template.diff_thres[chan][2]) )
+			else if ((g_x[2] > g_x[0]) && (g_x[2] > g_x[1]) && (probabl[2]>= buff->spike_template.diff_thres[chan][2]) && (buff->spike_template.sorting_on[chan][2]))
 			{
 				if (buff->spike_template.include_unit[chan][2])
 					buff->sorted_spike_data[buff->scan_number_write].data[chan]=3;
