@@ -40,13 +40,18 @@ void create_gui(void)
 	color_train_nonsorted.green = 65535;
 	color_train_nonsorted.blue = 65535;
 
+	color_train_exp_env.red = 0;
+	color_train_exp_env.green = 0;
+	color_train_exp_env.blue = 65535;
+
 	int i,j;
 	X_train = g_new0 (float, NUM_OF_SAMP_PER_TRAIN);
 	for (i=0; i<NUM_OF_SAMP_PER_TRAIN; i++)
 	{
 		X_train[i] = (float)i;
 	}
-	
+	Y_exp_env = g_new0 (float, NUM_OF_SAMP_PER_TRAIN);
+
 	GPtrArray *trains_ptr_chan;
 	trains_ptr_all = g_ptr_array_new();
 	float *Y_temp;
@@ -147,6 +152,8 @@ void create_gui(void)
 		g_ptr_array_add  (graphs_ptr_all, graphs_ptr_chan);
 	}
 
+	graph_exp_env = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_TRAIN, X_train, Y_exp_env, &color_train_exp_env, 0));	
+
 	for (i=0; i < NUM_OF_CHAN_TO_DISP; i++)
 	{
 		trains_ptr_chan = g_ptr_array_index(trains_ptr_all, i);
@@ -157,11 +164,13 @@ void create_gui(void)
 			databox = g_ptr_array_index(databoxes_ptr_chan, j);
 			graph = g_ptr_array_index(graphs_ptr_chan, j);
 			gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+			gtk_databox_graph_add (GTK_DATABOX (databox), graph_exp_env);
 			gtk_databox_set_total_limits (GTK_DATABOX (databox), NUM_OF_SAMP_PER_TRAIN, 0, 1.1, 0.8);	
 		}
 		databox = g_ptr_array_index(databoxes_ptr_chan, NUM_OF_TEMP_PER_CHAN);
 		graph = g_ptr_array_index(graphs_ptr_chan, NUM_OF_TEMP_PER_CHAN);
 		gtk_databox_graph_add (GTK_DATABOX (databox), graph);
+		gtk_databox_graph_add (GTK_DATABOX (databox), graph_exp_env);
 		gtk_databox_set_total_limits (GTK_DATABOX (databox), NUM_OF_SAMP_PER_TRAIN, 0, 1.1, 0.8);		
 	}
 
@@ -207,7 +216,7 @@ gboolean timeout_callback(gpointer user_data)
 					 Y_temp[k] = 0;
 			}
 		}
-		Y_temp = g_ptr_array_index(trains_ptr_chan, j);
+		Y_temp = g_ptr_array_index(trains_ptr_chan, NUM_OF_TEMP_PER_CHAN);
 		for (k=NUM_OF_SAMP_PER_TRAIN-1; k> -1; k--)
 		{	
 			if (k >= size_binned)
@@ -215,6 +224,14 @@ gboolean timeout_callback(gpointer user_data)
 			else
 				 Y_temp[k] = 0;
 		}
+	}
+
+	for (i=NUM_OF_SAMP_PER_TRAIN-1; i> -1; i--)
+	{	
+		if (i >= size_binned)
+			Y_exp_env[i] = Y_exp_env[i-size_binned];
+		else
+			 Y_exp_env[i] = 0;
 	}
 
 	for (i = 0; i < size; i++)
@@ -250,6 +267,7 @@ gboolean timeout_callback(gpointer user_data)
 					Y_temp [size_binned - 1 - (i/80)] = 1;			
 				}
 			}
+			Y_exp_env [size_binned - 1 - (i/80)]  = 2*buff->RTStatusFlags[back+i-NUM_OF_SAMP_IN_BUFF].StatusFlags.Bit1;
 		}
 		else
 		{
@@ -281,6 +299,7 @@ gboolean timeout_callback(gpointer user_data)
 					Y_temp [size_binned - 1 - (i/80)] = 1;			
 				}
 			}
+			Y_exp_env [size_binned - 1 - (i/80)]  = 2*buff->RTStatusFlags[back+i].StatusFlags.Bit1;
 		}
 	}
 	back = front;

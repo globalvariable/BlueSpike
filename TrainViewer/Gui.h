@@ -39,13 +39,14 @@ int front, back, size;
 
 float *X_train;
 GPtrArray *trains_ptr_all;
-
+float	*Y_exp_env;
+GtkDataboxGraph *graph_exp_env;
 int disp_paused;
 
 GdkColor color_bg_train;
 GdkColor color_train[NUM_OF_TEMP_PER_CHAN];
 GdkColor color_train_nonsorted;
-
+GdkColor color_train_exp_env;
 // Functions
 void create_gui(void);
 gboolean timeout_callback(gpointer user_data) ;
