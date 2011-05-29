@@ -1171,7 +1171,8 @@ gboolean load_template_but_func (GtkDatabox * box)
 	strLoadFileName = gtk_entry_get_text(GTK_ENTRY(entryLoadFileName));
 	strcat(strFileName, strLoadFileName);
 
-	int i,j,k,l;
+	int i,j,k,l, check_S;
+	check_S= 0;
 
 	fp = fopen(strFileName, "r");
 	if ( fp != NULL )
@@ -1215,56 +1216,72 @@ gboolean load_template_but_func (GtkDatabox * box)
 		{
 			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 			{
-				m_zero(S);
-				m_zero(S_inv);
-				m_zero(LU);
 				for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
 				{
 					for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
 					{
-						S->me[k][l] = buff->spike_template.S[i][j][k][l];
+						check_S = check_S + abs(buff->spike_template.S[i][j][k][l]);
 					}	
-				}
-
-				for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
-				{
-					for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
-					{
-						LU->me[k][l] = S->me[k][l]; 
-					}
-				}
-
-				pivot = px_get(S->m);
-  				LU = LUfactor(LU,pivot);
-				determinant = 1.0;
-
-				for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
-				{
-					for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
-					{
-						if (k == l)
-							determinant = determinant * (LU->me[k][l]);
-					}
-				}
-		
-				m_inverse(S,S_inv);
-	
-				if (determinant < 0)
-					determinant = determinant *(-1.0);	
-
-				buff->spike_template.sqrt_det_S[i][j] = sqrt(determinant); 
-				buff->spike_template.log_det_S[i][j] = log(determinant);
-
-				for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
-				{
-					for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
-					{	
-						buff->spike_template.inv_S[i][j][k][l] = S_inv->me[k][l];
-					}
 				}
 			}
 		}
+		if (check_S > 0)
+		{
+
+			for (i=0; i<NUM_OF_CHAN; i++)
+			{
+				for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+				{
+					m_zero(S);
+					m_zero(S_inv);
+					m_zero(LU);
+					for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+					{
+						for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
+						{
+							S->me[k][l] = buff->spike_template.S[i][j][k][l];
+						}	
+					}
 	
+					for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+					{
+						for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
+						{
+							LU->me[k][l] = S->me[k][l]; 
+						}
+					}
+	
+					pivot = px_get(S->m);
+  					LU = LUfactor(LU,pivot);
+					determinant = 1.0;
+	
+					for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+					{
+						for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
+						{
+							if (k == l)
+								determinant = determinant * (LU->me[k][l]);
+						}
+					}
+		
+					m_inverse(S,S_inv);
+	
+					if (determinant < 0)
+						determinant = determinant *(-1.0);	
+
+					buff->spike_template.sqrt_det_S[i][j] = sqrt(determinant); 
+					buff->spike_template.log_det_S[i][j] = log(determinant);
+
+					for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+					{
+						for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
+						{	
+							buff->spike_template.inv_S[i][j][k][l] = S_inv->me[k][l];
+						}
+					}
+				}
+			}	
+		}
 		m_free(S);
 		m_free(S_inv);
 
