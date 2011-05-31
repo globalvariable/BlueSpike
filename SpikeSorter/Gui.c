@@ -1165,7 +1165,7 @@ gboolean save_template_but_func (GtkDatabox * box)
 
 gboolean load_template_but_func (GtkDatabox * box)
 {
-	char strFileName[70];
+	char strFileName[100];
 	strcpy(strFileName, "/home/kocaturk/SPIKE_DATA/templates/");
 
 	strLoadFileName = gtk_entry_get_text(GTK_ENTRY(entryLoadFileName));
