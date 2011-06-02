@@ -28,11 +28,8 @@
 #define BUFFNAME  "SHBUFF"
 #define SPIKE_MIN_END_SAMP_NUM   40
 
-#define INIT_POINT_OF_SPIKE 59
-#define NUM_OF_SAMP_PER_SPIKE 60
-#define SPIKE_MEM_TO_DISPLAY 150
 #define NUM_OF_TEMP_PER_CHAN 3
-#define MIN_SPIKE_NUM_FOR_TEMPLATE 80
+#define NUM_OF_SAMP_PER_SPIKE 60
 
 typedef struct{
 	union

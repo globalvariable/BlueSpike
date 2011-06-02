@@ -22,6 +22,11 @@
 #include <gtkdatabox_lines.h>
 
 
+#define INIT_POINT_OF_SPIKE 59
+#define SPIKE_MEM_TO_DISPLAY 150
+#define SPIKE_MEM_TO_DISPLAY_UNIT 30
+#define MIN_SPIKE_NUM_FOR_TEMPLATE 80
+
 
 // Variables
 GtkWidget *databox_all_spike;
@@ -119,6 +124,9 @@ int Y_spikes_nonsorted_idx;
 int disp_paused;
 int spike_filter_mode;
 float x_upper, x_lower, y_upper, y_lower;   // for rectangle to select spikes
+float x_upper_1, x_lower_1, y_upper_1, y_lower_1; 
+float x_upper_2, x_lower_2, y_upper_2, y_lower_2; 
+int rect_switch;
 
 GdkColor color_bg;
 GdkColor color_all_spike;

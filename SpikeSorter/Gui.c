@@ -68,7 +68,7 @@ void create_gui(void)
 
 	
 	Y_spikes_0_ptr = g_ptr_array_new();
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_0 = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 		g_ptr_array_add  (Y_spikes_0_ptr, Y_spike_0);
@@ -76,7 +76,7 @@ void create_gui(void)
 	Y_spikes_0_idx = 0;
 
 	Y_spikes_1_ptr = g_ptr_array_new();
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_1 = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 		g_ptr_array_add  (Y_spikes_1_ptr, Y_spike_1);
@@ -84,7 +84,7 @@ void create_gui(void)
 	Y_spikes_1_idx = 0;
 
 	Y_spikes_2_ptr = g_ptr_array_new();
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_2 = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 		g_ptr_array_add  (Y_spikes_2_ptr, Y_spike_2);
@@ -92,7 +92,7 @@ void create_gui(void)
 	Y_spikes_2_idx = 0;
 
 	Y_spikes_nonsorted_ptr = g_ptr_array_new();
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_nonsorted = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 		g_ptr_array_add  (Y_spikes_nonsorted_ptr, Y_spike_nonsorted);
@@ -318,7 +318,7 @@ void create_gui(void)
 	Y_spike_0_template = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 	graph_spike_template_0 = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_0_template, &color_spike_template, 0));
 	gtk_databox_graph_add (GTK_DATABOX (box_spike_0), graph_spike_template_0);
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_0 = g_ptr_array_index(Y_spikes_0_ptr,i);
 		graph_spike_0 = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_0, &color_spike_0, 0));
@@ -337,7 +337,7 @@ void create_gui(void)
 	Y_spike_1_template = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 	graph_spike_template_1 = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_1_template, &color_spike_template, 0));
 	gtk_databox_graph_add (GTK_DATABOX (box_spike_1), graph_spike_template_1);
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_1 = g_ptr_array_index(Y_spikes_1_ptr,i);
 		graph_spike_1 = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_1, &color_spike_1, 0));
@@ -355,7 +355,7 @@ void create_gui(void)
 	Y_spike_2_template = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 	graph_spike_template_2 = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_2_template, &color_spike_template, 0));
 	gtk_databox_graph_add (GTK_DATABOX (box_spike_2), graph_spike_template_2);
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_2 = g_ptr_array_index(Y_spikes_2_ptr,i);
 		graph_spike_2 = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_2, &color_spike_2, 0));
@@ -369,7 +369,7 @@ void create_gui(void)
 	}
 	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_2), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
 
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_spike_nonsorted = g_ptr_array_index(Y_spikes_nonsorted_ptr,i);
 		graph_spike_nonsorted = GTK_DATABOX_GRAPH(gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_spike_nonsorted, &color_spike_nonsorted, 0));
@@ -413,7 +413,8 @@ gboolean timeout_callback(gpointer user_data)
 	
 
 
-   	gint i,spike_view_cntr, spike_filter_cntr;
+   	gint i,spike_view_cntr, spike_filter_cntr, spike_filter_cntr_2;
+	bool spike_in_range;
 
 	front = buff->scan_number_read;
 	if (front < back)
@@ -448,28 +449,28 @@ gboolean timeout_callback(gpointer user_data)
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_0_ptr,Y_spikes_0_idx);
 							Y_spikes_0_idx++;
-							if (Y_spikes_0_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_0_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_0_idx = 0;	
 						}
 						else if ((buff->sorted_spike_data[back+i-NUM_OF_SAMP_IN_BUFF].data[disp_chan] == 2) || (buff->sorted_spike_data[back+i-NUM_OF_SAMP_IN_BUFF].data[disp_chan] == 5))
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_1_ptr,Y_spikes_1_idx);
 							Y_spikes_1_idx++;
-							if (Y_spikes_1_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_1_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_1_idx = 0;
 						}
 						else if ((buff->sorted_spike_data[back+i-NUM_OF_SAMP_IN_BUFF].data[disp_chan] == 3) || (buff->sorted_spike_data[back+i-NUM_OF_SAMP_IN_BUFF].data[disp_chan] == 6))
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_2_ptr,Y_spikes_2_idx);
 							Y_spikes_2_idx++;
-							if (Y_spikes_2_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_2_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_2_idx = 0;
 						}
 						else
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_nonsorted_ptr,Y_spikes_nonsorted_idx);
 							Y_spikes_nonsorted_idx++;
-							if (Y_spikes_nonsorted_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_nonsorted_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_nonsorted_idx = 0;							
 						}
 	
@@ -489,17 +490,28 @@ gboolean timeout_callback(gpointer user_data)
 
 						if (spike_filter_mode)
 						{
+							spike_in_range = 0;
 							for (spike_filter_cntr = 0 ; spike_filter_cntr<NUM_OF_SAMP_PER_SPIKE;spike_filter_cntr++)
 							{
-								if ((Y_temp[spike_filter_cntr] >=  y_lower) && (Y_temp[spike_filter_cntr] <=  y_upper)) 
+								if ((Y_temp[spike_filter_cntr] >=  y_lower_1) && (Y_temp[spike_filter_cntr] <=  y_upper_1)) 
 								{
-									if ((spike_filter_cntr >= x_lower) && (spike_filter_cntr <= x_upper))
+									if ((spike_filter_cntr >= x_lower_1) && (spike_filter_cntr <= x_upper_1))
 									{
-										break;
+										for (spike_filter_cntr_2 = 0 ; spike_filter_cntr_2<NUM_OF_SAMP_PER_SPIKE;spike_filter_cntr_2++)
+										{
+											if ((Y_temp[spike_filter_cntr_2] >=  y_lower_2) && (Y_temp[spike_filter_cntr_2] <=  y_upper_2)) 
+											{
+												if ((spike_filter_cntr_2 >= x_lower_2) && (spike_filter_cntr_2 <= x_upper_2))
+												{
+													spike_in_range = 1;
+													break;
+												}
+											}
+										}
 									}
 								}
 							}
-							if (spike_filter_cntr == NUM_OF_SAMP_PER_SPIKE)
+							if (!spike_in_range)
 							{
 								for (spike_filter_cntr = 0 ; spike_filter_cntr<NUM_OF_SAMP_PER_SPIKE;spike_filter_cntr++)
 								{
@@ -531,28 +543,28 @@ gboolean timeout_callback(gpointer user_data)
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_0_ptr,Y_spikes_0_idx);
 							Y_spikes_0_idx++;
-							if (Y_spikes_0_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_0_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_0_idx = 0;
 						}
 						else if ((buff->sorted_spike_data[back+i].data[disp_chan] == 2) ||  (buff->sorted_spike_data[back+i].data[disp_chan] == 5))
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_1_ptr,Y_spikes_1_idx);
 							Y_spikes_1_idx++;
-							if (Y_spikes_1_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_1_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_1_idx = 0;	
 						}
 						else if ((buff->sorted_spike_data[back+i].data[disp_chan] == 3) || (buff->sorted_spike_data[back+i].data[disp_chan] == 6))
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_2_ptr,Y_spikes_2_idx);
 							Y_spikes_2_idx++;
-							if (Y_spikes_2_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_2_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_2_idx = 0;
 						}
 						else
 						{
 							Y_temp_sort = g_ptr_array_index(Y_spikes_nonsorted_ptr,Y_spikes_nonsorted_idx);
 							Y_spikes_nonsorted_idx++;
-							if (Y_spikes_nonsorted_idx == SPIKE_MEM_TO_DISPLAY)
+							if (Y_spikes_nonsorted_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
 								Y_spikes_nonsorted_idx = 0;							
 						}
 
@@ -572,17 +584,28 @@ gboolean timeout_callback(gpointer user_data)
 
 						if (spike_filter_mode)
 						{
+							spike_in_range = 0;
 							for (spike_filter_cntr = 0 ; spike_filter_cntr<NUM_OF_SAMP_PER_SPIKE;spike_filter_cntr++)
 							{
-								if ((Y_temp[spike_filter_cntr] >=  y_lower) && (Y_temp[spike_filter_cntr] <=  y_upper)) 
+								if ((Y_temp[spike_filter_cntr] >=  y_lower_1) && (Y_temp[spike_filter_cntr] <=  y_upper_1)) 
 								{
-									if ((spike_filter_cntr >= x_lower) && (spike_filter_cntr <= x_upper))
+									if ((spike_filter_cntr >= x_lower_1) && (spike_filter_cntr <= x_upper_1))
 									{
-										break;
+										for (spike_filter_cntr_2 = 0 ; spike_filter_cntr_2<NUM_OF_SAMP_PER_SPIKE;spike_filter_cntr_2++)
+										{
+											if ((Y_temp[spike_filter_cntr_2] >=  y_lower_2) && (Y_temp[spike_filter_cntr_2] <=  y_upper_2)) 
+											{
+												if ((spike_filter_cntr_2 >= x_lower_2) && (spike_filter_cntr_2 <= x_upper_2))
+												{
+													spike_in_range = 1;
+													break;
+												}
+											}
+										}
 									}
 								}
 							}
-							if (spike_filter_cntr == NUM_OF_SAMP_PER_SPIKE)
+							if (!spike_in_range)
 							{
 								for (spike_filter_cntr = 0 ; spike_filter_cntr<NUM_OF_SAMP_PER_SPIKE;spike_filter_cntr++)
 								{
@@ -629,7 +652,7 @@ gboolean ch_slct_func (GtkDatabox * box)
 		}
 	}
 
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_local = g_ptr_array_index(Y_spikes_0_ptr,i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -638,7 +661,7 @@ gboolean ch_slct_func (GtkDatabox * box)
 		}
 	}
 
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_local = g_ptr_array_index(Y_spikes_1_ptr,i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -647,7 +670,7 @@ gboolean ch_slct_func (GtkDatabox * box)
 		}
 	}
 
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_local = g_ptr_array_index(Y_spikes_2_ptr,i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -656,7 +679,7 @@ gboolean ch_slct_func (GtkDatabox * box)
 		}
 	}
 
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_local = g_ptr_array_index(Y_spikes_nonsorted_ptr,i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -781,7 +804,7 @@ gboolean clear_unit_but_func (GtkDatabox * box)
 	int i,j;
 	if (selected_spike_unit == 0)
 	{
-		for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+		for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 		{
 			Y_local = g_ptr_array_index(Y_spikes_0_ptr,i);
 			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -793,7 +816,7 @@ gboolean clear_unit_but_func (GtkDatabox * box)
 	}
 	else if (selected_spike_unit == 1)
 	{
-		for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+		for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 		{
 			Y_local = g_ptr_array_index(Y_spikes_1_ptr,i);
 			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -805,7 +828,7 @@ gboolean clear_unit_but_func (GtkDatabox * box)
 	}	
 	else if (selected_spike_unit == 2)	
 	{
-		for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+		for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 		{
 			Y_local = g_ptr_array_index(Y_spikes_2_ptr,i);
 			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -823,7 +846,7 @@ gboolean clear_nonsorted_but_func (GtkDatabox * box)
 {
 	float *Y_local;
 	int i,j;
-	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_UNIT;i++)
 	{
 		Y_local = g_ptr_array_index(Y_spikes_nonsorted_ptr,i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
@@ -903,6 +926,60 @@ gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selec
 {
 	printf ("%f %f %f %f\n", selectionValues->x1, selectionValues->x2, selectionValues->y1, selectionValues->y2);
 
+	if (spike_filter_mode)
+	{
+		if (rect_switch)
+		{
+			rect_switch = 0;		
+			if (selectionValues->x1 > selectionValues->x2)
+			{
+				x_upper_1 = selectionValues->x1;
+				x_lower_1 = selectionValues->x2;
+			}
+			else 
+			{
+				x_lower_1 = selectionValues->x1;
+				x_upper_1 = selectionValues->x2;
+			}
+			if (selectionValues->y1 > selectionValues->y2)
+			{
+				y_upper_1 = selectionValues->y1;
+				y_lower_1 = selectionValues->y2;
+			}
+			else 
+			{
+				y_lower_1 = selectionValues->y1;
+				y_upper_1 = selectionValues->y2;
+			}
+		}
+		else
+		{
+			rect_switch = 1;		
+			if (selectionValues->x1 > selectionValues->x2)
+			{
+				x_upper_2 = selectionValues->x1;
+				x_lower_2 = selectionValues->x2;
+			}
+			else 
+			{
+				x_lower_2 = selectionValues->x1;
+				x_upper_2 = selectionValues->x2;
+			}
+			if (selectionValues->y1 > selectionValues->y2)
+			{
+				y_upper_2 = selectionValues->y1;
+				y_lower_2 = selectionValues->y2;
+			}
+			else 
+			{
+				y_lower_2 = selectionValues->y1;
+				y_upper_2 = selectionValues->y2;
+			}
+
+
+		}		
+		return TRUE;
+	}
 	if (selectionValues->x1 > selectionValues->x2)
 	{
 		x_upper = selectionValues->x1;
@@ -925,8 +1002,7 @@ gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selec
 		y_upper = selectionValues->y2;
 	}
 
-	if (spike_filter_mode)
-		return TRUE;
+
 
 	float *Y_analyze, *Y_mean, *Y_temp;
 	int i ,j, k, idx;
@@ -1103,14 +1179,31 @@ gboolean save_template_but_func (GtkDatabox * box)
 	strcat(strFileName, strAddFileName);
 	fp = fopen(strFileName, "w");
 
-	int i,j,k,l;
+	int i,j,k,l,check_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 
 	for (i=0; i<NUM_OF_CHAN; i++)
 	{
 		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 		{
+			check_S[i][j] = 0;
 			for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
 			{
+				for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
+				{
+					check_S[i][j] = check_S[i][j] + abs(buff->spike_template.S[i][j][k][l]);
+				}	
+			}
+		}
+	}
+
+	for (i=0; i<NUM_OF_CHAN; i++)
+	{
+		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+		{			
+			for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
+			{
+				if (check_S[i][j] == 0)
+					buff->spike_template.template[i][j][k] = 0;
 				fprintf(fp, "%E\n", buff->spike_template.template[i][j][k]);
 			}
 		}
@@ -1134,6 +1227,8 @@ gboolean save_template_but_func (GtkDatabox * box)
 	{
 		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 		{
+			if (check_S[i][j] == 0)
+				buff->spike_template.diff_thres[i][j] = 0;
 			fprintf(fp, "%E\n", buff->spike_template.diff_thres[i][j]);
 		}
 	}
@@ -1142,6 +1237,8 @@ gboolean save_template_but_func (GtkDatabox * box)
 	{
 		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 		{
+			if (check_S[i][j] == 0)
+				buff->spike_template.sorting_on[i][j] = 0;
 			fprintf(fp, "%d\n", buff->spike_template.sorting_on[i][j]);
 		}
 	}
@@ -1150,6 +1247,8 @@ gboolean save_template_but_func (GtkDatabox * box)
 	{
 		for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 		{
+			if (check_S[i][j] == 0)
+				buff->spike_template.include_unit[i][j] = 0;
 			fprintf(fp, "%d\n", buff->spike_template.include_unit[i][j]);
 		}
 	}
@@ -1171,8 +1270,7 @@ gboolean load_template_but_func (GtkDatabox * box)
 	strLoadFileName = gtk_entry_get_text(GTK_ENTRY(entryLoadFileName));
 	strcat(strFileName, strLoadFileName);
 
-	int i,j,k,l, check_S;
-	check_S= 0;
+	int i,j,k,l, check_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
 
 	fp = fopen(strFileName, "r");
 	if ( fp != NULL )
@@ -1216,21 +1314,21 @@ gboolean load_template_but_func (GtkDatabox * box)
 		{
 			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 			{
+				check_S[i][j] = 0;
 				for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
 				{
 					for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
 					{
-						check_S = check_S + abs(buff->spike_template.S[i][j][k][l]);
+						check_S[i][j] = check_S[i][j] + abs(buff->spike_template.S[i][j][k][l]);
 					}	
 				}
 			}
 		}
-		if (check_S > 0)
+		for (i=0; i<NUM_OF_CHAN; i++)
 		{
-
-			for (i=0; i<NUM_OF_CHAN; i++)
+			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 			{
-				for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+				if (check_S[i][j] > 0)
 				{
 					m_zero(S);
 					m_zero(S_inv);
@@ -1242,7 +1340,6 @@ gboolean load_template_but_func (GtkDatabox * box)
 							S->me[k][l] = buff->spike_template.S[i][j][k][l];
 						}	
 					}
-	
 					for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
 					{
 						for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
@@ -1250,11 +1347,11 @@ gboolean load_template_but_func (GtkDatabox * box)
 							LU->me[k][l] = S->me[k][l]; 
 						}
 					}
-	
+
 					pivot = px_get(S->m);
-  					LU = LUfactor(LU,pivot);
+					LU = LUfactor(LU,pivot);
 					determinant = 1.0;
-	
+
 					for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
 					{
 						for (l=0; l<NUM_OF_SAMP_PER_SPIKE; l++)
@@ -1265,7 +1362,7 @@ gboolean load_template_but_func (GtkDatabox * box)
 					}
 		
 					m_inverse(S,S_inv);
-	
+
 					if (determinant < 0)
 						determinant = determinant *(-1.0);	
 
@@ -1280,18 +1377,31 @@ gboolean load_template_but_func (GtkDatabox * box)
 						}
 					}
 				}
-			}	
+			}
+
 		}
 		m_free(S);
 		m_free(S_inv);
+		m_free(LU);
 
+		for (i=0; i<NUM_OF_CHAN; i++)
+		{
+			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
+			{
+				if (check_S[i][j] == 0)
+					buff->spike_template.template[i][j][k] = 0;
+			}
+		}
 
 		for (i=0; i<NUM_OF_CHAN; i++)
 		{
 			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 			{
       				fgets(line, sizeof line, fp );
-				buff->spike_template.diff_thres[i][j] = (double)atof(line);
+				if (check_S[i][j] > 0)
+					buff->spike_template.diff_thres[i][j] = (double)atof(line);
+				else
+					buff->spike_template.diff_thres[i][j] = 0;
 			}
 		}
 		for (i=0; i<NUM_OF_CHAN; i++)
@@ -1299,7 +1409,10 @@ gboolean load_template_but_func (GtkDatabox * box)
 			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 			{
       				fgets(line, sizeof line, fp );
-				buff->spike_template.sorting_on[i][j] = (bool)atof(line);
+				if (check_S[i][j] > 0)
+					buff->spike_template.sorting_on[i][j] = (bool)atof(line);
+				else
+					buff->spike_template.sorting_on[i][j] = 0;
 			}
 		}
 		for (i=0; i<NUM_OF_CHAN; i++)
@@ -1307,7 +1420,10 @@ gboolean load_template_but_func (GtkDatabox * box)
 			for (j=0; j<NUM_OF_TEMP_PER_CHAN; j++)
 			{
       				fgets(line, sizeof line, fp );
-				buff->spike_template.include_unit[i][j] = (bool)atof(line);
+				if (check_S[i][j] > 0)
+					buff->spike_template.include_unit[i][j] = (bool)atof(line);
+				else
+					buff->spike_template.include_unit[i][j] = 0;
 			}
 		}
 		for (i=0; i<NUM_OF_CHAN; i++)
