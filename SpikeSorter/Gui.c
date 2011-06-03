@@ -276,6 +276,10 @@ void create_gui(void)
 	gtk_widget_set_size_request(clear_unit_button, 30, 30);
 	gtk_box_pack_start (GTK_BOX (vbox2), clear_unit_button, TRUE, TRUE, 0);	
 
+	clear_unit_template_button = gtk_button_new_with_label("Clear Unit Template");
+	gtk_widget_set_size_request(clear_unit_template_button, 30, 30);
+	gtk_box_pack_start (GTK_BOX (vbox2), clear_unit_template_button, TRUE, TRUE, 0);	
+
 	clear_nonsorted_button = gtk_button_new_with_label("Clear Non-Sorted Screen");
 	gtk_widget_set_size_request(clear_nonsorted_button, 30, 30);
 	gtk_box_pack_start (GTK_BOX (vbox2), clear_nonsorted_button, TRUE, TRUE, 0);	
@@ -392,6 +396,7 @@ void create_gui(void)
 	g_signal_connect_swapped(G_OBJECT(clear_button), "clicked", G_CALLBACK(clear_screen_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(clear_nonsorted_button), "clicked", G_CALLBACK(clear_nonsorted_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(clear_unit_button), "clicked", G_CALLBACK(clear_unit_but_func), G_OBJECT(box_all_spike));
+	g_signal_connect_swapped(G_OBJECT(clear_unit_template_button), "clicked", G_CALLBACK(clear_unit_template_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(diff_button), "clicked", G_CALLBACK(diff_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(sorting_onoff_button), "clicked", G_CALLBACK(sorting_onoff_but_func), G_OBJECT(box_all_spike));
 	g_signal_connect_swapped(G_OBJECT(unit_sorting_onoff_button), "clicked", G_CALLBACK(unit_sorting_onoff_but_func), G_OBJECT(box_all_spike));
@@ -841,6 +846,89 @@ gboolean clear_unit_but_func (GtkDatabox * box)
 
 	return TRUE;	
 }
+
+gboolean clear_unit_template_but_func (GtkDatabox * box)
+{
+	int i,j;
+
+	gtk_button_set_label (unit_sorting_onoff_button,"Turn Unit Sorting-ON");
+	gtk_button_set_label (include_unit_onoff_button,"Include Unit-ON");
+	if (selected_spike_unit == 0)
+	{
+		buff->spike_template.sorting_on[disp_chan][0] = 0;
+		buff->spike_template.include_unit[disp_chan][0] = 0;
+
+		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+		{
+			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
+			{
+				buff->spike_template.S[disp_chan][0][i][j] = 0;
+			}
+		}
+
+		buff->spike_template.diff_thres[disp_chan][0] = 0;
+		sprintf(strDiff, "%E" , buff->spike_template.diff_thres[disp_chan][0]);
+		gtk_entry_set_text (GTK_ENTRY(entryDiff), strDiff);
+	
+		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+		{
+			buff->spike_template.template[disp_chan][0][i] = 0;
+			Y_spike_0_template[i] = buff->spike_template.template[disp_chan][0][i];
+		}
+
+		gtk_databox_set_total_limits (GTK_DATABOX (box_spike_0), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);	
+	}
+	else if (selected_spike_unit == 1)
+	{
+		buff->spike_template.sorting_on[disp_chan][1] = 0;
+		buff->spike_template.include_unit[disp_chan][1] = 0;
+
+		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+		{
+			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
+			{
+				buff->spike_template.S[disp_chan][1][i][j] = 0;
+			}
+		}
+
+		buff->spike_template.diff_thres[disp_chan][1] = 0;
+		sprintf(strDiff, "%E" , buff->spike_template.diff_thres[disp_chan][1]);
+		gtk_entry_set_text (GTK_ENTRY(entryDiff), strDiff);
+
+		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+		{
+			buff->spike_template.template[disp_chan][1][i] = 0;
+			Y_spike_1_template[i] = buff->spike_template.template[disp_chan][1][i];
+		}
+		gtk_databox_set_total_limits (GTK_DATABOX (box_spike_1), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
+	}
+	else if (selected_spike_unit == 2)
+	{
+		buff->spike_template.sorting_on[disp_chan][2] = 0;
+		buff->spike_template.include_unit[disp_chan][2] = 0;
+
+		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+		{
+			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
+			{
+				buff->spike_template.S[disp_chan][2][i][j] = 0;
+			}
+		}
+
+		buff->spike_template.diff_thres[disp_chan][2] = 0;
+		sprintf(strDiff, "%E" , buff->spike_template.diff_thres[disp_chan][2]);
+		gtk_entry_set_text (GTK_ENTRY(entryDiff), strDiff);
+
+		for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+		{
+			buff->spike_template.template[disp_chan][2][i] = 0;
+			Y_spike_2_template[i] = buff->spike_template.template[disp_chan][2][i];
+		}
+		gtk_databox_set_total_limits (GTK_DATABOX (box_spike_2), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);
+	}
+	return TRUE;	
+}
+
 
 gboolean clear_nonsorted_but_func (GtkDatabox * box)
 {
