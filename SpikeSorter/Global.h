@@ -26,10 +26,10 @@
 #define NUM_OF_CHAN 16 
 #define NUM_OF_SAMP_IN_BUFF 40000  
 #define BUFFNAME  "SHBUFF"
-#define SPIKE_MIN_END_SAMP_NUM   40
+#define SPIKE_MIN_END_SAMP_NUM   20
 
 #define NUM_OF_TEMP_PER_CHAN 3
-#define NUM_OF_SAMP_PER_SPIKE 60
+#define NUM_OF_SAMP_PER_SPIKE 40
 
 typedef struct{
 	union

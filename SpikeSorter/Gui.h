@@ -22,7 +22,7 @@
 #include <gtkdatabox_lines.h>
 
 
-#define INIT_POINT_OF_SPIKE 59
+#define INIT_POINT_OF_SPIKE 39
 #define SPIKE_MEM_TO_DISPLAY 150
 #define SPIKE_MEM_TO_DISPLAY_UNIT 30
 #define MIN_SPIKE_NUM_FOR_TEMPLATE 80

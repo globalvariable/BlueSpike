@@ -38,8 +38,8 @@
 #define SHMSIZ  sizeof(buff_data_struct)
 #define BUFFNAME  "SHBUFF"
 
-#define SPIKE_MIN_END_SAMP_NUM   40
-#define NUM_OF_SAMP_PER_SPIKE 60
+#define SPIKE_MIN_END_SAMP_NUM   20
+#define NUM_OF_SAMP_PER_SPIKE 40
 #define NUM_OF_TEMP_PER_CHAN 3
 
 static RT_TASK rt_task0;

@@ -1122,7 +1122,8 @@ gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selec
 		{
 			for (j=0; j<MIN_SPIKE_NUM_FOR_TEMPLATE; j++)
 			{
-				Y_temp = g_ptr_array_index(Y_spikes_in_range_array,j);
+				Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));    // to select more distributed spikes in time.
+				printf("idx: %d\n", (int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 				Y_mean[i] = Y_mean[i]+Y_temp[i];
 			}
 		}
