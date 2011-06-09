@@ -104,7 +104,7 @@ void create_gui(void)
 
  	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  	gtk_window_set_default_size(GTK_WINDOW(window), 1200, 900);
+  	gtk_window_set_default_size(GTK_WINDOW(window), 800, 1100);
   	gtk_window_set_title(GTK_WINDOW(window), "SpikeSorter");
   	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
@@ -1123,7 +1123,6 @@ gboolean rect_selection_func (GtkDatabox * box, GtkDataboxValueRectangle * selec
 			for (j=0; j<MIN_SPIKE_NUM_FOR_TEMPLATE; j++)
 			{
 				Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));    // to select more distributed spikes in time.
-				printf("idx: %d\n", (int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 				Y_mean[i] = Y_mean[i]+Y_temp[i];
 			}
 		}
