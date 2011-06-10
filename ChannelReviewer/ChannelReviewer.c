@@ -137,6 +137,7 @@ typedef struct buff_data
 	StaFlag	Curr_RTStatusFlags;
 	int jitter[1000];
 	int jitter_idx;	
+	bool lowpass_4th_on;
 } buff_data_struct;
 
 buff_data_struct *buff;

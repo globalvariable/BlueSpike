@@ -145,15 +145,36 @@ void create_gui(void)
 	gtk_widget_set_size_request(highpass_4th_button, 80, 30);
 	gtk_box_pack_start (GTK_BOX (hbox1), highpass_4th_button, TRUE, TRUE, 0);
 
-	if (buff->filter_on)
-		gtk_button_set_label (filter_button,"Turn Filter OFF");
-	else
-		gtk_button_set_label (filter_button,"Turn Filter ON");
+	lowpass_4th_button = gtk_button_new_with_label("Turn Low-Pass ON");
+	gtk_widget_set_size_request(lowpass_4th_button, 80, 30);
+	gtk_box_pack_start (GTK_BOX (hbox1), lowpass_4th_button, TRUE, TRUE, 0);
 
-	if (buff->highpass_4th_on)
-		gtk_button_set_label (highpass_4th_button,"Turn 4th Order OFF");
+	if (buff->filter_on)
+	{
+		gtk_widget_set_sensitive(highpass_4th_button, TRUE);
+		gtk_button_set_label (filter_button,"Turn Filter OFF");
+	}
 	else
+	{
+		gtk_widget_set_sensitive(highpass_4th_button, FALSE);
+		gtk_widget_set_sensitive(lowpass_4th_button, FALSE);
+		gtk_button_set_label (filter_button,"Turn Filter ON");
+		buff->highpass_4th_on = 0;
+		buff->lowpass_4th_on = 0;
+	}
+	if (buff->highpass_4th_on)
+	{
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order OFF");
+	}
+	else
+	{
 		gtk_button_set_label (highpass_4th_button,"Turn 4th Order ON");
+	}
+
+	if (buff->lowpass_4th_on)
+		gtk_button_set_label (lowpass_4th_button,"Turn Low-Pass OFF");
+	else
+		gtk_button_set_label (lowpass_4th_button,"Turn Low-Pass ON");
 
 
 	hbox1 = gtk_hbox_new(FALSE, 0);
@@ -239,6 +260,7 @@ void create_gui(void)
 
 	g_signal_connect_swapped(G_OBJECT(filter_button), "clicked", G_CALLBACK(filter_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(highpass_4th_button), "clicked", G_CALLBACK(highpass_4th_button_func), G_OBJECT(box_signal));
+	g_signal_connect_swapped(G_OBJECT(lowpass_4th_button), "clicked", G_CALLBACK(lowpass_4th_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(ch_slct_button), "clicked", G_CALLBACK(ch_slct_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(pause_button), "clicked", G_CALLBACK(pause_button_func), G_OBJECT(box_signal));
 	g_signal_connect_swapped(G_OBJECT(record_button), "clicked", G_CALLBACK(record_but_func), G_OBJECT(box_signal));
@@ -422,11 +444,21 @@ gboolean filter_button_func (GtkDatabox * box)
 	{
 		buff->filter_on = 0;
 		gtk_button_set_label (filter_button,"Turn Filter ON");
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order ON");
+		gtk_button_set_label (lowpass_4th_button,"Turn Low-Pass ON");
+		gtk_widget_set_sensitive(highpass_4th_button, FALSE);
+		gtk_widget_set_sensitive(lowpass_4th_button, FALSE);
+		buff->highpass_4th_on = 0;
+		buff->lowpass_4th_on = 0;
 	}
 	else
 	{
 		buff->filter_on = 1;
 		gtk_button_set_label (filter_button,"Turn Filter OFF");
+		gtk_widget_set_sensitive(highpass_4th_button, TRUE);
+		gtk_widget_set_sensitive(lowpass_4th_button, TRUE);
+		gtk_button_set_label (highpass_4th_button,"Turn 4th Order ON");
+		gtk_button_set_label (lowpass_4th_button,"Turn Low-Pass ON");
 	}
 		
 }
@@ -442,6 +474,21 @@ gboolean highpass_4th_button_func (GtkDatabox * box)
 	{
 		gtk_button_set_label (highpass_4th_button,"Turn 4th Order OFF");
 		buff->highpass_4th_on = 1;
+	}
+		
+}
+
+gboolean lowpass_4th_button_func (GtkDatabox * box)
+{
+	if (buff->lowpass_4th_on)
+	{
+		gtk_button_set_label (lowpass_4th_button,"Turn Low-Pass ON");
+		buff->lowpass_4th_on = 0;
+	}
+	else
+	{
+		gtk_button_set_label (lowpass_4th_button,"Turn Low-Pass OFF");
+		buff->lowpass_4th_on = 1;
 	}
 		
 }
