@@ -29,7 +29,7 @@ void create_gui(void)
 	color_all_spike.blue = 65535;
 
 	color_spike_0.red = 0;
-	color_spike_0.green = 0;
+	color_spike_0.green = 32768;
 	color_spike_0.blue = 65535;
 
 	color_spike_1.red = 65535;
@@ -104,12 +104,12 @@ void create_gui(void)
 
  	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  	gtk_window_set_default_size(GTK_WINDOW(window), 800, 1100);
+  	gtk_window_set_default_size(GTK_WINDOW(window), 500, 1100);
   	gtk_window_set_title(GTK_WINDOW(window), "SpikeSorter");
   	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
 
-  	vbox = gtk_vbox_new(FALSE, 0);
+  	vbox = gtk_vbox_new(TRUE, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
 	hbox = gtk_hbox_new(TRUE, 0);
@@ -122,7 +122,7 @@ void create_gui(void)
   	gtk_box_pack_start (GTK_BOX (vbox1), hbox1, TRUE, TRUE, 0);
 
 	vbox2 = gtk_vbox_new(TRUE, 0);
-  	gtk_box_pack_start (GTK_BOX (hbox1), vbox2, TRUE, TRUE, 20);
+  	gtk_box_pack_start (GTK_BOX (hbox1), vbox2, TRUE, TRUE, 80);
 
   	gtk_databox_create_box_with_scrollbars_and_rulers (&box_all_spike, &databox_all_spike,TRUE, TRUE, TRUE, TRUE);
   	gtk_box_pack_start (GTK_BOX (vbox2), databox_all_spike, TRUE, TRUE, 0);
