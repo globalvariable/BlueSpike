@@ -132,7 +132,7 @@ typedef struct buff_data
 	template_matching_data spike_template; 	
 	bool sorting_on;
 	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];
-	bool highpass_4th_on;
+	bool highpass_400Hz_on;
 	StaFlag	RTStatusFlags[NUM_OF_SAMP_IN_BUFF];
 	StaFlag	Curr_RTStatusFlags;
 	int jitter[1000];

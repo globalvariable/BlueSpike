@@ -39,7 +39,7 @@ GtkWidget *pause_button;
 GtkWidget *threshold_button;
 GtkWidget *name_file_button;
 GtkWidget *filter_button;
-GtkWidget *highpass_4th_button;
+GtkWidget *highpass_400Hz_button;
 GtkWidget *lowpass_4th_button;
 
 char strFileName[150];
@@ -94,7 +94,7 @@ GdkColor color_spike_shape;
 void create_gui(void);
 gboolean timeout_callback(gpointer user_data) ;
 gboolean filter_button_func (GtkDatabox * box);
-gboolean highpass_4th_button_func (GtkDatabox * box);
+gboolean highpass_400Hz_button_func (GtkDatabox * box);
 gboolean lowpass_4th_button_func (GtkDatabox * box);
 gboolean ch_slct_func (GtkDatabox * box);
 gboolean pause_button_func (GtkDatabox * box);
