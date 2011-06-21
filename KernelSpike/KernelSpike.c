@@ -139,6 +139,39 @@ typedef struct{
 	} StatusFlags;
 } StaFlag; 
 
+typedef struct{
+	union
+	{
+		struct{
+			unsigned Bit0:1;
+			unsigned Bit1:1;
+			unsigned Bit2:1;
+			unsigned Bit3:1;
+			unsigned Bit4:1;
+			unsigned Bit5:1;
+			unsigned Bit6:1;						
+			unsigned Bit7:1;
+			unsigned Bit8:1;
+			unsigned Bit9:1;
+			unsigned Bit10:1;
+			unsigned Bit11:1;
+			unsigned Bit12:1;
+			unsigned Bit13:1;
+			unsigned Bit14:1;						
+			unsigned Bit15:1;
+			unsigned Bit16:1;
+			unsigned Bit17:1;
+			unsigned Bit18:1;
+			unsigned Bit19:1;
+			unsigned Bit20:1;						
+			unsigned Bit21:1;
+			unsigned Bit22:1;						
+			unsigned Bit23:1;
+		};
+		unsigned AllFlags;
+	} CommandFlags;
+} CmndFlag; 
+
 typedef struct buff_data 
 {
 	int scan_number_write;
@@ -161,6 +194,8 @@ typedef struct buff_data
 	int jitter[1000];
 	int jitter_idx;	
 	bool lowpass_4th_on;
+	CmndFlag RTCommandFlags[NUM_OF_SAMP_IN_BUFF];
+	CmndFlag Curr_RTCommandFlags;
 } buff_data_struct;
 
 static buff_data_struct *buff;
@@ -210,7 +245,8 @@ static void fun(int t)
 			if(chan_number==NUM_OF_CHAN)
 			{
 				buff->Environment[buff->scan_number_write] = buff->Curr_Environment;
-				buff->RTStatusFlags[buff->scan_number_write] = buff->Curr_RTStatusFlags;				
+				buff->RTStatusFlags[buff->scan_number_write] = buff->Curr_RTStatusFlags;
+				buff->RTCommandFlags[buff->scan_number_write] = buff->Curr_RTCommandFlags;
 				if (buff->filter_on)
 				{
 

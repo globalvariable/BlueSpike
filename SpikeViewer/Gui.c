@@ -404,14 +404,16 @@ gboolean timeout_callback(gpointer user_data)
 					fprintf(fp, " %.0f\t", buff->scan[back+i-NUM_OF_SAMP_IN_BUFF].data[j]);
 				fprintf(fp, " %d\t", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].Status.AllStatus);	
 				fprintf(fp, " %d\t", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].ShortInt_Status0);
-				fprintf(fp, " %d\n", buff->RTStatusFlags[back+i-NUM_OF_SAMP_IN_BUFF].StatusFlags.AllFlags);
+				fprintf(fp, " %d\t", buff->RTStatusFlags[back+i-NUM_OF_SAMP_IN_BUFF].StatusFlags.AllFlags);
+				fprintf(fp, " %d\n", buff->RTCommandFlags[back+i-NUM_OF_SAMP_IN_BUFF].CommandFlags.AllFlags);
 				if ((buff->sorting_on) && (buff->filter_on))
 				{
 					for (j=0; j<NUM_OF_CHAN; j++)
 						fprintf(fp_sorted, " %d\t", buff->sorted_spike_data[back+i-NUM_OF_SAMP_IN_BUFF].data[j]);
 					fprintf(fp_sorted, " %d\t", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].Status.AllStatus);	
 					fprintf(fp_sorted, " %d\t", buff->Environment[back+i-NUM_OF_SAMP_IN_BUFF].ShortInt_Status0);	
-					fprintf(fp_sorted, " %d\n", buff->RTStatusFlags[back+i-NUM_OF_SAMP_IN_BUFF].StatusFlags.AllFlags);			
+					fprintf(fp_sorted, " %d\t", buff->RTStatusFlags[back+i-NUM_OF_SAMP_IN_BUFF].StatusFlags.AllFlags);	
+					fprintf(fp_sorted, " %d\n", buff->RTCommandFlags[back+i-NUM_OF_SAMP_IN_BUFF].CommandFlags.AllFlags);		
 				}								
 			}
 			else
@@ -420,14 +422,16 @@ gboolean timeout_callback(gpointer user_data)
 					fprintf(fp, " %.0f\t", buff->scan[back+i].data[j]);
 				fprintf(fp, " %d\t", buff->Environment[back+i].Status.AllStatus);
 				fprintf(fp, " %d\t", buff->Environment[back+i].ShortInt_Status0);
-				fprintf(fp, " %d\n", buff->RTStatusFlags[back+i].StatusFlags.AllFlags);
+				fprintf(fp, " %d\t", buff->RTStatusFlags[back+i].StatusFlags.AllFlags);
+				fprintf(fp, " %d\n", buff->RTCommandFlags[back+i].CommandFlags.AllFlags);
 				if ((buff->sorting_on) && (buff->filter_on))
 				{
 					for (j=0; j<NUM_OF_CHAN; j++)
 						fprintf(fp_sorted, " %d\t", buff->sorted_spike_data[back+i].data[j]);
 					fprintf(fp_sorted, " %d\t", buff->Environment[back+i].Status.AllStatus);
 					fprintf(fp_sorted, " %d\t", buff->Environment[back+i].ShortInt_Status0);
-					fprintf(fp_sorted, " %d\n", buff->RTStatusFlags[back+i].StatusFlags.AllFlags);				
+					fprintf(fp_sorted, " %d\t", buff->RTStatusFlags[back+i].StatusFlags.AllFlags);	
+					fprintf(fp_sorted, " %d\n", buff->RTCommandFlags[back+i].CommandFlags.AllFlags);			
 				}														
 			}
 		}	
