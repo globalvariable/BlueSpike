@@ -28,6 +28,8 @@
 #include <linux/comedi.h>
 #include <linux/comedilib.h>
 
+#include "../SharedMemory.h"
+
 #define TICK_PERIOD 1000000
 #define TASK_PRIORITY 1
 #define STACK_SIZE 10000
