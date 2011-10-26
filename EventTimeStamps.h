@@ -1,3 +1,5 @@
+#define EVENT_TIMESTAMPS_DATA_H
+
 #ifndef TYPES_H
 #include "Types.h"
 #endif

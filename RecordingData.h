@@ -1,3 +1,5 @@
+#define RECORDING_DATA_H
+
 #ifndef TYPES_H
 #include "Types.h"
 #endif
@@ -8,7 +10,10 @@
 #define MAX_NUM_OF_CHAN_PER_MWA 8
 
 
-typedef float RecordingData;
+typedef struct __RecordingData
+{
+	float data[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+} RecordingData;
 
 
 
