@@ -1,0 +1,7 @@
+#define MICROWIREARRAY_H
+
+#define MAX_NUM_OF_MWA 2
+#define MAX_NUM_OF_CHAN_PER_MWA 8
+
+
+

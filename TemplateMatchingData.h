@@ -1,6 +1,6 @@
-#define TEMPLATE_MATCHING_DATA_H
+#define TEMPLATEMATCHINGDATA_H
 
-#ifndef RECORDING_DATA_H
+#ifndef RECORDINGDATA_H
 #include "RecordingData.h"
 #endif
 

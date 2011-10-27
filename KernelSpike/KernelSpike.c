@@ -14,6 +14,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#define KERNELSPIKE
 
 #include <linux/init.h>
 #include <linux/module.h>
@@ -25,286 +26,89 @@
 #include <rtai_nam2num.h>
 #include <rtai_math.h>
 
-#include <linux/comedi.h>
-#include <linux/comedilib.h>
-
 #include "../SharedMemory.h"
+
 
 #define TICK_PERIOD 1000000
 #define TASK_PRIORITY 1
 #define STACK_SIZE 10000
-#define COMEDI_SUBDEVICE_AI 0
-#define NUM_OF_CHAN 16 
-#define SAMPLING_INTERVAL 25000
-#define NUM_OF_SAMP_IN_BUFF 40000  
-#define SHMSIZ  sizeof(buff_data_struct)
-#define BUFFNAME  "SHBUFF"
-
-#define SPIKE_MIN_END_SAMP_NUM   15
-#define NUM_OF_SAMP_PER_SPIKE 30
-#define NUM_OF_TEMP_PER_CHAN 3
 
 static RT_TASK rt_task0;
-static RTIME tick_period;
-static comedi_cmd ni6070_comedi_cmd;
-static comedi_t* ni6070_comedi_dev;
-static unsigned ni6070_comedi_chanlist[NUM_OF_CHAN];
-static int ni6070_comedi_configure(void);
-static int ni6070_comedi_init(void);
-static void highpass_150Hz_4th_order(void);
-static void highpass_400Hz_4th_order(void);
-static void lowpass_4th_order(void);
-static void threshold_spikes(void);
-static void template_matching(void);
-void *ptr = NULL;
-static int size, chan_number;
-static int front, back;
 
-typedef struct{
-	union
+static void rt_handler(int t);
+
+
+
+
+static void rt_handler(int t)
+{
+	int i, j, return_value;
+	int while_ctrl = 1;
+	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], chan_num[MAX_NUM_OF_DAQ_CARD] ;
+	RecordingData			*recording_data;
+	int *recording_data_write_idx;
+	int mwa, mwa_chan;
+	DaqMwaMap			*daq_mwa_map;
+	recording_data = &shared_memory->recording_data;
+	daq_mwa_map = &shared_memory->daq_mwa_map;
+	shared_memory->daq_mwa_map[0][0].channel = 5;
+	shared_memory->daq_mwa_map[0][0].mwa = 1;
+	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
-		struct{
-			unsigned Bit0:1;
-			unsigned Bit1:1;
-			unsigned Bit2:1;
-			unsigned Bit3:1;
-			unsigned Bit4:1;
-			unsigned Bit5:1;
-			unsigned Bit6:1;						
-			unsigned Bit7:1;
-		};
-		unsigned AllCommand;
-	} Command;
-	union
-	{
-		struct{
-			unsigned Bit0:1;
-			unsigned Bit1:1;
-			unsigned Bit2:1;
-			unsigned Bit3:1;
-			unsigned Bit4:1;
-			unsigned Bit5:1;
-			unsigned Bit6:1;						
-			unsigned Bit7:1;
-		};
-		unsigned AllStatus;
-	} Status;
-	short int ShortInt_Status0;
-	short int ShortInt_Status1;		 	
-} ExpEnv; 
-
-
-typedef struct sample_data
-{
-	float data[NUM_OF_CHAN];
-} scan_data;
-
-typedef struct spk_data
-{
-	int data[NUM_OF_CHAN];
-} spike_data;
-
-typedef struct templ_data
-{
-	double template[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];   //mean
-	double S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE]; //covariance
-	double  inv_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];
-	double sqrt_det_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
-	double log_det_S[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];	
-	double diff_thres[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
-	bool sorting_on[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
-	bool include_unit[NUM_OF_CHAN][NUM_OF_TEMP_PER_CHAN];
-} template_matching_data;
-
-typedef struct{
-	union
-	{
-		struct{
-			unsigned Bit0:1;
-			unsigned Bit1:1;
-			unsigned Bit2:1;
-			unsigned Bit3:1;
-			unsigned Bit4:1;
-			unsigned Bit5:1;
-			unsigned Bit6:1;						
-			unsigned Bit7:1;
-			unsigned Bit8:1;
-			unsigned Bit9:1;
-			unsigned Bit10:1;
-			unsigned Bit11:1;
-			unsigned Bit12:1;
-			unsigned Bit13:1;
-			unsigned Bit14:1;						
-			unsigned Bit15:1;
-		};
-		unsigned AllFlags;
-	} StatusFlags;
-} StaFlag; 
-
-typedef struct{
-	union
-	{
-		struct{
-			unsigned Bit0:1;
-			unsigned Bit1:1;
-			unsigned Bit2:1;
-			unsigned Bit3:1;
-			unsigned Bit4:1;
-			unsigned Bit5:1;
-			unsigned Bit6:1;						
-			unsigned Bit7:1;
-			unsigned Bit8:1;
-			unsigned Bit9:1;
-			unsigned Bit10:1;
-			unsigned Bit11:1;
-			unsigned Bit12:1;
-			unsigned Bit13:1;
-			unsigned Bit14:1;						
-			unsigned Bit15:1;
-			unsigned Bit16:1;
-			unsigned Bit17:1;
-			unsigned Bit18:1;
-			unsigned Bit19:1;
-			unsigned Bit20:1;						
-			unsigned Bit21:1;
-			unsigned Bit22:1;						
-			unsigned Bit23:1;
-		};
-		unsigned AllFlags;
-	} CommandFlags;
-} CmndFlag; 
-
-typedef struct buff_data 
-{
-	int scan_number_write;
-	int scan_number_read;
-	scan_data scan[NUM_OF_SAMP_IN_BUFF];
-	scan_data filtered_scan[NUM_OF_SAMP_IN_BUFF];
-	spike_data spike_peak[NUM_OF_SAMP_IN_BUFF];
-	spike_data spike_end[NUM_OF_SAMP_IN_BUFF];	
-	float Threshold[NUM_OF_CHAN];
-	bool in_spike[NUM_OF_CHAN];	
-	bool filter_on;
-	ExpEnv Environment[NUM_OF_SAMP_IN_BUFF];
-	ExpEnv Curr_Environment;
-	template_matching_data spike_template; 	
-	bool sorting_on;
-	spike_data sorted_spike_data[NUM_OF_SAMP_IN_BUFF];
-	bool highpass_400Hz_on;
-	StaFlag	RTStatusFlags[NUM_OF_SAMP_IN_BUFF];
-	StaFlag	Curr_RTStatusFlags;
-	int jitter[1000];
-	int jitter_idx;	
-	bool lowpass_4th_on;
-	CmndFlag RTCommandFlags[NUM_OF_SAMP_IN_BUFF];
-	CmndFlag Curr_RTCommandFlags;
-} buff_data_struct;
-
-static buff_data_struct *buff;
-static scan_data scan_hp_filtered[NUM_OF_SAMP_IN_BUFF];
-
-static void fun(int t)
-{
-	int ret,i, chan_iter;
-	int num_byte;
-	int cpu_time_prev;
-	int cpu_time_curr;
-	int jitter_counter = 0;
-	cpu_time_prev = rt_get_cpu_time_ns();
-	while (1) 
+		front[i] = 0;
+		back[i] = 0;
+		chan_num[i] = 0;
+	}
+	while (while_ctrl) 
 	{
 		rt_task_wait_period();
-		cpu_time_curr = rt_get_cpu_time_ns();
-		buff->jitter[buff->jitter_idx] = cpu_time_curr - cpu_time_prev;
-		cpu_time_prev = cpu_time_curr;
-		buff->jitter_idx++;
-		if (buff->jitter_idx == 1000)
-			buff->jitter_idx = 0;	
-			
-		comedi_poll(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
-		num_byte= comedi_get_buffer_contents(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
-		front = front + num_byte;
-		if (front >= size)
-			front = front - size;
-
-		if(num_byte == 0)
+		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 		{
-			printk("num_byte = 0\n");
-			continue;
-		}
-
-		for(i = 0; i < num_byte; i += sizeof(sampl_t))
-		{			
-			if ((ptr+back+i) >= (ptr+size))
+			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+			num_byte[i] = comedi_get_buffer_contents(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+			front[i] = front[i] + num_byte[i];
+			if (front[i] >= comedi_buff_size[i])
+				front[i] = front[i] - comedi_buff_size[i];
+			if(num_byte[i] == 0)
 			{
-				buff->scan[buff->scan_number_write].data[chan_number] = ((*(sampl_t *)(ptr + back + i - size)) - 2048.0) ;
-			}	
-			else
-			{
-				buff->scan[buff->scan_number_write].data[chan_number] = ((*(sampl_t *)(ptr + back + i)) - 2048.0);
+				printk("num_byte[%d] = 0\n", i);
+				continue;
 			}
-			chan_number++;
-			if(chan_number==NUM_OF_CHAN)
+			
+			for(j = 0; j < num_byte[i]; j += sizeof(sampl_t))
 			{
-				buff->Environment[buff->scan_number_write] = buff->Curr_Environment;
-				buff->RTStatusFlags[buff->scan_number_write] = buff->Curr_RTStatusFlags;
-				buff->RTCommandFlags[buff->scan_number_write] = buff->Curr_RTCommandFlags;
-				if (buff->filter_on)
+
+					  
+				mwa = (*daq_mwa_map)[i][chan_num[i]].mwa;
+				mwa_chan = (*daq_mwa_map)[i][chan_num[i]].channel;	
+								
+				recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
+
+				if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
 				{
-
-					if (buff->highpass_400Hz_on)
-						highpass_400Hz_4th_order();
-					else
-						highpass_150Hz_4th_order();
-
-					if (buff->lowpass_4th_on)
-						lowpass_4th_order();
-
-					threshold_spikes();
-
-					if(buff->sorting_on)
-					{
-						template_matching();
-					}
-					else
-					{
-						for (chan_iter = 0; chan_iter < NUM_OF_CHAN; chan_iter++)
-						{
-							buff->sorted_spike_data[buff->scan_number_write].data[chan_iter]=0;
-						}
-					}
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - 2048.0) ;
 				}
 				else
 				{
-					for (chan_iter = 0; chan_iter < NUM_OF_CHAN; chan_iter++)
-					{
-						buff->spike_peak[buff->scan_number_write].data[chan_iter]=0;
-						if ((buff->scan_number_write+SPIKE_MIN_END_SAMP_NUM) >= NUM_OF_SAMP_IN_BUFF)
-							buff->spike_end[buff->scan_number_write+SPIKE_MIN_END_SAMP_NUM-NUM_OF_SAMP_IN_BUFF].data[chan_iter] = 0;
-						else
-							buff->spike_end[buff->scan_number_write+SPIKE_MIN_END_SAMP_NUM].data[chan_iter] = 0;						
-					}
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - 2048.0);
 				}
-				chan_number=0;
-				buff->scan_number_read = buff->scan_number_write;
-				(buff->scan_number_write)++;
-				if ((buff->scan_number_write) == NUM_OF_SAMP_IN_BUFF) 
-				{
-					(buff->scan_number_write) = 0;
-				}
+				(chan_num[i])++;
+				if (chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
+					chan_num[i] = 0;
+				(*recording_data_write_idx)++;
+				if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
+					(*recording_data_write_idx) = 0;
 			}
 			
+			return_value = comedi_mark_buffer_read(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, num_byte[i]);
+			if(return_value < 0)
+			{
+				printk("ERROR: comedi_mark_buffer_read");
+				while_ctrl = 0;
+			}
+			back[i] = front[i];
 		}
-
-
-		ret = comedi_mark_buffer_read(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI, num_byte);
-		if(ret < 0){
-			printk("comedi_mark_buffer_read");
-			break;
-		}
-		back = front;
 	}
-
 }
 
 
@@ -312,20 +116,37 @@ static void fun(int t)
 int __init xinit_module(void)
 {
 	int ret;
+	int i;
+	char path_comedi[100], temp[10];
+	RTIME tick_period;
 
-	buff = (buff_data_struct*)rtai_kmalloc(nam2num(BUFFNAME), SHMSIZ);
-	if (buff == NULL)
+	shared_memory = (SharedMemStruct*)rtai_kmalloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
+	if (shared_memory == NULL)
 		return -ENOMEM;
-	memset(buff, 0, SHMSIZ);
-	ni6070_comedi_init();
-	ret = comedi_map(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI, &ptr);
-	printk("comedi_map ret: %d, ptr: %d\n", ret, (int)ptr);
-	size = comedi_get_buffer_size(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
-	printk("buffer size is %d\n", size);
-        printk("sizeof(buff_data_struct) : % d\n", sizeof(buff_data_struct));
-	ni6070_comedi_configure();
+	memset(shared_memory, 0, SHARED_MEM_SIZE);
+        printk("sizeof(SharedMemStruct) : %d\n", SHARED_MEM_SIZE);
+
+
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{
+		strcpy(path_comedi, "/dev/comedi");	
+		sprintf(temp, "%d" , i);
+		strcat(path_comedi, temp);
+		ni6070_comedi_dev[i] = comedi_open(path_comedi);
+		if (ni6070_comedi_dev[i] == NULL)
+		{
+			printk("ERROR: Couldn' t comedi_open %dth device at %s\n", i, path_comedi);
+			return 0;
+		}
+		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &comedi_map_ptr[i]);
+		printk("%d th device comedi_map return: %d, ptr: %u\n", i, ret, (unsigned int)comedi_map_ptr[i]);
+		comedi_buff_size[i] = comedi_get_buffer_size(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+		printk("buffer size of %dth device is %d\n", i, comedi_buff_size[i]);
+		ni6070_comedi_configure(i);
+	}
+
 	rt_set_periodic_mode();
-	rt_task_init_cpuid(&rt_task0, fun, 1, STACK_SIZE, TASK_PRIORITY, 1, 0,7);
+	rt_task_init_cpuid(&rt_task0, rt_handler, 1, STACK_SIZE, TASK_PRIORITY, 1, 0,7);
 	tick_period = start_rt_timer(nano2count(TICK_PERIOD));
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
 
@@ -334,11 +155,15 @@ int __init xinit_module(void)
 
 void __exit xcleanup_module(void)
 {
-	comedi_cancel(ni6070_comedi_dev, COMEDI_SUBDEVICE_AI);
-	comedi_close(ni6070_comedi_dev);
+	int i;
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{
+		comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+		comedi_close(ni6070_comedi_dev[i]);
+	}
 	stop_rt_timer();
 	rt_task_delete(&rt_task0);
-    	rtai_kfree(nam2num(BUFFNAME));
+    	rtai_kfree(nam2num(SHARED_MEM_NAME));
 	return;
 }
 
@@ -346,627 +171,69 @@ module_init(xinit_module);
 module_exit(xcleanup_module);
 MODULE_LICENSE("GPL");
 
-static void print_cmd(void)
+int ni6070_comedi_configure(int card_number)
 {
-	printk("comedi_cmd.subdev = %i\n", ni6070_comedi_cmd.subdev);
-	printk("comedi_cmd.flags = %i\n", ni6070_comedi_cmd.flags);
+	int i;
+	memset(&ni6070_comedi_cmd[card_number], 0, sizeof(comedi_cmd));
+	memset(&ni6070_comedi_chanlist[card_number], 0, sizeof(unsigned)*MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
 
-	printk("comedi_cmd.start_src = %i\n", ni6070_comedi_cmd.start_src);
-	printk("comedi_cmd.start_arg = %i\n", ni6070_comedi_cmd.start_arg);
+	ni6070_comedi_cmd[card_number].subdev = COMEDI_SUBDEVICE_AI;
+	ni6070_comedi_cmd[card_number].flags = 0;
 
-	printk("comedi_cmd.scan_begin_src = %i\n", ni6070_comedi_cmd.scan_begin_src);
-	printk("comedi_cmd.scan_begin_arg = %i\n", ni6070_comedi_cmd.scan_begin_arg);
+	ni6070_comedi_cmd[card_number].start_src = TRIG_NOW;
+	ni6070_comedi_cmd[card_number].start_arg = 0;
+
+	ni6070_comedi_cmd[card_number].scan_begin_src = TRIG_TIMER;
+	ni6070_comedi_cmd[card_number].scan_begin_arg = SAMPLING_INTERVAL;
 	
-	printk("comedi_cmd.convert_src = %i\n", ni6070_comedi_cmd.convert_src);
-	printk("comedi_cmd.convert_arg = %i\n", ni6070_comedi_cmd.convert_arg);
+	ni6070_comedi_cmd[card_number].convert_src = TRIG_TIMER;
+	ni6070_comedi_cmd[card_number].convert_arg = 1000;
 
-	printk("comedi_cmd.scan_end_src = %i\n", ni6070_comedi_cmd.scan_end_src);
-	printk("comedi_cmd.scan_end_arg = %i\n", ni6070_comedi_cmd.scan_end_arg);
+	ni6070_comedi_cmd[card_number].scan_end_src = TRIG_COUNT;
+	ni6070_comedi_cmd[card_number].scan_end_arg = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
 
-	printk("comedi_cmd.stop_src = %i\n", ni6070_comedi_cmd.stop_src);
-	printk("comedi_cmd.stop_arg = %i\n", ni6070_comedi_cmd.stop_arg);
+	ni6070_comedi_cmd[card_number].stop_src = TRIG_NONE;
+	ni6070_comedi_cmd[card_number].stop_arg = 0;
 
-	printk("comedi_cmd.chanlist_len = %i\n", ni6070_comedi_cmd.chanlist_len);
+	ni6070_comedi_cmd[card_number].chanlist = ni6070_comedi_chanlist[MAX_NUM_OF_DAQ_CARD];
+	ni6070_comedi_cmd[card_number].chanlist_len = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+
+	for (i = 0 ; i < MAX_NUM_OF_CHANNEL_PER_DAQ_CARD ; i++)
+	{
+		ni6070_comedi_chanlist[card_number][i] = CR_PACK(i, VOLTAGE_RANGE_6070E, AREF_GROUND);
+	}
+
+	ni6070_comedi_cmd[card_number].data = NULL;
+	ni6070_comedi_cmd[card_number].data_len = 0;
+
+	print_cmd(card_number);
+	printk("test 1: %i\n", comedi_command_test(ni6070_comedi_dev[card_number], &ni6070_comedi_cmd[card_number]));
+	print_cmd(card_number);
+	printk("test 2: %i\n", comedi_command_test(ni6070_comedi_dev[card_number],&ni6070_comedi_cmd[card_number]));
+	print_cmd(card_number);
+
+	return comedi_command(ni6070_comedi_dev[card_number], &ni6070_comedi_cmd[card_number]);
 }
 
-
-static int ni6070_comedi_configure(void)
+void print_cmd(int card_number)
 {
-	int i;
-	memset(&ni6070_comedi_cmd, 0, sizeof(comedi_cmd));
-	memset(&ni6070_comedi_chanlist, 0, sizeof(unsigned)*NUM_OF_CHAN);
+	printk("comedi_cmd[%d].subdev = %i\n", card_number, ni6070_comedi_cmd[card_number].subdev);
+	printk("comedi_cmd[%d].flags = %i\n", card_number, ni6070_comedi_cmd[card_number].flags);
 
-	ni6070_comedi_cmd.subdev = COMEDI_SUBDEVICE_AI;
-	ni6070_comedi_cmd.flags = 0;
+	printk("comedi_cmd[%d].start_src = %i\n", card_number, ni6070_comedi_cmd[card_number].start_src);
+	printk("comedi_cmd[%d].start_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].start_arg);
 
-	ni6070_comedi_cmd.start_src = TRIG_NOW;
-	ni6070_comedi_cmd.start_arg = 0;
-
-	ni6070_comedi_cmd.scan_begin_src = TRIG_TIMER;
-	ni6070_comedi_cmd.scan_begin_arg = SAMPLING_INTERVAL;
+	printk("comedi_cmd[%d].scan_begin_src = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_begin_src);
+	printk("comedi_cmd[%d].scan_begin_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_begin_arg);
 	
-	ni6070_comedi_cmd.convert_src = TRIG_TIMER;
-	ni6070_comedi_cmd.convert_arg = 1000;
+	printk("comedi_cmd[%d].convert_src = %i\n", card_number, ni6070_comedi_cmd[card_number].convert_src);
+	printk("comedi_cmd[%d].convert_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].convert_arg);
 
-	ni6070_comedi_cmd.scan_end_src = TRIG_COUNT;
-	ni6070_comedi_cmd.scan_end_arg = NUM_OF_CHAN;
+	printk("comedi_cmd[%d].scan_end_src = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_end_src);
+	printk("comedi_cmd[%d].scan_end_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_end_arg);
 
-	ni6070_comedi_cmd.stop_src = TRIG_NONE;
-	ni6070_comedi_cmd.stop_arg = 0;
+	printk("comedi_cmd[%d].stop_src = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_src);
+	printk("comedi_cmd[%d].stop_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_arg);
 
-	ni6070_comedi_cmd.chanlist = ni6070_comedi_chanlist;
-	ni6070_comedi_cmd.chanlist_len = NUM_OF_CHAN;
-
-	for (i = 0 ; i < NUM_OF_CHAN ; i++)
-	{
-		ni6070_comedi_chanlist[i] = CR_PACK(i, 4, AREF_GROUND);
-	}
-
-	ni6070_comedi_cmd.data = NULL;
-	ni6070_comedi_cmd.data_len = 0;
-
-	print_cmd();
-	printk("test 1: %i\n", comedi_command_test(ni6070_comedi_dev,&ni6070_comedi_cmd));
-	print_cmd();
-	printk("test 2: %i\n", comedi_command_test(ni6070_comedi_dev,&ni6070_comedi_cmd));
-	print_cmd();
-
-	return comedi_command(ni6070_comedi_dev,&ni6070_comedi_cmd);
-}
-
-
-static int ni6070_comedi_init(void)
-{
-	ni6070_comedi_dev = comedi_open("/dev/comedi0");
-	return 0;
-}
-
-
-
-static void highpass_150Hz_4th_order(void)
-{
-	int i;
-
-
-	if (buff->lowpass_4th_on)
-	{
-		if (buff->scan_number_write == 0)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[0].data[i]) +
-											(-3.878732256328792 * buff->scan[39999].data[i]) +
-											(5.818098384493188 * buff->scan[39998].data[i]) + 
-											(-3.878732256328792 * buff->scan[39997].data[i]) +
- 											(0.969683064082198 * buff->scan[39996].data[i]) -
-											(-3.938430361819402 * scan_hp_filtered[39999].data[i])-
-											(5.817179417349658 * scan_hp_filtered[39998].data[i])- 
-											(-3.819034001378268 * scan_hp_filtered[39997].data[i])-
-											(0.940285244767841 * scan_hp_filtered[39996].data[i]);
- 			}		
-		}
-		else if (buff->scan_number_write == 1)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[1].data[i]) +
-											(-3.878732256328792 * buff->scan[0].data[i]) +
-											(5.818098384493188 * buff->scan[39999].data[i]) + 
-											(-3.878732256328792 * buff->scan[39998].data[i]) +
- 											(0.969683064082198 * buff->scan[39997].data[i]) -
-											(-3.938430361819402 * scan_hp_filtered[0].data[i])-
-											(5.817179417349658 * scan_hp_filtered[39999].data[i])- 
-											(-3.819034001378268 * scan_hp_filtered[39998].data[i])-
-											(0.940285244767841 * scan_hp_filtered[39997].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 2)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[2].data[i]) +
-											(-3.878732256328792 * buff->scan[1].data[i]) +
-											(5.818098384493188 * buff->scan[0].data[i]) + 
-											(-3.878732256328792 * buff->scan[39999].data[i]) +
- 											(0.969683064082198 * buff->scan[39998].data[i]) -
-											(-3.938430361819402 * scan_hp_filtered[1].data[i])-
-											(5.817179417349658 * scan_hp_filtered[0].data[i])- 
-											(-3.819034001378268 * scan_hp_filtered[39999].data[i])-
-											(0.940285244767841 * scan_hp_filtered[39998].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 3)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[3].data[i]) +
-											(-3.878732256328792 * buff->scan[2].data[i]) +
-											(5.818098384493188 * buff->scan[1].data[i]) + 
-											(-3.878732256328792 * buff->scan[0].data[i]) +
- 											(0.969683064082198 * buff->scan[39999].data[i]) -
-											(-3.938430361819402 * scan_hp_filtered[2].data[i])-
-											(5.817179417349658 * scan_hp_filtered[1].data[i])- 
-											(-3.819034001378268 * scan_hp_filtered[0].data[i])-
-											(0.940285244767841 * scan_hp_filtered[39999].data[i]);
- 			}
-		}
-		else 
-		{
-
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[buff->scan_number_write].data[i]) +
-											(-3.878732256328792 * buff->scan[buff->scan_number_write-1].data[i]) +
-											(5.818098384493188 * buff->scan[buff->scan_number_write-2].data[i]) + 
-											(-3.878732256328792 * buff->scan[buff->scan_number_write-3].data[i]) +
- 											(0.969683064082198 * buff->scan[buff->scan_number_write-4].data[i]) -
-											(-3.938430361819402 * scan_hp_filtered[buff->scan_number_write-1].data[i])-
-											(5.817179417349658 * scan_hp_filtered[buff->scan_number_write-2].data[i])- 
-											(-3.819034001378268 * scan_hp_filtered[buff->scan_number_write-3].data[i])-
-											(0.940285244767841 * scan_hp_filtered[buff->scan_number_write-4].data[i]);
- 			}
-		
-		}
-	}
-	else
-	{
-		if (buff->scan_number_write == 0)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[0].data[i]) +
-											(-3.878732256328792 * buff->scan[39999].data[i]) +
-											(5.818098384493188 * buff->scan[39998].data[i]) + 
-											(-3.878732256328792 * buff->scan[39997].data[i]) +
- 											(0.969683064082198 * buff->scan[39996].data[i]) -
-											(-3.938430361819402 * buff->filtered_scan[39999].data[i])-
-											(5.817179417349658 * buff->filtered_scan[39998].data[i])- 
-											(-3.819034001378268 * buff->filtered_scan[39997].data[i])-
-											(0.940285244767841 * buff->filtered_scan[39996].data[i]);
- 			}		
-		}
-		else if (buff->scan_number_write == 1)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[1].data[i]) +
-											(-3.878732256328792 * buff->scan[0].data[i]) +
-											(5.818098384493188 * buff->scan[39999].data[i]) + 
-											(-3.878732256328792 * buff->scan[39998].data[i]) +
- 											(0.969683064082198 * buff->scan[39997].data[i]) -
-											(-3.938430361819402 * buff->filtered_scan[0].data[i])-
-											(5.817179417349658 * buff->filtered_scan[39999].data[i])- 
-											(-3.819034001378268 * buff->filtered_scan[39998].data[i])-
-											(0.940285244767841 * buff->filtered_scan[39997].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 2)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[2].data[i]) +
-											(-3.878732256328792 * buff->scan[1].data[i]) +
-											(5.818098384493188 * buff->scan[0].data[i]) + 
-											(-3.878732256328792 * buff->scan[39999].data[i]) +
- 											(0.969683064082198 * buff->scan[39998].data[i]) -
-											(-3.938430361819402 * buff->filtered_scan[1].data[i])-
-											(5.817179417349658 * buff->filtered_scan[0].data[i])- 
-											(-3.819034001378268 * buff->filtered_scan[39999].data[i])-
-											(0.940285244767841 * buff->filtered_scan[39998].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 3)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[3].data[i]) +
-											(-3.878732256328792 * buff->scan[2].data[i]) +
-											(5.818098384493188 * buff->scan[1].data[i]) + 
-											(-3.878732256328792 * buff->scan[0].data[i]) +
- 											(0.969683064082198 * buff->scan[39999].data[i]) -
-											(-3.938430361819402 * buff->filtered_scan[2].data[i])-
-											(5.817179417349658 * buff->filtered_scan[1].data[i])- 
-											(-3.819034001378268 * buff->filtered_scan[0].data[i])-
-											(0.940285244767841 * buff->filtered_scan[39999].data[i]);
- 			}
-		}
-		else 
-		{
-
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.969683064082198 * buff->scan[buff->scan_number_write].data[i]) +
-											(-3.878732256328792 * buff->scan[buff->scan_number_write-1].data[i]) +
-											(5.818098384493188 * buff->scan[buff->scan_number_write-2].data[i]) + 
-											(-3.878732256328792 * buff->scan[buff->scan_number_write-3].data[i]) +
- 											(0.969683064082198 * buff->scan[buff->scan_number_write-4].data[i]) -
-											(-3.938430361819402 * buff->filtered_scan[buff->scan_number_write-1].data[i])-
-											(5.817179417349658 * buff->filtered_scan[buff->scan_number_write-2].data[i])- 
-											(-3.819034001378268 * buff->filtered_scan[buff->scan_number_write-3].data[i])-
-											(0.940285244767841 * buff->filtered_scan[buff->scan_number_write-4].data[i]);
- 			}
-		
-		}
-	}
-}
-
-static void highpass_400Hz_4th_order(void)
-{
-	int i;
-
-
-	if (buff->lowpass_4th_on)
-	{
-		if (buff->scan_number_write == 0)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[0].data[i]) +
-											(-3.684683973999769 * buff->scan[39999].data[i]) +
-											(5.527025960999653 * buff->scan[39998].data[i]) + 
-											(-3.684683973999769 * buff->scan[39997].data[i]) +
- 											(0.921170993499942 * buff->scan[39996].data[i]) -
-											(-3.835825540647349 * scan_hp_filtered[39999].data[i])-
-											(5.520819136622230 * scan_hp_filtered[39998].data[i])- 
-											(-3.533535219463017 * scan_hp_filtered[39997].data[i])-
-											(0.848555999266478 * scan_hp_filtered[39996].data[i]);
- 			}		
-		}
-		else if (buff->scan_number_write == 1)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[1].data[i]) +
-											(-3.684683973999769 * buff->scan[0].data[i]) +
-											(5.527025960999653 * buff->scan[39999].data[i]) + 
-											(-3.684683973999769 * buff->scan[39998].data[i]) +
- 											(0.921170993499942 * buff->scan[39997].data[i]) -
-											(-3.835825540647349 * scan_hp_filtered[0].data[i])-
-											(5.520819136622230 * scan_hp_filtered[39999].data[i])- 
-											(-3.533535219463017 * scan_hp_filtered[39998].data[i])-
-											(0.848555999266478 * scan_hp_filtered[39997].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 2)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[2].data[i]) +
-											(-3.684683973999769 * buff->scan[1].data[i]) +
-											(5.527025960999653 * buff->scan[0].data[i]) + 
-											(-3.684683973999769 * buff->scan[39999].data[i]) +
- 											(0.921170993499942 * buff->scan[39998].data[i]) -
-											(-3.835825540647349 * scan_hp_filtered[1].data[i])-
-											(5.520819136622230 * scan_hp_filtered[0].data[i])- 
-											(-3.533535219463017 * scan_hp_filtered[39999].data[i])-
-											(0.848555999266478 * scan_hp_filtered[39998].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 3)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[3].data[i]) +
-											(-3.684683973999769 * buff->scan[2].data[i]) +
-											(5.527025960999653 * buff->scan[1].data[i]) + 
-											(-3.684683973999769 * buff->scan[0].data[i]) +
- 											(0.921170993499942 * buff->scan[39999].data[i]) -
-											(-3.835825540647349 * scan_hp_filtered[2].data[i])-
-											(5.520819136622230 * scan_hp_filtered[1].data[i])- 
-											(-3.533535219463017 * scan_hp_filtered[0].data[i])-
-											(0.848555999266478 * scan_hp_filtered[39999].data[i]);
- 			}
-		}
-		else 
-		{
-
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				scan_hp_filtered[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[buff->scan_number_write].data[i]) +
-											(-3.684683973999769 * buff->scan[buff->scan_number_write-1].data[i]) +
-											(5.527025960999653 * buff->scan[buff->scan_number_write-2].data[i]) + 
-											(-3.684683973999769 * buff->scan[buff->scan_number_write-3].data[i]) +
- 											(0.921170993499942 * buff->scan[buff->scan_number_write-4].data[i]) -
-											(-3.835825540647349 * scan_hp_filtered[buff->scan_number_write-1].data[i])-
-											(5.520819136622230 * scan_hp_filtered[buff->scan_number_write-2].data[i])- 
-											(-3.533535219463017 * scan_hp_filtered[buff->scan_number_write-3].data[i])-
-											(0.848555999266478 * scan_hp_filtered[buff->scan_number_write-4].data[i]);
- 			}
-		
-		}
-	}
-	else
-	{
-		if (buff->scan_number_write == 0)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[0].data[i]) +
-											(-3.684683973999769 * buff->scan[39999].data[i]) +
-											(5.527025960999653 * buff->scan[39998].data[i]) + 
-											(-3.684683973999769 * buff->scan[39997].data[i]) +
- 											(0.921170993499942 * buff->scan[39996].data[i]) -
-											(-3.835825540647349 * buff->filtered_scan[39999].data[i])-
-											(5.520819136622230 * buff->filtered_scan[39998].data[i])- 
-											(-3.533535219463017 * buff->filtered_scan[39997].data[i])-
-											(0.848555999266478 * buff->filtered_scan[39996].data[i]);
- 			}		
-		}
-		else if (buff->scan_number_write == 1)
-		{	
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[1].data[i]) +
-											(-3.684683973999769 * buff->scan[0].data[i]) +
-											(5.527025960999653 * buff->scan[39999].data[i]) + 
-											(-3.684683973999769 * buff->scan[39998].data[i]) +
- 											(0.921170993499942 * buff->scan[39997].data[i]) -
-											(-3.835825540647349 * buff->filtered_scan[0].data[i])-
-											(5.520819136622230 * buff->filtered_scan[39999].data[i])- 
-											(-3.533535219463017 * buff->filtered_scan[39998].data[i])-
-											(0.848555999266478 * buff->filtered_scan[39997].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 2)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[2].data[i]) +
-											(-3.684683973999769 * buff->scan[1].data[i]) +
-											(5.527025960999653 * buff->scan[0].data[i]) + 
-											(-3.684683973999769 * buff->scan[39999].data[i]) +
- 											(0.921170993499942 * buff->scan[39998].data[i]) -
-											(-3.835825540647349 * buff->filtered_scan[1].data[i])-
-											(5.520819136622230 * buff->filtered_scan[0].data[i])- 
-											(-3.533535219463017 * buff->filtered_scan[39999].data[i])-
-											(0.848555999266478 * buff->filtered_scan[39998].data[i]);
- 			}
-		}
-		else if (buff->scan_number_write == 3)
-		{
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[3].data[i]) +
-											(-3.684683973999769 * buff->scan[2].data[i]) +
-											(5.527025960999653 * buff->scan[1].data[i]) + 
-											(-3.684683973999769 * buff->scan[0].data[i]) +
- 											(0.921170993499942 * buff->scan[39999].data[i]) -
-											(-3.835825540647349 * buff->filtered_scan[2].data[i])-
-											(5.520819136622230 * buff->filtered_scan[1].data[i])- 
-											(-3.533535219463017 * buff->filtered_scan[0].data[i])-
-											(0.848555999266478 * buff->filtered_scan[39999].data[i]);
- 			}
-		}
-		else 
-		{
-
-			for (i=0;i<NUM_OF_CHAN; i++)
-			{
-				buff->filtered_scan[buff->scan_number_write].data[i]=   (0.921170993499942 * buff->scan[buff->scan_number_write].data[i]) +
-											(-3.684683973999769 * buff->scan[buff->scan_number_write-1].data[i]) +
-											(5.527025960999653 * buff->scan[buff->scan_number_write-2].data[i]) + 
-											(-3.684683973999769 * buff->scan[buff->scan_number_write-3].data[i]) +
- 											(0.921170993499942 * buff->scan[buff->scan_number_write-4].data[i]) -
-											(-3.835825540647349 * buff->filtered_scan[buff->scan_number_write-1].data[i])-
-											(5.520819136622230 * buff->filtered_scan[buff->scan_number_write-2].data[i])- 
-											(-3.533535219463017 * buff->filtered_scan[buff->scan_number_write-3].data[i])-
-											(0.848555999266478 * buff->filtered_scan[buff->scan_number_write-4].data[i]);
- 			}
-		
-		}
-	}
-}
-
-static void lowpass_4th_order(void)
-{
-	int i;
-
-	if (buff->scan_number_write == 0)
-	{
-		for (i=0;i<NUM_OF_CHAN; i++)
-		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.046582906636444 * scan_hp_filtered[0].data[i]) +
-										(0.186331626545775 * scan_hp_filtered[39999].data[i]) +
-										(0.279497439818662 * scan_hp_filtered[39998].data[i]) + 
-										(0.186331626545775 * scan_hp_filtered[39997].data[i]) +
- 										(0.046582906636444 * scan_hp_filtered[39996].data[i]) -
-										(-0.782095198023338 * buff->filtered_scan[39999].data[i])-
-										(0.679978526916300 * buff->filtered_scan[39998].data[i])- 
-										(-0.182675697753033 * buff->filtered_scan[39997].data[i])-
-										(0.030118875043169 * buff->filtered_scan[39996].data[i]);
- 		}		
-	}
-	else if (buff->scan_number_write == 1)
-	{
-		for (i=0;i<NUM_OF_CHAN; i++)
-		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.046582906636444 * scan_hp_filtered[1].data[i]) +
-										(0.186331626545775 * scan_hp_filtered[0].data[i]) +
-										(0.279497439818662 * scan_hp_filtered[39999].data[i]) + 
-										(0.186331626545775 * scan_hp_filtered[39998].data[i]) +
- 										(0.046582906636444 * scan_hp_filtered[39997].data[i]) -
-										(-0.782095198023338 * buff->filtered_scan[0].data[i])-
-										(0.679978526916300 * buff->filtered_scan[39999].data[i])- 
-										(-0.182675697753033 * buff->filtered_scan[39998].data[i])-
-										(0.030118875043169 * buff->filtered_scan[39997].data[i]);
- 		}
-	}
-	else if (buff->scan_number_write == 2)
-	{
-		for (i=0;i<NUM_OF_CHAN; i++)
-		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.046582906636444 * scan_hp_filtered[2].data[i]) +
-										(0.186331626545775 * scan_hp_filtered[1].data[i]) +
-										(0.279497439818662 * scan_hp_filtered[0].data[i]) + 
-										(0.186331626545775 * scan_hp_filtered[39999].data[i]) +
- 										(0.046582906636444 * scan_hp_filtered[39998].data[i]) -
-										(-0.782095198023338 * buff->filtered_scan[1].data[i])-
-										(0.679978526916300 * buff->filtered_scan[0].data[i])- 
-										(-0.182675697753033 * buff->filtered_scan[39999].data[i])-
-										(0.030118875043169 * buff->filtered_scan[39998].data[i]);
- 		}
-	}
-	else if (buff->scan_number_write == 3)
-	{
-		for (i=0;i<NUM_OF_CHAN; i++)
-		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.046582906636444 * scan_hp_filtered[3].data[i]) +
-										(0.186331626545775 * scan_hp_filtered[2].data[i]) +
-										(0.279497439818662 * scan_hp_filtered[1].data[i]) + 
-										(0.186331626545775 * scan_hp_filtered[0].data[i]) +
- 										(0.046582906636444 * scan_hp_filtered[39999].data[i]) -
-										(-0.782095198023338 * buff->filtered_scan[2].data[i])-
-										(0.679978526916300 * buff->filtered_scan[1].data[i])- 
-										(-0.182675697753033 * buff->filtered_scan[0].data[i])-
-										(0.030118875043169 * buff->filtered_scan[39999].data[i]);
- 		}
-	}
-	else 
-	{
-
-		for (i=0;i<NUM_OF_CHAN; i++)
-		{
-			buff->filtered_scan[buff->scan_number_write].data[i]=   (0.046582906636444 * scan_hp_filtered[buff->scan_number_write].data[i]) +
-										(0.186331626545775 * scan_hp_filtered[buff->scan_number_write-1].data[i]) +
-										(0.279497439818662 * scan_hp_filtered[buff->scan_number_write-2].data[i]) + 
-										(0.186331626545775 * scan_hp_filtered[buff->scan_number_write-3].data[i]) +
- 										(0.046582906636444 * scan_hp_filtered[buff->scan_number_write-4].data[i]) -
-										(-0.782095198023338 * buff->filtered_scan[buff->scan_number_write-1].data[i])-
-										(0.679978526916300 * buff->filtered_scan[buff->scan_number_write-2].data[i])- 
-										(-0.182675697753033 * buff->filtered_scan[buff->scan_number_write-3].data[i])-
-										(0.030118875043169 * buff->filtered_scan[buff->scan_number_write-4].data[i]);
- 		}
-		
-	}
-}
-
-static void threshold_spikes(void)
-{
-	int i, idx;
-	int min_idx, min;
-	for (i=0;i<NUM_OF_CHAN; i++)
-	{
-		buff->spike_peak[buff->scan_number_write].data[i] = 0;
-		if ((buff->scan_number_write+SPIKE_MIN_END_SAMP_NUM) >= NUM_OF_SAMP_IN_BUFF)
-			buff->spike_end[buff->scan_number_write+SPIKE_MIN_END_SAMP_NUM-NUM_OF_SAMP_IN_BUFF].data[i] = 0;
-		else
-			buff->spike_end[buff->scan_number_write+SPIKE_MIN_END_SAMP_NUM].data[i] = 0;
-		if (buff->Threshold[i] == 0.0)
-			continue;
-		if ((buff->filtered_scan[buff->scan_number_write].data[i] <  buff->Threshold[i]) && (!(buff->in_spike[i])))
-		{
-
-			buff->in_spike[i] = 1;
-		}
-		if ((buff->filtered_scan[buff->scan_number_write].data[i] >  buff->Threshold[i]) && (buff->in_spike[i]))
-		{
-			buff->in_spike[i] = 0;
-			min = buff->filtered_scan[buff->scan_number_write].data[i];
-			for (idx = 0; idx < 20; idx++)
-			{
-				if (buff->scan_number_write < idx)
-				{
-					if (buff->filtered_scan[buff->scan_number_write-idx+NUM_OF_SAMP_IN_BUFF].data[i] < min)
-					{
-						min =  buff->filtered_scan[buff->scan_number_write-idx+NUM_OF_SAMP_IN_BUFF].data[i];
-						min_idx = buff->scan_number_write-idx+NUM_OF_SAMP_IN_BUFF;
-					}									
-				}
-				else
-				{					
-					if (buff->filtered_scan[buff->scan_number_write-idx].data[i] < min)
-					{
-						min =  buff->filtered_scan[buff->scan_number_write-idx].data[i];
-						min_idx = buff->scan_number_write-idx;
-					}
-				}
-			}
-			buff->spike_peak[min_idx].data[i] = 1;
-		if ((min_idx+SPIKE_MIN_END_SAMP_NUM) >= NUM_OF_SAMP_IN_BUFF)
-			buff->spike_end[min_idx+SPIKE_MIN_END_SAMP_NUM-NUM_OF_SAMP_IN_BUFF].data[i] = 1;
-		else		
-			buff->spike_end[min_idx+SPIKE_MIN_END_SAMP_NUM].data[i] = 1;
-
-		}
- 	}
-}
-
-static void template_matching(void)
-{
-	int chan,chan_temp_num,idx, i , j;
-	double g_x[NUM_OF_TEMP_PER_CHAN];
-	double diff[NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-	double diff_temporary[NUM_OF_TEMP_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-
-	double exponent[NUM_OF_TEMP_PER_CHAN];	
-	double probabl[NUM_OF_TEMP_PER_CHAN];	
-
-	for (chan=0;chan<NUM_OF_CHAN; chan++)
-	{
-
-		if (buff->spike_end[buff->scan_number_write].data[chan] == 1)
-		{
-			for (chan_temp_num=0;chan_temp_num<NUM_OF_TEMP_PER_CHAN; chan_temp_num++)
-			{	
-				g_x[chan_temp_num] = -100000000.0;	
-				if (buff->spike_template.sorting_on[chan][chan_temp_num])
-				{
-					g_x[chan_temp_num] = 0.0;
-					for (idx=0;idx<NUM_OF_SAMP_PER_SPIKE;idx++)
-					{
-						if (buff->scan_number_write-idx < 0)
-							diff[chan_temp_num][idx] = ((double)buff->filtered_scan[buff->scan_number_write-idx+NUM_OF_SAMP_IN_BUFF].data[chan])-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1];
-						else
-							diff[chan_temp_num][idx] =((double) buff->filtered_scan[buff->scan_number_write-idx].data[chan])-buff->spike_template.template[chan][chan_temp_num][NUM_OF_SAMP_PER_SPIKE-idx-1];
-					}
-					for (i=0; i <NUM_OF_SAMP_PER_SPIKE;i++)
-					{
-						diff_temporary[chan_temp_num][i] = 0;
-					}
-					for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
-					{
-						for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
-						{
-							diff_temporary[chan_temp_num][i] = diff_temporary[chan_temp_num][i] + (diff[chan_temp_num][j]* buff->spike_template.inv_S[chan][chan_temp_num][i][j]);
-						}
-					}
-							
-					for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
-					{
-						g_x[chan_temp_num] = g_x[chan_temp_num] + (diff_temporary[chan_temp_num][i] * diff[chan_temp_num][i]);
-					}
-					exponent[chan_temp_num] = exp((-0.5)*g_x[chan_temp_num]);
-					probabl[chan_temp_num] = (1.133976225112738364E-24/(buff->spike_template. sqrt_det_S[chan][chan_temp_num]))*exponent[chan_temp_num];       //   ( 1/ (   ((2*pi)^(d/2)) * (det_S^(1/2)) ) * exp( (-1/2) * (x-u)' * (S^ (-1)) - (x-u) ) 
-					g_x[chan_temp_num] = 0 - (buff->spike_template. log_det_S[chan][chan_temp_num]) - (g_x[chan_temp_num]);
-				}
-			}
-			if ((g_x[0] >= g_x[1]) && (g_x[0] >= g_x[2]) && (probabl[0]>= buff->spike_template.diff_thres[chan][0]) && (buff->spike_template.sorting_on[chan][0]))
-			{
-				if (buff->spike_template.include_unit[chan][0])
-					buff->sorted_spike_data[buff->scan_number_write].data[chan]=1;
-				else
-					buff->sorted_spike_data[buff->scan_number_write].data[chan]=4;
-			}
-			else if ((g_x[1] > g_x[0]) && (g_x[1] > g_x[2]) && (probabl[1]>= buff->spike_template.diff_thres[chan][1]) && (buff->spike_template.sorting_on[chan][1]))
-			{
-				if (buff->spike_template.include_unit[chan][1])
-					buff->sorted_spike_data[buff->scan_number_write].data[chan]=2;
-				else
-					buff->sorted_spike_data[buff->scan_number_write].data[chan]=5;
-			}
-			else if ((g_x[2] > g_x[0]) && (g_x[2] > g_x[1]) && (probabl[2]>= buff->spike_template.diff_thres[chan][2]) && (buff->spike_template.sorting_on[chan][2]))
-			{
-				if (buff->spike_template.include_unit[chan][2])
-					buff->sorted_spike_data[buff->scan_number_write].data[chan]=3;
-				else
-					buff->sorted_spike_data[buff->scan_number_write].data[chan]=6;
-			}
-			else
-				buff->sorted_spike_data[buff->scan_number_write].data[chan]=9;			
-		}
-		else
-		{
-			buff->sorted_spike_data[buff->scan_number_write].data[chan] = 0;
-		}
-	}
+	printk("comedi_cmd[%d].chanlist_len = %i\n", card_number, ni6070_comedi_cmd[card_number].chanlist_len);
 }
