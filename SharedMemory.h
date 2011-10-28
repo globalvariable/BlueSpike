@@ -11,7 +11,7 @@
 #include "KernelTaskStat.h"
 
 #define SHARED_MEM_NAME  "SHMEM"
-#ifdef KERNELSPIKE
+#ifdef KERNELSPIKE_H
 #define SHARED_MEM_SIZE sizeof(SharedMemStruct)
 #else
 #define SHARED_MEM_SIZE 0

@@ -4,8 +4,8 @@
 
 typedef struct __KernelTaskStatItem
 {
-	float 		cpu_usage;
-	unsigned int	task_jitter;
+	float 	cpu_usage;
+	int		task_jitter;
 } KernelTaskStatItem;
 
 

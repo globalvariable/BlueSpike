@@ -13,50 +13,49 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
-
-#define KERNELSPIKE
-
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <rtai.h>
-#include <rtai_sched.h>
-#include <rtai_comedi.h>
-#include <rtai_shm.h>
-#include <rtai_nam2num.h>
-#include <rtai_math.h>
-
-#include "../SharedMemory.h"
+#include "KernelSpike.h"
 
 
-#define TICK_PERIOD 1000000
-#define TASK_PRIORITY 1
-#define STACK_SIZE 10000
-
-static RT_TASK rt_task0;
-
-static void rt_handler(int t);
-
-
-
-
-static void rt_handler(int t)
+void rt_handler(int t)
 {
 	int i, j, return_value;
 	int while_ctrl = 1;
 	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], chan_num[MAX_NUM_OF_DAQ_CARD] ;
-	RecordingData			*recording_data;
-	int *recording_data_write_idx;
-	int mwa, mwa_chan;
 	DaqMwaMap			*daq_mwa_map;
-	recording_data = &shared_memory->recording_data;
+	RecordingData			*recording_data;
+	RecordingData			*filtered_recording_data;
+	KernelTaskCtrl			*kernel_task_ctrl;
+	SpikeEnd				*spike_end;
+	int *recording_data_write_idx;
+	int *filtered_recording_data_write_idx;
+	RecordingDataChanBuff	*recording_data_chan_buff;
+	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
+	RecordingDataChanBuff	*highpass_filtered_recording_data_chan_buff;
+	int mwa, mwa_chan;
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on; 
+
 	daq_mwa_map = &shared_memory->daq_mwa_map;
+	recording_data = &shared_memory->recording_data;
+	filtered_recording_data = &shared_memory->filtered_recording_data;
+	spike_end = &shared_memory->spike_end;	
+	kernel_task_ctrl = &shared_memory->kernel_task_ctrl;
+	
+	highpass_150Hz_on = &kernel_task_ctrl->highpass_150Hz_on; 
+	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
+	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;	
+	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		front[i] = 0;
 		back[i] = 0;
 		chan_num[i] = 0;
+		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+		{
+			(*daq_mwa_map)[i][chan_num[i]].mwa = MAX_NUM_OF_MWA;
+			(*daq_mwa_map)[i][chan_num[i]].channel = MAX_NUM_OF_CHAN_PER_MWA;
+		}
 	}
+	
 	while (while_ctrl) 
 	{
 		rt_task_wait_period();
@@ -75,11 +74,16 @@ static void rt_handler(int t)
 			
 			for(j = 0; j < num_byte[i]; j += sizeof(sampl_t))
 			{
-
-					  
 				mwa = (*daq_mwa_map)[i][chan_num[i]].mwa;
 				mwa_chan = (*daq_mwa_map)[i][chan_num[i]].channel;	
-								
+				if ((mwa == MAX_NUM_OF_MWA) || (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
+				{
+					(chan_num[i])++;
+					if (chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
+						chan_num[i] = 0;	
+					continue;
+				}
+													
 				recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
 
 				if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
@@ -90,9 +94,7 @@ static void rt_handler(int t)
 				{
 					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - 2048.0);
 				}
-				(chan_num[i])++;
-				if (chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
-					chan_num[i] = 0;
+
 				(*recording_data_write_idx)++;
 				if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
 					(*recording_data_write_idx) = 0;
@@ -105,6 +107,22 @@ static void rt_handler(int t)
 				while_ctrl = 0;
 			}
 			back[i] = front[i];
+		}
+		if (!((*highpass_150Hz_on) || (*highpass_400Hz_on)))
+			continue;	// Do not perform DSP;
+			
+		for (i=0; i<MAX_NUM_OF_MWA; i++)
+		{
+			for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+			{
+				recording_data_write_idx = &(recording_data->buff_idx_write[i][j]);
+				filtered_recording_data_write_idx = &(filtered_recording_data->buff_idx_write[i][j]);
+				recording_data_chan_buff = &(recording_data->recording_data_buff[i][j]);
+				filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[i][j]);
+				highpass_filtered_recording_data_chan_buff = &(highpass_filtered_recording_data.recording_data_buff[i][j]);
+				filter_recording_data(recording_data_write_idx,filtered_recording_data_write_idx, recording_data_chan_buff, filtered_recording_data_chan_buff, highpass_filtered_recording_data_chan_buff, highpass_150Hz_on, highpass_400Hz_on, lowpass_8KHz_on);
+				//detect_spikes_ends
+			}
 		}
 	}
 }
@@ -234,4 +252,389 @@ void print_cmd(int card_number)
 	printk("comedi_cmd[%d].stop_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_arg);
 
 	printk("comedi_cmd[%d].chanlist_len = %i\n", card_number, ni6070_comedi_cmd[card_number].chanlist_len);
+}
+
+
+void filter_recording_data	(int *recording_data_write_idx, int *filtered_recording_data_write_idx, RecordingDataChanBuff *recording_data_chan_buff, RecordingDataChanBuff *filtered_recording_data_chan_buff, 
+					RecordingDataChanBuff *highpass_filtered_recording_data_chan_buff, bool *highpass_150Hz_on, bool *highpass_400Hz_on, bool *lowpass_8KHz_on)
+{
+	int idx, last_idx;
+	idx = *filtered_recording_data_write_idx;
+	last_idx = *recording_data_write_idx;	
+	
+	if ((*lowpass_8KHz_on) && (*highpass_400Hz_on))	 
+	{
+		for (idx=0; idx < last_idx; idx++)
+		{
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;	
+			if (idx == 0)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.921170993499942 * (*recording_data_chan_buff)[0]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4])  -
+														(-3.835825540647349 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(5.520819136622230 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(-3.533535219463017 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) -
+														(0.848555999266478 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4]); 
+														
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[0])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4]); 														
+														
+			}
+			else if (idx == 1)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.921170993499942 * (*recording_data_chan_buff)[1]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[0]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  -
+														(-3.835825540647349 * (*highpass_filtered_recording_data_chan_buff)[0]) -
+														(5.520819136622230 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(-3.533535219463017 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(0.848555999266478 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]); 
+																												
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[1])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[0]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[0]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]); 	
+			}
+			else if (idx == 2)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.921170993499942 * (*recording_data_chan_buff)[2]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[1]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[0]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  -
+														(-3.835825540647349 * (*highpass_filtered_recording_data_chan_buff)[1]) -
+														(5.520819136622230 * (*highpass_filtered_recording_data_chan_buff)[0]) -
+														(-3.533535219463017 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.848555999266478 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]); 
+																																										
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[2])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[1]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[0]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[1]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[0]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]); 	
+			}			
+			else if (idx == 3)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.921170993499942 * (*recording_data_chan_buff)[3]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[2]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[1]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[0]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  -
+														(-3.835825540647349 * (*highpass_filtered_recording_data_chan_buff)[2]) -
+														(5.520819136622230 * (*highpass_filtered_recording_data_chan_buff)[1]) -
+														(-3.533535219463017 * (*highpass_filtered_recording_data_chan_buff)[0]) -
+														(0.848555999266478 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]); 
+																																																								
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[3])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[2]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[1]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[0]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[2]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[1]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[0]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]); 	
+			}
+			else
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.921170993499942 * (*recording_data_chan_buff)[idx]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[idx-1]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[idx-2]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[idx-3]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[idx-4])  -
+														(-3.835825540647349 * (*highpass_filtered_recording_data_chan_buff)[idx-1]) -
+														(5.520819136622230 * (*highpass_filtered_recording_data_chan_buff)[idx-2]) -
+														(-3.533535219463017 * (*highpass_filtered_recording_data_chan_buff)[idx-3]) -
+														(0.848555999266478 * (*highpass_filtered_recording_data_chan_buff)[idx-4]); 	
+														
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[idx])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[idx-1]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[idx-2]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[idx-3]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[idx-4])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[idx-1]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[idx-2]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[idx-3]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[idx-4]); 						
+			}						
+		}
+	}	
+	else if ((*lowpass_8KHz_on) && (*highpass_150Hz_on))
+	{
+		for (idx=0; idx < last_idx; idx++)
+		{
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;
+			if (idx == 0)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.969683064082198 * (*recording_data_chan_buff)[0]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4])  -
+														(-3.938430361819402 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(5.817179417349658 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(-3.819034001378268 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) -
+														(0.940285244767841 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4]);
+
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[0])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4]); 	
+			}
+			else if (idx == 1)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.969683064082198 * (*recording_data_chan_buff)[1]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[0])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  -
+														(-3.938430361819402 * (*highpass_filtered_recording_data_chan_buff)[0]) -
+														(5.817179417349658 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(-3.819034001378268 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(0.940285244767841 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]);		
+														
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[1])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[0]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[0]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]); 		
+			}
+			else if (idx == 2)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.969683064082198 * (*recording_data_chan_buff)[2]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[1])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[0])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  -
+														(-3.938430361819402 * (*highpass_filtered_recording_data_chan_buff)[1]) -
+														(5.817179417349658 * (*highpass_filtered_recording_data_chan_buff)[0]) -
+														(-3.819034001378268 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.940285244767841 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]);
+														
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[2])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[1]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[0]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[1]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[0]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]); 				
+			}	
+			else if (idx == 3)
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.969683064082198 * (*recording_data_chan_buff)[3]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[2])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[1])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[0])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  -
+														(-3.938430361819402 * (*highpass_filtered_recording_data_chan_buff)[2]) -
+														(5.817179417349658 * (*highpass_filtered_recording_data_chan_buff)[1]) -
+														(-3.819034001378268 * (*highpass_filtered_recording_data_chan_buff)[0]) -
+														(0.940285244767841 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]);	
+														
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[3])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[2]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[1]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[0]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[2]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[1]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[0]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]); 			
+			}	
+			else 
+			{
+				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.969683064082198 * (*recording_data_chan_buff)[idx]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[idx-1])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[idx-2])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[idx-3])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[idx-4])  -
+														(-3.938430361819402 * (*highpass_filtered_recording_data_chan_buff)[idx-1]) -
+														(5.817179417349658 * (*highpass_filtered_recording_data_chan_buff)[idx-2]) -
+														(-3.819034001378268 * (*highpass_filtered_recording_data_chan_buff)[idx-3]) -
+														(0.940285244767841 * (*highpass_filtered_recording_data_chan_buff)[idx-4]);			
+														
+				(*filtered_recording_data_chan_buff)[idx]=  			(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[idx])+
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[idx-1]) +
+														(0.279497439818662 * (*highpass_filtered_recording_data_chan_buff)[idx-2]) + 
+														(0.186331626545775 * (*highpass_filtered_recording_data_chan_buff)[idx-3]) +
+ 														(0.046582906636444 * (*highpass_filtered_recording_data_chan_buff)[idx-4])  -
+														(-0.782095198023338 * (*filtered_recording_data_chan_buff)[idx-1]) -
+														(0.679978526916300 * (*filtered_recording_data_chan_buff)[idx-2]) -
+														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[idx-3]) -
+														(0.030118875043169 * (*filtered_recording_data_chan_buff)[idx-4]); 
+			}					
+		}
+	}	
+	else if (*highpass_400Hz_on)	 
+	{
+		for (idx=0; idx < last_idx; idx++)
+		{
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;	
+			if (idx == 0)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.921170993499942 * (*recording_data_chan_buff)[0]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4])  -
+														(-3.835825540647349 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(5.520819136622230 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(-3.533535219463017 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) -
+														(0.848555999266478 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4]); 
+			}
+			else if (idx == 1)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.921170993499942 * (*recording_data_chan_buff)[1]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[0]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  -
+														(-3.835825540647349 * (*filtered_recording_data_chan_buff)[0]) -
+														(5.520819136622230 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(-3.533535219463017 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(0.848555999266478 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]); 
+			}
+			else if (idx == 2)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.921170993499942 * (*recording_data_chan_buff)[2]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[1]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[0]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  -
+														(-3.835825540647349 * (*filtered_recording_data_chan_buff)[1]) -
+														(5.520819136622230 * (*filtered_recording_data_chan_buff)[0]) -
+														(-3.533535219463017 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.848555999266478 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]); 
+			}			
+			else if (idx == 3)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.921170993499942 * (*recording_data_chan_buff)[3]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[2]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[1]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[0]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  -
+														(-3.835825540647349 * (*filtered_recording_data_chan_buff)[2]) -
+														(5.520819136622230 * (*filtered_recording_data_chan_buff)[1]) -
+														(-3.533535219463017 * (*filtered_recording_data_chan_buff)[0]) -
+														(0.848555999266478 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]); 
+			}
+			else
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.921170993499942 * (*recording_data_chan_buff)[idx]) +
+														(-3.684683973999769 * (*recording_data_chan_buff)[idx-1]) +
+														(5.527025960999653 * (*recording_data_chan_buff)[idx-2]) + 
+														(-3.684683973999769 * (*recording_data_chan_buff)[idx-3]) +
+ 														(0.921170993499942 * (*recording_data_chan_buff)[idx-4])  -
+														(-3.835825540647349 * (*filtered_recording_data_chan_buff)[idx-1]) -
+														(5.520819136622230 * (*filtered_recording_data_chan_buff)[idx-2]) -
+														(-3.533535219463017 * (*filtered_recording_data_chan_buff)[idx-3]) -
+														(0.848555999266478 * (*filtered_recording_data_chan_buff)[idx-4]); 						
+			}						
+		}	
+	}
+	else if (*highpass_150Hz_on)	 
+	{
+		for (idx=0; idx < last_idx; idx++)
+		{
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;
+			if (idx == 0)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.969683064082198 * (*recording_data_chan_buff)[0]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4])  -
+														(-3.938430361819402 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(5.817179417349658 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(-3.819034001378268 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]) -
+														(0.940285244767841 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_4]);
+			}
+			else if (idx == 1)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.969683064082198 * (*recording_data_chan_buff)[1]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[0])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3])  -
+														(-3.938430361819402 * (*filtered_recording_data_chan_buff)[0]) -
+														(5.817179417349658 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(-3.819034001378268 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]) -
+														(0.940285244767841 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_3]);			
+			}
+			else if (idx == 2)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.969683064082198 * (*recording_data_chan_buff)[2]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[1])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[0])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2])  -
+														(-3.938430361819402 * (*filtered_recording_data_chan_buff)[1]) -
+														(5.817179417349658 * (*filtered_recording_data_chan_buff)[0]) -
+														(-3.819034001378268 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]) -
+														(0.940285244767841 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_2]);			
+			}	
+			else if (idx == 3)
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.969683064082198 * (*recording_data_chan_buff)[3]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[2])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[1])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[0])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1])  -
+														(-3.938430361819402 * (*filtered_recording_data_chan_buff)[2]) -
+														(5.817179417349658 * (*filtered_recording_data_chan_buff)[1]) -
+														(-3.819034001378268 * (*filtered_recording_data_chan_buff)[0]) -
+														(0.940285244767841 * (*filtered_recording_data_chan_buff)[RECORDING_DATA_BUFF_SIZE_1]);			
+			}	
+			else 
+			{
+				(*filtered_recording_data_chan_buff)[idx]=			(0.969683064082198 * (*recording_data_chan_buff)[idx]) +
+														(-3.878732256328792 * (*recording_data_chan_buff)[idx-1])  +
+														(5.818098384493188 * (*recording_data_chan_buff)[idx-2])  + 
+														(-3.878732256328792 * (*recording_data_chan_buff)[idx-3])  + 
+ 														(0.969683064082198 * (*recording_data_chan_buff)[idx-4])  -
+														(-3.938430361819402 * (*filtered_recording_data_chan_buff)[idx-1]) -
+														(5.817179417349658 * (*filtered_recording_data_chan_buff)[idx-2]) -
+														(-3.819034001378268 * (*filtered_recording_data_chan_buff)[idx-3]) -
+														(0.940285244767841 * (*filtered_recording_data_chan_buff)[idx-4]);			
+			}					
+		}
+	}
+	
+	*filtered_recording_data_write_idx = last_idx;
 }
