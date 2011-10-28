@@ -51,8 +51,6 @@ static void rt_handler(int t)
 	DaqMwaMap			*daq_mwa_map;
 	recording_data = &shared_memory->recording_data;
 	daq_mwa_map = &shared_memory->daq_mwa_map;
-	shared_memory->daq_mwa_map[0][0].channel = 5;
-	shared_memory->daq_mwa_map[0][0].mwa = 1;
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		front[i] = 0;
