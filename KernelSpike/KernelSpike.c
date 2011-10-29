@@ -20,24 +20,24 @@ void rt_handler(int t)
 {
 	int i, j, return_value;
 	int while_ctrl = 1;
-	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], chan_num[MAX_NUM_OF_DAQ_CARD] ;
+	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], daq_chan_num[MAX_NUM_OF_DAQ_CARD] ;
 	DaqMwaMap			*daq_mwa_map;
 	RecordingData			*recording_data;
+	RecordingData			highpass_filtered_recording_data;
 	RecordingData			*filtered_recording_data;
 	KernelTaskCtrl			*kernel_task_ctrl;
 	SpikeEnd				*spike_end;
+	TemplateMatchingData	*template_matching_data;
+
 	int *recording_data_write_idx;
-	int *filtered_recording_data_write_idx;
-	RecordingDataChanBuff	*recording_data_chan_buff;
-	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
-	RecordingDataChanBuff	*highpass_filtered_recording_data_chan_buff;
 	int mwa, mwa_chan;
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on; 
-
+	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
 	recording_data = &shared_memory->recording_data;
 	filtered_recording_data = &shared_memory->filtered_recording_data;
 	spike_end = &shared_memory->spike_end;	
+	template_matching_data = &shared_memory->template_matching_data;
 	kernel_task_ctrl = &shared_memory->kernel_task_ctrl;
 	
 	highpass_150Hz_on = &kernel_task_ctrl->highpass_150Hz_on; 
@@ -48,11 +48,11 @@ void rt_handler(int t)
 	{
 		front[i] = 0;
 		back[i] = 0;
-		chan_num[i] = 0;
+		daq_chan_num[i] = 0;
 		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
 		{
-			(*daq_mwa_map)[i][chan_num[i]].mwa = MAX_NUM_OF_MWA;
-			(*daq_mwa_map)[i][chan_num[i]].channel = MAX_NUM_OF_CHAN_PER_MWA;
+			(*daq_mwa_map)[i][daq_chan_num[i]].mwa = MAX_NUM_OF_MWA;
+			(*daq_mwa_map)[i][daq_chan_num[i]].channel = MAX_NUM_OF_CHAN_PER_MWA;
 		}
 	}
 	
@@ -74,13 +74,13 @@ void rt_handler(int t)
 			
 			for(j = 0; j < num_byte[i]; j += sizeof(sampl_t))
 			{
-				mwa = (*daq_mwa_map)[i][chan_num[i]].mwa;
-				mwa_chan = (*daq_mwa_map)[i][chan_num[i]].channel;	
+				mwa = (*daq_mwa_map)[i][daq_chan_num[i]].mwa;
+				mwa_chan = (*daq_mwa_map)[i][daq_chan_num[i]].channel;	
 				if ((mwa == MAX_NUM_OF_MWA) || (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
 				{
-					(chan_num[i])++;
-					if (chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
-						chan_num[i] = 0;	
+					(daq_chan_num[i])++;
+					if (daq_chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
+						daq_chan_num[i] = 0;	
 					continue;
 				}
 													
@@ -115,13 +115,8 @@ void rt_handler(int t)
 		{
 			for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 			{
-				recording_data_write_idx = &(recording_data->buff_idx_write[i][j]);
-				filtered_recording_data_write_idx = &(filtered_recording_data->buff_idx_write[i][j]);
-				recording_data_chan_buff = &(recording_data->recording_data_buff[i][j]);
-				filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[i][j]);
-				highpass_filtered_recording_data_chan_buff = &(highpass_filtered_recording_data.recording_data_buff[i][j]);
-				filter_recording_data(recording_data_write_idx,filtered_recording_data_write_idx, recording_data_chan_buff, filtered_recording_data_chan_buff, highpass_filtered_recording_data_chan_buff, highpass_150Hz_on, highpass_400Hz_on, lowpass_8KHz_on);
-				//detect_spikes_ends
+				filter_recording_data(recording_data, &highpass_filtered_recording_data, filtered_recording_data, recording_data->buff_idx_write[i][j], i, j, highpass_150Hz_on, highpass_400Hz_on, lowpass_8KHz_on);
+				find_spike_end(spike_end, filtered_recording_data, i, j);
 			}
 		}
 	}
@@ -255,16 +250,23 @@ void print_cmd(int card_number)
 }
 
 
-void filter_recording_data	(int *recording_data_write_idx, int *filtered_recording_data_write_idx, RecordingDataChanBuff *recording_data_chan_buff, RecordingDataChanBuff *filtered_recording_data_chan_buff, 
-					RecordingDataChanBuff *highpass_filtered_recording_data_chan_buff, bool *highpass_150Hz_on, bool *highpass_400Hz_on, bool *lowpass_8KHz_on)
+void filter_recording_data( RecordingData *recording_data, RecordingData *highpass_filtered_recording_data, RecordingData *filtered_recording_data, int end_idx, int mwa, int mwa_chan, bool *highpass_150Hz_on, bool *highpass_400Hz_on, bool *lowpass_8KHz_on)
 {
-	int idx, last_idx;
-	idx = *filtered_recording_data_write_idx;
-	last_idx = *recording_data_write_idx;	
+	int idx, start_idx;
 	
+	RecordingDataChanBuff	*recording_data_chan_buff;
+	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
+	RecordingDataChanBuff	*highpass_filtered_recording_data_chan_buff;
+	
+	recording_data_chan_buff = &(recording_data->recording_data_buff[mwa][mwa_chan]);
+	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][mwa_chan]);
+	highpass_filtered_recording_data_chan_buff = &(highpass_filtered_recording_data->recording_data_buff[mwa][mwa_chan]);	
+	
+	start_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
+				
 	if ((*lowpass_8KHz_on) && (*highpass_400Hz_on))	 
 	{
-		for (idx=0; idx < last_idx; idx++)
+		for (idx=start_idx; idx < end_idx; idx++)
 		{
 			if (idx ==	RECORDING_DATA_BUFF_SIZE)
 				idx = 0;	
@@ -378,12 +380,12 @@ void filter_recording_data	(int *recording_data_write_idx, int *filtered_recordi
 														(0.679978526916300 * (*filtered_recording_data_chan_buff)[idx-2]) -
 														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[idx-3]) -
 														(0.030118875043169 * (*filtered_recording_data_chan_buff)[idx-4]); 						
-			}						
+			}
 		}
 	}	
 	else if ((*lowpass_8KHz_on) && (*highpass_150Hz_on))
 	{
-		for (idx=0; idx < last_idx; idx++)
+		for (idx=start_idx; idx < end_idx; idx++)
 		{
 			if (idx ==	RECORDING_DATA_BUFF_SIZE)
 				idx = 0;
@@ -501,7 +503,7 @@ void filter_recording_data	(int *recording_data_write_idx, int *filtered_recordi
 	}	
 	else if (*highpass_400Hz_on)	 
 	{
-		for (idx=0; idx < last_idx; idx++)
+		for (idx=start_idx; idx < end_idx; idx++)
 		{
 			if (idx ==	RECORDING_DATA_BUFF_SIZE)
 				idx = 0;	
@@ -569,7 +571,7 @@ void filter_recording_data	(int *recording_data_write_idx, int *filtered_recordi
 	}
 	else if (*highpass_150Hz_on)	 
 	{
-		for (idx=0; idx < last_idx; idx++)
+		for (idx=start_idx; idx < end_idx; idx++)
 		{
 			if (idx ==	RECORDING_DATA_BUFF_SIZE)
 				idx = 0;
@@ -635,6 +637,75 @@ void filter_recording_data	(int *recording_data_write_idx, int *filtered_recordi
 			}					
 		}
 	}
-	
-	*filtered_recording_data_write_idx = last_idx;
+	filtered_recording_data->buff_idx_write[mwa][mwa_chan] = end_idx;
 }
+
+void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data, int mwa, int mwa_chan)
+{
+	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
+	
+	int idx, start_idx, end_idx, min_idx, i, spike_end_idx;
+	float amplitude_thres, min;
+	bool *in_spike;
+		
+	amplitude_thres = spike_end->amplitude_thres[mwa][mwa_chan];
+	if (amplitude_thres == 0.0)
+	{
+		spike_end->search_idx_start[mwa][mwa_chan] = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
+		return;
+	}
+	
+	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][mwa_chan]);
+	start_idx = spike_end->search_idx_start[mwa][mwa_chan];
+	end_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
+	in_spike = &(spike_end->in_spike[mwa][mwa_chan]);
+	
+	for (idx=start_idx; idx < end_idx; idx++)
+	{	
+		if (idx ==	RECORDING_DATA_BUFF_SIZE)
+			idx = 0;
+		
+		if (((*filtered_recording_data_chan_buff)[idx] <  amplitude_thres) && (!(*in_spike)))
+		{
+			*in_spike = 1;
+		}
+		if (((*filtered_recording_data_chan_buff)[idx] >  amplitude_thres) && (*in_spike))
+		{
+			*in_spike = 0;
+			min = (*filtered_recording_data_chan_buff)[idx];
+			for (i=0; i<20; idx++)
+			{
+				if (idx < i)
+				{
+					if ((*filtered_recording_data_chan_buff)[idx-i+RECORDING_DATA_BUFF_SIZE] < min)
+					{
+						min =  (*filtered_recording_data_chan_buff)[idx-i+RECORDING_DATA_BUFF_SIZE];
+						min_idx = idx-i+RECORDING_DATA_BUFF_SIZE;
+					}	
+				}
+				else
+				{
+					if ((*filtered_recording_data_chan_buff)[idx-i] < min)
+					{
+						min =  (*filtered_recording_data_chan_buff)[idx-i];
+						min_idx = idx-i;
+					}		
+				}
+			}
+			if ((min_idx+SPIKE_MIN_END_SAMP_NUM) >= RECORDING_DATA_BUFF_SIZE)
+				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM - RECORDING_DATA_BUFF_SIZE;
+			else		
+				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM;
+
+			//   Write spike end into shared_memory->spike_end
+			spike_end->spike_end_data_buff[spike_end->buff_idx_write].idx = spike_end_idx;
+			spike_end->spike_end_data_buff[spike_end->buff_idx_write].mwa = mwa;
+			spike_end->spike_end_data_buff[spike_end->buff_idx_write].chan = mwa_chan;
+			spike_end->buff_idx_write++;
+			if (spike_end->buff_idx_write == SPIKE_END_DATA_BUFF_SIZE)
+				spike_end->buff_idx_write = 0;
+		}
+	}
+
+}
+
