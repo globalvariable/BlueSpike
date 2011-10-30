@@ -10,7 +10,7 @@
 
 #define MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT 1     //  i.e. object moving in 3D with three stepper motors, animal moving in 2D, robot with 5 degree of freedom
 
-typedef enum __MovingObjDirection{BACKWARD, STATIONARY, FORWARD} MovingObjDirection;   // Forward increases Location parameter in that dimension
+typedef enum __MovingObjDirection{NO_DIRECTION_DATA, BACKWARD, STATIONARY, FORWARD } MovingObjDirection;   // Forward increases Location parameter in that dimension
  
  typedef short int MovingObjSpeed;
  
