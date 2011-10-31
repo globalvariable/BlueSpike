@@ -1,4 +1,4 @@
-#define TYPES_H
+#define TIMESTAMP_H
 
 typedef long long unsigned int TimeStamp;
 

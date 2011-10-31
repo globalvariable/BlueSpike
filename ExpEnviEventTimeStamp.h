@@ -1,7 +1,7 @@
 #define EXPENVIEVENTTIMESTAMP_H    // Experimental Environment Event Timestamps
 
-#ifndef TYPES_H
-#include "Types.h"
+#ifndef TIMESTAMP_H
+#include "TimeStamp.h"
 #endif
 
 #include "ExpEnviCommandTimeStamp.h"

@@ -1,7 +1,7 @@
 #define EXPENVICOMMANDTIMESTAMP_H
 
-#ifndef TYPES_H
-#include "Types.h"
+#ifndef TIMESTAMP_H
+#include "TimeStamp.h"
 #endif
 
 #define EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE 10000

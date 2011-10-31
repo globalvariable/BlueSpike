@@ -1,9 +1,5 @@
 #define RECORDINGDATA_H
 
-#ifndef TYPES_H
-#include "Types.h"
-#endif
-
 #ifndef MICROWIREARRAY_H
 #include "MicroWireArray.h"
 #endif

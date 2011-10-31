@@ -2,8 +2,8 @@
 
 
 #include "MovingObjCommandTimeStamp.h"
-#ifndef TYPES_H
-#include "Types.h"
+#ifndef TIMESTAMP_H
+#include "TimeStamp.h"
 #endif
 
 #define MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE 10000
