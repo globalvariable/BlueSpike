@@ -48,7 +48,7 @@ void rt_handler(int t)
 	highpass_150Hz_on = &kernel_task_ctrl->highpass_150Hz_on; 
 	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
 	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;	
-	
+
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		front[i] = 0;
@@ -56,11 +56,11 @@ void rt_handler(int t)
 		daq_chan_num[i] = 0;
 		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
 		{
-			(*daq_mwa_map)[i][daq_chan_num[i]].mwa = MAX_NUM_OF_MWA;
-			(*daq_mwa_map)[i][daq_chan_num[i]].channel = MAX_NUM_OF_CHAN_PER_MWA;
+			(*daq_mwa_map)[i][j].mwa = MAX_NUM_OF_MWA;
+			(*daq_mwa_map)[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;
 		}
 	}
-	
+	      
 	while (while_ctrl) 
 	{
 		rt_task_wait_period();
@@ -94,11 +94,11 @@ void rt_handler(int t)
 
 				if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
 				{
-					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - 2048.0) ;
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) ;
 				}
 				else
 				{
-					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - 2048.0);
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E);
 				}
 
 				(*recording_data_write_idx)++;
@@ -127,7 +127,7 @@ void rt_handler(int t)
 			template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
 		}
 		previous_time_ns = current_time_ns;
-	}
+	}   
 }
 
 
@@ -144,7 +144,7 @@ int __init xinit_module(void)
 		return -ENOMEM;
 	memset(shared_memory, 0, SHARED_MEM_SIZE);
         printk("sizeof(SharedMemStruct) : %d\n", SHARED_MEM_SIZE);
-
+        printk("Shared Memory Pointer: %d\n", (int)shared_memory);
 
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{

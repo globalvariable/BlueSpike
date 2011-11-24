@@ -4,6 +4,8 @@
 #include "RecordingData.h"
 #endif
 
+#include <stdbool.h>
+
 #define MAX_NUM_OF_UNIT_PER_CHAN 3
 #define NUM_OF_SAMP_PER_SPIKE 30
 

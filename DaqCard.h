@@ -1,10 +1,10 @@
 #define DAQCARD_H
 
-#define MAX_NUM_OF_DAQ_CARD 1 
-#define MAX_NUM_OF_CHANNEL_PER_DAQ_CARD 16 
+#define MAX_NUM_OF_DAQ_CARD 1 					// Increase if there is an additional card
+#define MAX_NUM_OF_CHANNEL_PER_DAQ_CARD 16 		
 
-#define COMEDI_SUBDEVICE_AI 0
-#define SAMPLING_INTERVAL 25000     /// DO NOT CHANGE!!!
-#define VOLTAGE_RANGE_6070E 4
+#define COMEDI_SUBDEVICE_AI 		0
+#define SAMPLING_INTERVAL 			25000     /// DO NOT CHANGE!!!
+#define VOLTAGE_RANGE_6070E 		4
 
-
+#define BASELINE_QUANT_6070E 		2048.0

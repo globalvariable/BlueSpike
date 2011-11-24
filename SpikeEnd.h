@@ -6,6 +6,8 @@
 #include "TimeStamp.h"
 #endif
 
+#include <stdbool.h>
+
 typedef struct __SpikeEndItem
 {
 	int 			idx;    // index of SpikeEndData in filtered recording data buffer 
