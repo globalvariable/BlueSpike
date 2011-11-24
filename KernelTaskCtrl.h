@@ -8,7 +8,6 @@ typedef struct __KernelTaskCtrl
 	bool 	highpass_400Hz_on;
 	bool 	lowpass_8KHz_on;
 	bool 	sorting_on;
-	bool 	deneme;	
 } KernelTaskCtrl;
 
 
