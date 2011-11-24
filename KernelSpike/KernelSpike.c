@@ -144,7 +144,6 @@ int __init xinit_module(void)
 		return -ENOMEM;
 	memset(shared_memory, 0, SHARED_MEM_SIZE);
         printk("sizeof(SharedMemStruct) : %d\n", SHARED_MEM_SIZE);
-        printk("Shared Memory Pointer: %d\n", (int)shared_memory);
 
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{
