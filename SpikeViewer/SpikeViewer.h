@@ -22,8 +22,12 @@
 #include <gtkdatabox.h>
 #include <gtkdatabox_ruler.h>
 #include <gtkdatabox_lines.h>
+#include <gtkdatabox_grid.h>
 
 #define SPIKE_MEM_TO_DISPLAY 30 
+
+#define NUM_OF_RAW_SAMPLE_TO_DISPLAY 4000		// Adjusted for 40000KHz sampling rate 
+#define RAW_DATA_DISP_DURATION_MS 100	
 
 
 // Variables
@@ -36,31 +40,27 @@ GtkWidget *box_spike_shape;
 GtkWidget *combo_mwa;
 GtkWidget *combo_chan;
 
-GtkWidget *ch_slct_button;
-
 GtkWidget *clear_button;
 GtkWidget *pause_button;
 GtkWidget *threshold_button;
+GtkWidget *btn_filter_highpass_150Hz;
+GtkWidget *btn_filter_highpass_400Hz;
+GtkWidget *btn_filter_lowpass_8KHz;
 GtkWidget *filter_button;
 GtkWidget *highpass_400Hz_button;
 GtkWidget *lowpass_4th_button;
 
-GtkDataboxGraph *graph;	
-GtkDataboxGraph *graph_spike_shape;
+
 int GraphIdx;	
 
-char *strThreshold;
 GtkWidget *entryThreshold;
 
-GtkWidget *lbl_jitter;
-GtkWidget *lbl_jitter_20_us;
-GtkWidget *lbl_jitter_50_us;
-GtkWidget *lbl_jitter_100_us;
+int display_mwa;
+int display_mwa_chan;
 
-int disp_chan;
-int front, back, size;
-float *X;
-float *Y;
+float *X_raw;
+float *Y_raw;
+int previous_start_idx_to_plot;
 
 float *X_spike;
 float *Y_spike;
@@ -80,10 +80,11 @@ GdkColor color_spike_shape;
 // Functions
 void create_gui(void);
 gboolean timeout_callback(gpointer user_data) ;
-gboolean filter_button_func (GtkDatabox * box);
-gboolean highpass_400Hz_button_func (GtkDatabox * box);
-gboolean lowpass_4th_button_func (GtkDatabox * box);
-gboolean ch_slct_func (GtkDatabox * box);
+gboolean filter_highpass_150Hz_button_func (GtkDatabox * box);
+gboolean filter_highpass_400Hz_button_func (GtkDatabox * box);
+gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box);
+gboolean combo_mwa_func (GtkDatabox * box);
+gboolean combo_chan_func (GtkDatabox * box);
 gboolean pause_button_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
