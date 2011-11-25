@@ -50,7 +50,7 @@ GtkWidget *filter_button;
 GtkWidget *highpass_400Hz_button;
 GtkWidget *lowpass_4th_button;
 
-
+int spike_end_buff_curr_idx;
 int GraphIdx;	
 
 GtkWidget *entryThreshold;

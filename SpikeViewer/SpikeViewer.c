@@ -200,7 +200,8 @@ void create_gui(void)
 
 	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);	
 
-
+	spike_end_buff_curr_idx = shared_memory->spike_end.buff_idx_write;
+	
   	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 
 	g_signal_connect_swapped(G_OBJECT(btn_filter_highpass_150Hz), "clicked", G_CALLBACK(filter_highpass_150Hz_button_func), G_OBJECT(box_signal));
@@ -250,15 +251,18 @@ gboolean timeout_callback(gpointer user_data)
 	{	  
 		previous_start_idx_to_plot = start_idx;
 		if (!disp_paused)
-		{		
+		{	
+			for (i = 0; i < NUM_OF_RAW_SAMPLE_TO_DISPLAY; i++)
+			{
+				Y_raw[i] = (*handling_data_chan_buff)[i+start_idx];
+			}		
+			gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV, LOWEST_VOLTAGE_MV);	
+						
 			if (shared_memory->kernel_task_ctrl.highpass_150Hz_on || shared_memory->kernel_task_ctrl.highpass_400Hz_on)
 			{
-				for (i = 0; i < NUM_OF_RAW_SAMPLE_TO_DISPLAY; i++)
-				{
-					Y_raw[i] = (*handling_data_chan_buff)[i+start_idx];
-				}				
+				// Implement: Handle visualization of detected spikes
 			}
-			gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV, LOWEST_VOLTAGE_MV);
+
 		}
 	}
 

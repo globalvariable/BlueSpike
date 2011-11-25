@@ -743,7 +743,9 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM - RECORDING_DATA_BUFF_SIZE;
 			else		
 				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM;
-
+				
+			
+	
 			//   Write spike end into shared_memory->spike_end
 			spike_end->spike_end_buff[spike_end->buff_idx_write].idx = spike_end_idx;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].mwa = mwa;
@@ -755,7 +757,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 			(*control_cntr)++;
 		}
 	}
-
+	spike_end->search_idx_start[mwa][mwa_chan] = end_idx;
 }
 
 
