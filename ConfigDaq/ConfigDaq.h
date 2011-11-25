@@ -33,8 +33,6 @@ GtkWidget *btn_select_config_file_directory_to_save;
 GtkWidget *entry_config_file_name;
 GtkWidget *btn_save_config_file;
 
-
-
 void create_gui(void);
 void map_channels_button_func(void); 
 void finalize_mapping_button_func(void); 
