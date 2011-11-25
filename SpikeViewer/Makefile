@@ -12,11 +12,8 @@ GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
 all: SpikeViewer
 
-SpikeViewer: SpikeViewer.c Gui.o 
+SpikeViewer: SpikeViewer.c
 	$(CC) $(LXRT_CFLAGS) -o $@ $< Gui.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
-
-Gui.o: Gui.c 
-	$(CC) $(LXRT_CFLAGS) -c -o $@ $< $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
 
 clean:
 	rm -f *.o SpikeViewer

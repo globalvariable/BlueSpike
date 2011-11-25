@@ -276,7 +276,9 @@ void map_channels_button_func(void)
 	}
 
 	j = mwa_chan_start;
-	
+
+	shared_memory->shared_mem_write_idle = 0;
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) {}	
 	for (i = daq_chan_start; i<= daq_chan_end; i++)
 	{	
 		if ((shared_memory->daq_mwa_map[daq_num][i].mwa != MAX_NUM_OF_MWA) || (shared_memory->daq_mwa_map[daq_num][i].channel != MAX_NUM_OF_CHAN_PER_MWA))
@@ -288,7 +290,10 @@ void map_channels_button_func(void)
 		shared_memory->daq_mwa_map[daq_num][i].channel = j;
 		j++;  
 	}
+	shared_memory->shared_mem_write_idle = 1;	
+	convert_daq_mwa_map_to_mwa_daq_map();
 	printf ("DAQ Card -> Microwire Array mapping completed\n");
+	printf ("Microwire Array -> DAQ Card mapping completed\n");
 	interrogate_mapping();
 	return;
 }
@@ -402,7 +407,10 @@ void load_config_file_button_func(void)
 		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}	
-	
+
+	shared_memory->shared_mem_write_idle = 0;
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) {}	
+
 	for (i = 0; i<max_num_of_daq_card; i++)    /// Only configure the ones written in config file even though max_num_of_daq_card != MAX_NUM_OF_DAQ_CARD
 	{	
 		for (j = 0; j<max_num_of_channel_per_daq_card; j++)
@@ -415,9 +423,10 @@ void load_config_file_button_func(void)
 			shared_memory->daq_mwa_map[i][j].channel =(int)atof(line);
 		}
 	}
-	
-	fclose(fp);
+	shared_memory->shared_mem_write_idle = 1;
 
+	fclose(fp);
+	convert_daq_mwa_map_to_mwa_daq_map();
 	interrogate_mapping();
 
 	return;
@@ -508,3 +517,36 @@ bool interrogate_mapping(void)
 	}	
 }
 
+void convert_daq_mwa_map_to_mwa_daq_map(void)
+{
+	int i, j;
+
+	shared_memory->shared_mem_write_idle = 0;
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) {}	
+
+	// Clear all mapping 
+	for (i = 0; i<MAX_NUM_OF_MWA; i++)
+	{	
+		for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{	
+			shared_memory->mwa_daq_map[i][j].daq_card = MAX_NUM_OF_DAQ_CARD;
+			shared_memory->mwa_daq_map[i][j].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+		}
+	}	
+		
+	// Re-map all mwa channels
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{	
+		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+		{	
+			if ((shared_memory->daq_mwa_map[i][j].mwa != MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel != MAX_NUM_OF_CHAN_PER_MWA))
+			{
+				shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_card = i;
+				shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_chan = j;
+			}
+		}
+	}
+
+	shared_memory->shared_mem_write_idle = 1;	
+	return;
+}

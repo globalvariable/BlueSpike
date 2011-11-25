@@ -1,5 +1,6 @@
 #define SHAREDMEMORY_H
 
+#include "MwaDaqMap.h"
 #include "DaqMwaMap.h"
 #include "RecordingData.h"
 #include "SpikeEnd.h"
@@ -21,6 +22,7 @@
 typedef struct __SharedMemStruct
 {
 	DaqMwaMap				daq_mwa_map;
+	MwaDaqMap				mwa_daq_map;
 	RecordingData				recording_data;
 	RecordingData				filtered_recording_data;
 	SpikeEnd					spike_end;
@@ -30,7 +32,8 @@ typedef struct __SharedMemStruct
 	ExpEnviCommandTimeStamp 	exp_envi_command_time_stamp;	
 	TemplateMatchingData		template_matching_data;
 	KernelTaskCtrl				kernel_task_ctrl;
-	KernelTaskStat				kernel_task_stat;	
+	KernelTaskStat				kernel_task_stat;
+	bool					shared_mem_write_idle;
 } SharedMemStruct;
 
 SharedMemStruct *shared_memory;

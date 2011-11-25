@@ -13,5 +13,77 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
+#include "../SharedMemory.h"
 
-#include "Gui.h"
+#include <rtai_shm.h>
+#include <rtai_nam2num.h>
+
+#include <gtk/gtk.h>
+#include <gtkdatabox.h>
+#include <gtkdatabox_ruler.h>
+#include <gtkdatabox_lines.h>
+
+#define SPIKE_MEM_TO_DISPLAY 30 
+
+
+// Variables
+GtkWidget *databox_signal;
+GtkWidget *databox_spike_shape;
+
+GtkWidget *box_signal;
+GtkWidget *box_spike_shape;
+
+GtkWidget *combo_mwa;
+GtkWidget *combo_chan;
+
+GtkWidget *ch_slct_button;
+
+GtkWidget *clear_button;
+GtkWidget *pause_button;
+GtkWidget *threshold_button;
+GtkWidget *filter_button;
+GtkWidget *highpass_400Hz_button;
+GtkWidget *lowpass_4th_button;
+
+GtkDataboxGraph *graph;	
+GtkDataboxGraph *graph_spike_shape;
+int GraphIdx;	
+
+char *strThreshold;
+GtkWidget *entryThreshold;
+
+GtkWidget *lbl_jitter;
+GtkWidget *lbl_jitter_20_us;
+GtkWidget *lbl_jitter_50_us;
+GtkWidget *lbl_jitter_100_us;
+
+int disp_chan;
+int front, back, size;
+float *X;
+float *Y;
+
+float *X_spike;
+float *Y_spike;
+GPtrArray* Y_spikes_ptr;
+int Y_spikes_idx;
+
+int disp_paused;
+
+GdkColor color_bg_signal;
+GdkColor color_signal;
+GdkColor color_grid_signal;
+
+GdkColor color_bg_spike_shape;
+GdkColor color_spike_shape;
+
+
+// Functions
+void create_gui(void);
+gboolean timeout_callback(gpointer user_data) ;
+gboolean filter_button_func (GtkDatabox * box);
+gboolean highpass_400Hz_button_func (GtkDatabox * box);
+gboolean lowpass_4th_button_func (GtkDatabox * box);
+gboolean ch_slct_func (GtkDatabox * box);
+gboolean pause_button_func (GtkDatabox * box);
+gboolean threshold_but_func (GtkDatabox * box);
+gboolean clear_screen_but_func (GtkDatabox * box);
