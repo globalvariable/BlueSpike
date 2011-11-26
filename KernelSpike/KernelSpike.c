@@ -66,57 +66,57 @@ void rt_handler(int t)
 		rt_task_wait_period();
 		*kernel_task_idle = 0;
 		current_time_ns += rt_get_cpu_time_ns();
-		if  (*shared_mem_write_idle)
-		{
-			for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
-			{	
-				comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
-				num_byte[i] = comedi_get_buffer_contents(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
-				front[i] = front[i] + num_byte[i];
-				if (front[i] >= comedi_buff_size[i])
-					front[i] = front[i] - comedi_buff_size[i];
-				if(num_byte[i] == 0)
+		while  (!(*shared_mem_write_idle)) {}
+
+		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
+		{	
+			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+			num_byte[i] = comedi_get_buffer_contents(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+			front[i] = front[i] + num_byte[i];
+			if (front[i] >= comedi_buff_size[i])
+				front[i] = front[i] - comedi_buff_size[i];
+			if(num_byte[i] == 0)
+			{
+				printk("num_byte[%d] = 0\n", i);
+				continue;
+			}
+				
+			for(j = 0; j < num_byte[i]; j += sizeof(sampl_t))
+			{
+				mwa = (*daq_mwa_map)[i][daq_chan_num[i]].mwa;
+				mwa_chan = (*daq_mwa_map)[i][daq_chan_num[i]].channel;	
+				if ((mwa == MAX_NUM_OF_MWA) || (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
 				{
-					printk("num_byte[%d] = 0\n", i);
+					(daq_chan_num[i])++;
+					if (daq_chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
+						daq_chan_num[i] = 0;	
 					continue;
 				}
-				
-				for(j = 0; j < num_byte[i]; j += sizeof(sampl_t))
-				{
-					mwa = (*daq_mwa_map)[i][daq_chan_num[i]].mwa;
-					mwa_chan = (*daq_mwa_map)[i][daq_chan_num[i]].channel;	
-					if ((mwa == MAX_NUM_OF_MWA) || (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
-					{
-						(daq_chan_num[i])++;
-						if (daq_chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
-							daq_chan_num[i] = 0;	
-						continue;
-					}
 														
-					recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
+				recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
 
-					if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
-					{
-						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) ;
-					}
-					else
-					{
-						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E);
-					}
-	
-					(*recording_data_write_idx)++;
-					if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
-						(*recording_data_write_idx) = 0;
-				}
-				
-				return_value = comedi_mark_buffer_read(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, num_byte[i]);
-				if(return_value < 0)
+				if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
 				{
-					printk("ERROR: comedi_mark_buffer_read");
-					rt_task_stay_alive = 0;
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) ;
 				}
-				back[i] = front[i];
+				else
+				{
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E);
+				}
+
+				(*recording_data_write_idx)++;
+				if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
+					(*recording_data_write_idx) = 0;
 			}
+				
+			return_value = comedi_mark_buffer_read(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, num_byte[i]);
+			if(return_value < 0)
+			{
+				printk("ERROR: comedi_mark_buffer_read");
+				rt_task_stay_alive = 0;
+			}
+			back[i] = front[i];
+
 			if ((*highpass_150Hz_on) || (*highpass_400Hz_on))
 			{
 				spike_end_buff_control_cntr = 0;
