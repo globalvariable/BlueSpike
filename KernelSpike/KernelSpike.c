@@ -18,7 +18,7 @@
 
 void rt_handler(int t)
 {
-	int i, j, return_value;
+	int i, j, k, m, return_value;
 	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], daq_chan_num[MAX_NUM_OF_DAQ_CARD] ;
 	DaqMwaMap			*daq_mwa_map;
 	RecordingData			*recording_data;
@@ -85,28 +85,26 @@ void rt_handler(int t)
 			{
 				mwa = (*daq_mwa_map)[i][daq_chan_num[i]].mwa;
 				mwa_chan = (*daq_mwa_map)[i][daq_chan_num[i]].channel;	
-				if ((mwa == MAX_NUM_OF_MWA) || (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
+				if ((mwa != MAX_NUM_OF_MWA) || (mwa_chan != MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
 				{
-					(daq_chan_num[i])++;
-					if (daq_chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
-						daq_chan_num[i] = 0;	
-					continue;
-				}
-														
-				recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
+					recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
 
-				if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
-				{
-					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E ;
+					if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
+					{
+						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E ;
+					}
+					else
+					{
+						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
+					}
+	
+					(*recording_data_write_idx)++;
+					if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
+						(*recording_data_write_idx) = 0;
 				}
-				else
-				{
-					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
-				}
-
-				(*recording_data_write_idx)++;
-				if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
-					(*recording_data_write_idx) = 0;
+				(daq_chan_num[i])++;
+				if (daq_chan_num[i] == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD)
+					daq_chan_num[i] = 0;
 			}
 				
 			return_value = comedi_mark_buffer_read(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, num_byte[i]);
@@ -121,12 +119,12 @@ void rt_handler(int t)
 			{
 				spike_end_buff_control_cntr = 0;
 				spike_timestamp_buff_control_cntr = 0;	
-				for (i=0; i<MAX_NUM_OF_MWA; i++)
+				for (k=0; k<MAX_NUM_OF_MWA; k++)
 				{
-					for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+					for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
 					{
-						filter_recording_data(recording_data, &highpass_filtered_recording_data, filtered_recording_data, recording_data->buff_idx_write[i][j], i, j, highpass_150Hz_on, highpass_400Hz_on, lowpass_8KHz_on);
-						find_spike_end(spike_end, filtered_recording_data, i, j, &spike_end_buff_control_cntr );
+						filter_recording_data(recording_data, &highpass_filtered_recording_data, filtered_recording_data, recording_data->buff_idx_write[k][m], k, m, highpass_150Hz_on, highpass_400Hz_on, lowpass_8KHz_on);
+						find_spike_end(spike_end, filtered_recording_data, k, m, &spike_end_buff_control_cntr );
 					}
 				}
 				template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data, &spike_timestamp_buff_control_cntr);

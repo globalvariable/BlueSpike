@@ -257,14 +257,15 @@ gboolean timeout_callback(gpointer user_data)
 	handling_data_chan_buff = &(handling_data->recording_data_buff[display_mwa][display_mwa_chan]);
 		
 	start_idx = handling_data->buff_idx_write[display_mwa][display_mwa_chan] / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
-	
+
 	if (start_idx == 0)
 		 start_idx = RECORDING_DATA_BUFF_SIZE - NUM_OF_RAW_SAMPLE_TO_DISPLAY;    // read previous section
 	else
-		start_idx = start_idx - NUM_OF_RAW_SAMPLE_TO_DISPLAY;  // read previous section
+		start_idx = (start_idx*NUM_OF_RAW_SAMPLE_TO_DISPLAY) - NUM_OF_RAW_SAMPLE_TO_DISPLAY;  // read previous section
 			
 	if (start_idx != previous_start_idx_to_plot)   // Do not plot the same section if it is the same as the previous one due to high refresh rate (high timeout_callback frequency)
-	{	  
+	{	
+		printf ("start_idx = %d     write_idx = %d\n ", start_idx, handling_data->buff_idx_write[display_mwa][display_mwa_chan]);	
 		previous_start_idx_to_plot = start_idx;
 		if (!disp_paused)
 		{	
