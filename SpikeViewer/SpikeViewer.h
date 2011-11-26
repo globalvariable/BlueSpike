@@ -27,10 +27,13 @@
 #define SPIKE_MEM_TO_DISPLAY 30 
 
 #define NUM_OF_RAW_SAMPLE_TO_DISPLAY 4000		// Adjusted for 40000KHz sampling rate 
-#define RAW_DATA_DISP_DURATION_MS 100	
+#define RAW_DATA_DISP_DURATION_MS 100.0	
 
 
 // Variables
+
+GtkWidget *main_table;
+
 GtkWidget *databox_signal;
 GtkWidget *databox_spike_shape;
 
@@ -46,12 +49,8 @@ GtkWidget *threshold_button;
 GtkWidget *btn_filter_highpass_150Hz;
 GtkWidget *btn_filter_highpass_400Hz;
 GtkWidget *btn_filter_lowpass_8KHz;
-GtkWidget *filter_button;
-GtkWidget *highpass_400Hz_button;
-GtkWidget *lowpass_4th_button;
 
 int spike_end_buff_curr_idx;
-int GraphIdx;	
 
 GtkWidget *entryThreshold;
 
@@ -62,10 +61,7 @@ float *X_raw;
 float *Y_raw;
 int previous_start_idx_to_plot;
 
-float *X_spike;
-float *Y_spike;
 GPtrArray* Y_spikes_ptr;
-int Y_spikes_idx;
 
 int disp_paused;
 

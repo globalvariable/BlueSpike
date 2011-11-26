@@ -97,11 +97,11 @@ void rt_handler(int t)
 
 				if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
 				{
-					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) ;
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E ;
 				}
 				else
 				{
-					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E);
+					recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
 				}
 
 				(*recording_data_write_idx)++;
@@ -208,13 +208,13 @@ int __init xinit_module(void)
 void __exit xcleanup_module(void)
 {
 	int i;
+	stop_rt_timer();
+	rt_task_delete(&rt_task0);	
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
 		comedi_close(ni6070_comedi_dev[i]);
 	}
-	stop_rt_timer();
-	rt_task_delete(&rt_task0);
     	rtai_kfree(nam2num(SHARED_MEM_NAME));
 	return;
 }
