@@ -33,7 +33,6 @@ typedef struct __SharedMemStruct
 	TemplateMatchingData		template_matching_data;
 	KernelTaskCtrl				kernel_task_ctrl;
 	KernelTaskStat				kernel_task_stat;
-	bool					shared_mem_write_idle;
 } SharedMemStruct;
 
 SharedMemStruct *shared_memory;

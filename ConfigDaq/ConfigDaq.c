@@ -9,7 +9,7 @@ int main( int argc, char *argv[])
 		printf("rtai_malloc() failed (maybe /dev/rtai_shm is missing)!\n");
 		return -1;
    	}
-
+        printf("sizeof(SharedMemStruct) : %d SHARED_MEM_SIZE: %d\n", sizeof(SharedMemStruct), SHARED_MEM_SIZE);
 	gtk_init(&argc, &argv);
 	create_gui(); 	
 	gtk_main();
@@ -284,20 +284,17 @@ void map_channels_button_func(void)
 			printf ("WARNING: Configured as DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", daq_num, i, shared_memory->daq_mwa_map[daq_num][i].mwa, shared_memory->daq_mwa_map[daq_num][i].channel);
 		}
 		
-		shared_memory->shared_mem_write_idle = 0;
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) {}
-		
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }   // wait until rt_task_wait_period starts
 		// First delete ex mwa_daq_map
 		shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[daq_num][i].mwa][shared_memory->daq_mwa_map[daq_num][i].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
 		shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[daq_num][i].mwa][shared_memory->daq_mwa_map[daq_num][i].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;	
-		// Now map daq to mwa				
+		// Now map daq to mwa	
 		shared_memory->daq_mwa_map[daq_num][i].mwa = mwa_num;
 		shared_memory->daq_mwa_map[daq_num][i].channel = j;
 		// Now map mwa to daq
 		shared_memory->mwa_daq_map[mwa_num][j].daq_card = daq_num;
 		shared_memory->mwa_daq_map[mwa_num][j].daq_chan = i;	
-		
-		shared_memory->shared_mem_write_idle = 1;			
+
 		j++;  
 	}
 
@@ -433,20 +430,16 @@ void load_config_file_button_func(void)
 			mwa_channel = (int)atof(line);
 			if ((mwa_channel >= MAX_NUM_OF_CHAN_PER_MWA) || (mwa_channel < 0))  { printf("ERROR: Incompatible value at %d th line of config file\n", line_cntr);  fclose(fp); return;} 
 						
-			shared_memory->shared_mem_write_idle = 0;
-			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) {}				         
-
+			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }   // wait until rt_task_wait_period starts
 			// First delete mwa to daq mapping			
 			shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
 			shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
-			// Now map daq to mwa				
+			// Now map daq to mwa	
 			shared_memory->daq_mwa_map[i][j].mwa = mwa;
 			shared_memory->daq_mwa_map[i][j].channel = mwa_channel;
 			// Now map mwa to daq
 			shared_memory->mwa_daq_map[mwa][mwa_channel].daq_card = i;
 			shared_memory->mwa_daq_map[mwa][mwa_channel].daq_chan = j;				
-			
-			shared_memory->shared_mem_write_idle = 1;						
 		}
 	}
 	
@@ -499,6 +492,7 @@ void save_config_file_button_func(void)
 bool interrogate_mapping(void)
 {
 	int i, j, check = 0;
+	
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{	
 		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)

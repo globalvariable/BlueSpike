@@ -22,7 +22,6 @@ void rt_handler(int t)
 	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], daq_chan_num[MAX_NUM_OF_DAQ_CARD] ;
 	DaqMwaMap			*daq_mwa_map;
 	RecordingData			*recording_data;
-	RecordingData			highpass_filtered_recording_data;
 	RecordingData			*filtered_recording_data;
 	KernelTaskCtrl			*kernel_task_ctrl;
 	SpikeEnd				*spike_end;
@@ -31,7 +30,7 @@ void rt_handler(int t)
 	
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
-	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *shared_mem_write_idle, *kernel_task_idle; 
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
 	
 	int spike_end_buff_control_cntr, spike_timestamp_buff_control_cntr;
 
@@ -45,7 +44,6 @@ void rt_handler(int t)
 	spike_time_stamp= &shared_memory->spike_time_stamp;
 	template_matching_data = &shared_memory->template_matching_data;
 	kernel_task_ctrl = &shared_memory->kernel_task_ctrl;
-	shared_mem_write_idle = &shared_memory->shared_mem_write_idle;	
 		
 	highpass_150Hz_on = &kernel_task_ctrl->highpass_150Hz_on; 
 	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
@@ -64,10 +62,10 @@ void rt_handler(int t)
 	while (rt_task_stay_alive) 
 	{
 		rt_task_wait_period();
-		*kernel_task_idle = 0;
-		current_time_ns += rt_get_cpu_time_ns();
-		while  (!(*shared_mem_write_idle)) {}
 
+		current_time_ns += rt_get_cpu_time_ns();
+		
+		*kernel_task_idle = 0;
 		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 		{	
 			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
@@ -91,13 +89,13 @@ void rt_handler(int t)
 
 					if ((comedi_map_ptr[i]+back[i]+j) >= (comedi_map_ptr[i]+comedi_buff_size[i]))
 					{
-						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i])) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E ;
-					}
+						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = (*(sampl_t *)(comedi_map_ptr[i] + back[i] + j - comedi_buff_size[i]) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
+					}				
 					else
 					{
-						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = ((*(sampl_t *)(comedi_map_ptr[i] + back[i] + j)) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
+						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = (*(sampl_t *)(comedi_map_ptr[i] + back[i] + j) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
 					}
-	
+
 					(*recording_data_write_idx)++;
 					if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
 						(*recording_data_write_idx) = 0;
@@ -128,7 +126,7 @@ void rt_handler(int t)
 				{
 					for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
 					{
-						filter_recording_data(recording_data, &highpass_filtered_recording_data, filtered_recording_data, k, m, *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on);
+						filter_recording_data(recording_data, filtered_recording_data, k, m, *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on);
 //						find_spike_end(spike_end, filtered_recording_data, k, m, &spike_end_buff_control_cntr );
 					}
 				}
@@ -136,8 +134,9 @@ void rt_handler(int t)
 //				print_buffer_warning_and_errors(spike_end_buff_control_cntr, spike_timestamp_buff_control_cntr);
 			}
 		}
+		*kernel_task_idle = 1;		
 		previous_time_ns = current_time_ns;
-		*kernel_task_idle = 1;
+
 	}
 
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
@@ -181,7 +180,7 @@ int __init xinit_module(void)
 			shared_memory->mwa_daq_map[i][j].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
 		}
 	}
-	shared_memory->shared_mem_write_idle = 1;
+
 	shared_memory->kernel_task_ctrl.kernel_task_idle = 1;
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -194,8 +193,8 @@ int __init xinit_module(void)
 			printk("ERROR: Couldn' t comedi_open %dth device at %s\n", i, path_comedi);
 			return 0;
 		}
-		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &comedi_map_ptr[i]);
-		printk("%d th device comedi_map return: %d, ptr: %u\n", i, ret, (unsigned int)comedi_map_ptr[i]);
+		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &(comedi_map_ptr[i]));
+		printk("%d th device comedi_map return: %d, ptr: %d\n", i, ret, (int)(comedi_map_ptr[i]));
 		comedi_buff_size[i] = comedi_get_buffer_size(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
 		printk("buffer size of %dth device is %d\n", i, comedi_buff_size[i]);
 		ni6070_comedi_configure(i);
@@ -250,7 +249,7 @@ int ni6070_comedi_configure(int card_number)
 	ni6070_comedi_cmd[card_number].stop_src = TRIG_NONE;
 	ni6070_comedi_cmd[card_number].stop_arg = 0;
 
-	ni6070_comedi_cmd[card_number].chanlist = ni6070_comedi_chanlist[MAX_NUM_OF_DAQ_CARD];
+	ni6070_comedi_cmd[card_number].chanlist = ni6070_comedi_chanlist[card_number];
 	ni6070_comedi_cmd[card_number].chanlist_len = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
 
 	for (i = 0 ; i < MAX_NUM_OF_CHANNEL_PER_DAQ_CARD ; i++)
@@ -294,7 +293,7 @@ void print_cmd(int card_number)
 }
 
 
-void filter_recording_data( RecordingData *recording_data, RecordingData *highpass_filtered_recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on)
+void filter_recording_data( RecordingData *recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on)
 {
 	int idx, start_idx, end_idx;
 	
@@ -304,18 +303,17 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *highpa
 	
 	recording_data_chan_buff = &(recording_data->recording_data_buff[mwa][mwa_chan]);
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][mwa_chan]);
-	highpass_filtered_recording_data_chan_buff = &(highpass_filtered_recording_data->recording_data_buff[mwa][mwa_chan]);	
+	highpass_filtered_recording_data_chan_buff = &(highpass_filtered_recording_data.recording_data_buff[mwa][mwa_chan]);	
 	
 	start_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];	// When filter is turned on SpikeViewer sets the filtered_recording_data->buff_idx_write[mwa][mwa_chan] = recording_data->buff_idx_write[mwa][mwa_chan] for all channel
 														// Otherwise this might try to filter all buffer which might lead to timeout for data acquisition
 	end_idx = recording_data->buff_idx_write[mwa][mwa_chan];													
-														
+	idx = start_idx;		
+												
 	if ((lowpass_8KHz_on) && (highpass_400Hz_on))	 
 	{
-		for (idx=start_idx; idx < end_idx; idx++)
+		while (idx != end_idx)
 		{
-			if (idx ==	RECORDING_DATA_BUFF_SIZE)
-				idx = 0;	
 			if (idx == 0)
 			{
 				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.921170993499942 * (*recording_data_chan_buff)[0]) +
@@ -427,14 +425,15 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *highpa
 														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[idx-3]) -
 														(0.030118875043169 * (*filtered_recording_data_chan_buff)[idx-4]); 						
 			}
+			idx++;	
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;			
 		}
 	}	
 	else if ((lowpass_8KHz_on) && (highpass_150Hz_on))
 	{
-		for (idx=start_idx; idx < end_idx; idx++)
+		while (idx != end_idx)
 		{
-			if (idx ==	RECORDING_DATA_BUFF_SIZE)
-				idx = 0;
 			if (idx == 0)
 			{
 				(*highpass_filtered_recording_data_chan_buff)[idx]=	(0.969683064082198 * (*recording_data_chan_buff)[0]) +
@@ -544,15 +543,16 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *highpa
 														(0.679978526916300 * (*filtered_recording_data_chan_buff)[idx-2]) -
 														(-0.182675697753033 * (*filtered_recording_data_chan_buff)[idx-3]) -
 														(0.030118875043169 * (*filtered_recording_data_chan_buff)[idx-4]); 
-			}					
+			}
+			idx++;	
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;								
 		}
 	}	
 	else if (highpass_400Hz_on)	 
 	{
-		for (idx=start_idx; idx < end_idx; idx++)
+		while (idx != end_idx)
 		{
-			if (idx ==	RECORDING_DATA_BUFF_SIZE)
-				idx = 0;	
 			if (idx == 0)
 			{
 				(*filtered_recording_data_chan_buff)[idx]=			(0.921170993499942 * (*recording_data_chan_buff)[0]) +
@@ -612,15 +612,16 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *highpa
 														(5.520819136622230 * (*filtered_recording_data_chan_buff)[idx-2]) -
 														(-3.533535219463017 * (*filtered_recording_data_chan_buff)[idx-3]) -
 														(0.848555999266478 * (*filtered_recording_data_chan_buff)[idx-4]); 						
-			}						
+			}
+			idx++;	
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;									
 		}	
 	}
 	else if (highpass_150Hz_on)	 
 	{
-		for (idx=start_idx; idx < end_idx; idx++)
+		while (idx != end_idx)
 		{
-			if (idx ==	RECORDING_DATA_BUFF_SIZE)
-				idx = 0;
 			if (idx == 0)
 			{
 				(*filtered_recording_data_chan_buff)[idx]=			(0.969683064082198 * (*recording_data_chan_buff)[0]) +
@@ -680,7 +681,10 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *highpa
 														(5.817179417349658 * (*filtered_recording_data_chan_buff)[idx-2]) -
 														(-3.819034001378268 * (*filtered_recording_data_chan_buff)[idx-3]) -
 														(0.940285244767841 * (*filtered_recording_data_chan_buff)[idx-4]);			
-			}					
+			}
+			idx++;	
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;
 		}
 	}
 	filtered_recording_data->buff_idx_write[mwa][mwa_chan] = end_idx;
@@ -706,13 +710,11 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 	end_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
 	in_spike = &(spike_end->in_spike[mwa][mwa_chan]);
 
-	
+	idx = start_idx;
 
-	for (idx=start_idx; idx < end_idx; idx++)
+	while (idx != end_idx)
 	{	
 		previous_acquisition_time_cntr++;
-		if (idx ==	RECORDING_DATA_BUFF_SIZE)
-			idx = 0;
 		
 		if (((*filtered_recording_data_chan_buff)[idx] <  amplitude_thres) && (!(*in_spike)))
 		{
@@ -761,6 +763,9 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 				spike_end->buff_idx_write = 0;
 			(*control_cntr)++;
 		}
+		idx ++;
+		if (idx ==	RECORDING_DATA_BUFF_SIZE)
+			idx = 0;
 	}
 	spike_end->search_idx_start[mwa][mwa_chan] = end_idx;
 }
