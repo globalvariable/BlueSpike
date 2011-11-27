@@ -40,4 +40,3 @@ void interrogate_mapping_button_func(void);
 void load_config_file_button_func(void); 
 void save_config_file_button_func(void); 
 bool  interrogate_mapping(void);
-void convert_daq_mwa_map_to_mwa_daq_map(void);

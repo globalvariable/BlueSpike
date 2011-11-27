@@ -39,7 +39,7 @@ int comedi_buff_size[MAX_NUM_OF_DAQ_CARD];
 void rt_handler(int t);
 int ni6070_comedi_configure(int card_number);
 void print_cmd(int card_number);
-void filter_recording_data( RecordingData *recording_data, RecordingData *highpass_filtered_recording_data, RecordingData *filtered_recording_data, int end_idx, int mwa, int mwa_chan, bool *highpass_150Hz_on, bool *highpass_400Hz_on, bool *lowpass_8KHz_on);
+void filter_recording_data( RecordingData *recording_data, RecordingData *highpass_filtered_recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on);
 void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data, int mwa, int mwa_chan, int *control_cntr);
 void template_matching(RecordingData *filtered_recording_data, SpikeEnd *spike_end, SpikeTimeStamp *spike_time_stamp, TemplateMatchingData *template_matching_data, int *control_cntr);
 bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
