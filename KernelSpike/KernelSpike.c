@@ -969,10 +969,10 @@ void print_buffer_warning_and_errors(void)
 	}  
 	else if (SPIKE_TIMESTAMP_BUFF_SIZE <= spike_timestamp_buff_control_cntr)
 	{
-		printk("--------------------------------------------------------\n");
-		printk("----------------   ERROR  !!!  -------------------\n");
-		printk("---- Spike End Buffer is getting full ------\n");
-		printk("---- Spike End Buffer is getting full ------\n");				
+		printk("---------------------------------------------------------\n");
+		printk("----------------   ERROR  !!!  --------------------\n");
+		printk("---- Spike Timestamp Buffer is full -------\n");
+		printk("---- Spike Timestamp Buffer is full -------\n");				
 		printk("--Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
 		printk("-------Spike End buffer size  is %d--------\n", SPIKE_TIMESTAMP_BUFF_SIZE);
 		printk("--------------------------------------------------------\n");
