@@ -49,8 +49,9 @@ GtkWidget *threshold_button;
 GtkWidget *btn_filter_highpass_150Hz;
 GtkWidget *btn_filter_highpass_400Hz;
 GtkWidget *btn_filter_lowpass_8KHz;
+GtkWidget *btn_print_spike_end_buff;
 
-int spike_end_buff_curr_idx;
+int spike_end_buff_read_idx;
 
 GtkWidget *entryThreshold;
 
@@ -62,8 +63,10 @@ float *Y_raw;
 int previous_start_idx_to_plot;
 
 GPtrArray* Y_spikes_ptr;
+int Y_spikes_idx;
 
 int disp_paused;
+int print_spike_end_buff;
 
 GdkColor color_bg_signal;
 GdkColor color_signal;
@@ -82,5 +85,6 @@ gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box);
 gboolean combo_mwa_func (GtkDatabox * box);
 gboolean combo_chan_func (GtkDatabox * box);
 gboolean pause_button_func (GtkDatabox * box);
+gboolean print_spike_end_buff_button_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);

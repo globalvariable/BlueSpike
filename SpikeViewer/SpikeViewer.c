@@ -56,6 +56,8 @@ void create_gui(void)
 	
 	display_mwa = 0;
 	display_mwa_chan = 0;
+	disp_paused = 0;
+	print_spike_end_buff = 0;
 	
 	int i;
 	X_raw = g_new0 (float, NUM_OF_RAW_SAMPLE_TO_DISPLAY);
@@ -72,6 +74,7 @@ void create_gui(void)
 	{
 		X_spike[i] = (float)i;
 	}
+	Y_spikes_idx = 0;
 	Y_spikes_ptr = g_ptr_array_new();
 	for (i=0;i<SPIKE_MEM_TO_DISPLAY;i++)
 	{
@@ -155,14 +158,20 @@ void create_gui(void)
    	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE,0);
         
-	pause_button = gtk_button_new_with_label("Pause");
+	pause_button = gtk_button_new_with_label("Pause Display");
 	gtk_box_pack_start (GTK_BOX (hbox), pause_button, TRUE, TRUE, 0);
 
-   	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
-
-	clear_button = gtk_button_new_with_label("Clear Screen");
+	clear_button = gtk_button_new_with_label("Clear Spike Screen");
 	gtk_box_pack_start (GTK_BOX (hbox), clear_button, TRUE, TRUE, 0);
+
+   	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
+  	
+    	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0); 
+  	
+ 	btn_print_spike_end_buff = gtk_button_new_with_label("Enable Spikes Log Printing");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_print_spike_end_buff, TRUE, TRUE, 0); 		
 
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
@@ -218,7 +227,8 @@ void create_gui(void)
 
 
  	gtk_widget_show_all(window);
-	spike_end_buff_curr_idx = shared_memory->spike_end.buff_idx_write;
+ 	
+	spike_end_buff_read_idx = shared_memory->spike_end.buff_idx_write;
 
   	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 	g_signal_connect(G_OBJECT(btn_filter_highpass_150Hz), "clicked", G_CALLBACK(filter_highpass_150Hz_button_func), NULL);
@@ -229,6 +239,7 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(pause_button), "clicked", G_CALLBACK(pause_button_func), NULL);
 	g_signal_connect(G_OBJECT(threshold_button), "clicked", G_CALLBACK(threshold_but_func), NULL);
 	g_signal_connect(G_OBJECT(clear_button), "clicked", G_CALLBACK(clear_screen_but_func), NULL);
+	g_signal_connect(G_OBJECT(btn_print_spike_end_buff), "clicked", G_CALLBACK(print_spike_end_buff_button_func), NULL);	
 
 	g_timeout_add(40, timeout_callback, box_signal);
 
@@ -239,10 +250,14 @@ void create_gui(void)
 gboolean timeout_callback(gpointer user_data) 
 {
 	int start_idx, i;
-//	float *Y_temp_spike;
+	int spike_end_start_idx, spike_end_end_idx, idx;
+	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx, spike_end_buff_peak_time;
+	int spike_idx;
+	float *Y_temp_spike;
 	RecordingData	*handling_data;
 	RecordingDataChanBuff	*handling_data_chan_buff;
-
+	SpikeEnd *spike_end;
+	
 	if ((shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
 		return TRUE;
 	
@@ -255,7 +270,8 @@ gboolean timeout_callback(gpointer user_data)
 		handling_data = &shared_memory->recording_data;
 	}
 	handling_data_chan_buff = &(handling_data->recording_data_buff[display_mwa][display_mwa_chan]);
-		
+	spike_end = &shared_memory->spike_end;			
+	
 	start_idx = handling_data->buff_idx_write[display_mwa][display_mwa_chan] / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
 
 	if (start_idx == 0)
@@ -263,26 +279,48 @@ gboolean timeout_callback(gpointer user_data)
 	else
 		start_idx = (start_idx*NUM_OF_RAW_SAMPLE_TO_DISPLAY) - NUM_OF_RAW_SAMPLE_TO_DISPLAY;  // read previous section
 			
-	if (start_idx != previous_start_idx_to_plot)   // Do not plot the same section if it is the same as the previous one due to high refresh rate (high timeout_callback frequency)
+	if ((start_idx != previous_start_idx_to_plot) && (!disp_paused))  // Do not plot the same section if it is the same as the previous one due to high refresh rate (high timeout_callback frequency)
 	{	
-//		printf ("start_idx = %d     write_idx = %d\n ", start_idx, handling_data->buff_idx_write[display_mwa][display_mwa_chan]);	
 		previous_start_idx_to_plot = start_idx;
-		if (!disp_paused)
-		{	
-			for (i = 0; i < NUM_OF_RAW_SAMPLE_TO_DISPLAY; i++)
+		for (i = 0; i < NUM_OF_RAW_SAMPLE_TO_DISPLAY; i++)
+		{
+			Y_raw[i] = (*handling_data_chan_buff)[i+start_idx];
+		}		
+		gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV, LOWEST_VOLTAGE_MV);	
+	}
+	
+	spike_end_start_idx = spike_end_buff_read_idx;
+	spike_end_end_idx = shared_memory->spike_end.buff_idx_write;
+	if ((shared_memory->kernel_task_ctrl.highpass_150Hz_on || shared_memory->kernel_task_ctrl.highpass_400Hz_on) && (!disp_paused))
+	{
+		while (idx != spike_end_end_idx)
+		{
+			spike_end_buff_recording_data_idx = spike_end->spike_end_buff[idx].recording_data_buff_idx;
+			spike_end_buff_mwa = spike_end->spike_end_buff[idx].mwa;
+			spike_end_buff_chan = spike_end->spike_end_buff[idx].chan;
+			spike_end_buff_peak_time = spike_end->spike_end_buff[idx].peak_time;			
+			spike_idx = spike_end_buff_recording_data_idx;
+			if ((spike_end_buff_mwa == display_mwa) && (spike_end_buff_chan == display_mwa_chan))
 			{
-				Y_raw[i] = (*handling_data_chan_buff)[i+start_idx];
-			}		
-			gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV, LOWEST_VOLTAGE_MV);	
-						
-			if (shared_memory->kernel_task_ctrl.highpass_150Hz_on || shared_memory->kernel_task_ctrl.highpass_400Hz_on)
-			{
-				// Implement: Handle visualization of detected spikes
-			}
-
+				Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
+				Y_spikes_idx ++;
+				if (Y_spikes_idx == SPIKE_MEM_TO_DISPLAY)
+					Y_spikes_idx = 0;
+				for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+				{
+					Y_temp_spike[i] = (*handling_data_chan_buff)[spike_idx];
+					spike_idx--;
+					if (spike_idx < 0)
+						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				}
+				gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+			}	
+			idx++;	
+			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+				idx = 0;	
 		}
 	}
-
+	spike_end_buff_read_idx = shared_memory->spike_end.buff_idx_write;
 	return TRUE;  
 
 }
@@ -423,6 +461,23 @@ gboolean pause_button_func (GtkDatabox * box)
 	{
 		disp_paused = 1;
 		gtk_button_set_label (GTK_BUTTON(pause_button),"Resume");
+	}	
+	return TRUE;	
+}
+
+gboolean print_spike_end_buff_button_func (GtkDatabox * box)
+{
+	if (print_spike_end_buff)
+	{
+		print_spike_end_buff = 0;
+		gtk_button_set_label (GTK_BUTTON(btn_print_spike_end_buff),"Enable Spikes Log Printing");
+		printf("SpikeViewer: Spike End Buffer log printing disabled\n");
+	}
+	else
+	{
+		print_spike_end_buff = 1;
+		gtk_button_set_label (GTK_BUTTON(btn_print_spike_end_buff),"Disable Spikes Log Printing");
+		printf("SpikeViewer: Spike End Buffer log printing enabled\n");
 	}	
 	return TRUE;	
 }

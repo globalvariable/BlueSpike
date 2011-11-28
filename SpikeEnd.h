@@ -10,7 +10,7 @@
 
 typedef struct __SpikeEndItem
 {
-	int 			idx;    // index of SpikeEndData in filtered recording data buffer 
+	int 			recording_data_buff_idx;    // index of SpikeEndData in filtered recording data buffer 
 	int 			mwa;
 	int 			chan;
 	TimeStamp	peak_time;
