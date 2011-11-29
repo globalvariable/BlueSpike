@@ -26,7 +26,6 @@
 RT_TASK rt_task0;
 
 TimeStamp current_time_ns;
-TimeStamp previous_time_ns;
 
 int spike_end_buff_control_cntr;     // to check if the buffer gets full in one rt task period
 int spike_timestamp_buff_control_cntr;    // to check if the buffer gets full in one rt task period

@@ -241,7 +241,7 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(clear_button), "clicked", G_CALLBACK(clear_screen_but_func), NULL);
 	g_signal_connect(G_OBJECT(btn_print_spike_end_buff), "clicked", G_CALLBACK(print_spike_end_buff_button_func), NULL);	
 
-	g_timeout_add(40, timeout_callback, box_signal);
+	g_timeout_add(50, timeout_callback, box_signal);
 
 
 	return;
@@ -250,8 +250,9 @@ void create_gui(void)
 gboolean timeout_callback(gpointer user_data) 
 {
 	int start_idx, i;
-	int spike_end_start_idx, spike_end_end_idx, idx;
-	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx, spike_end_buff_peak_time;
+	int spike_end_end_idx, idx;
+	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx; 
+	long long unsigned int spike_end_buff_peak_time;
 	int spike_idx;
 	float *Y_temp_spike;
 	RecordingData	*handling_data;
@@ -270,8 +271,8 @@ gboolean timeout_callback(gpointer user_data)
 		handling_data = &shared_memory->recording_data;
 	}
 	handling_data_chan_buff = &(handling_data->recording_data_buff[display_mwa][display_mwa_chan]);
-	spike_end = &shared_memory->spike_end;			
-	
+	spike_end = &shared_memory->spike_end;	
+			
 	start_idx = handling_data->buff_idx_write[display_mwa][display_mwa_chan] / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
 
 	if (start_idx == 0)
@@ -289,7 +290,7 @@ gboolean timeout_callback(gpointer user_data)
 		gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
 	}
 	
-	spike_end_start_idx = spike_end_buff_read_idx;
+	idx = spike_end_buff_read_idx;
 	spike_end_end_idx = shared_memory->spike_end.buff_idx_write;
 	if ((shared_memory->kernel_task_ctrl.highpass_150Hz_on || shared_memory->kernel_task_ctrl.highpass_400Hz_on) && (!disp_paused))
 	{
@@ -314,13 +315,15 @@ gboolean timeout_callback(gpointer user_data)
 						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
 				}
 				gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
-			}	
+			}
+			if (print_spike_end_buff)
+				printf ("%d %d %llu %d\n", spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_peak_time, spike_end_buff_recording_data_idx);	
 			idx++;	
-			if (idx ==	RECORDING_DATA_BUFF_SIZE)
+			if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
 				idx = 0;	
 		}
 	}
-	spike_end_buff_read_idx = shared_memory->spike_end.buff_idx_write;
+	spike_end_buff_read_idx = spike_end_end_idx;
 	return TRUE;  
 
 }
@@ -478,15 +481,29 @@ gboolean print_spike_end_buff_button_func (GtkDatabox * box)
 		print_spike_end_buff = 1;
 		gtk_button_set_label (GTK_BUTTON(btn_print_spike_end_buff),"Disable Spikes Log Printing");
 		printf("SpikeViewer: Spike End Buffer log printing enabled\n");
+		printf ("Data Format:  [mwa] [channel] [spike_peak_time] [spike_end_index_in_recording_data_buffer]");	
 	}	
 	return TRUE;	
 }
 
 gboolean threshold_but_func (GtkDatabox * box)
 {
-	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }										
-	shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]=atof(gtk_entry_get_text(GTK_ENTRY(entryThreshold)));
-	return TRUE;	
+	float threshold = atof(gtk_entry_get_text(GTK_ENTRY(entryThreshold)));
+	if (threshold <= 0.0)
+	{
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }
+		shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]=threshold;
+		if (threshold == 0.0)
+		{
+			printf("Spike detection is disable for this channel by applying 0.0 Volts as threshold\n");		
+		}
+	}
+	else
+	{
+		printf("WARNING: Threshold cannot be greater than 0.0\n");
+		printf("WARNING: Submit Threshold cancelled\n");		
+	}
+	return TRUE;
 }
 
 gboolean clear_screen_but_func (GtkDatabox * box)

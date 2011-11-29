@@ -32,8 +32,11 @@ void rt_handler(int t)
 	int mwa, mwa_chan;
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
 	
-	current_time_ns = 0;
-	previous_time_ns = 0;
+	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
+	int curr_time ;		// local_time  unsigned int
+	 
+	current_time_ns = 0;		// global time  long long unsigned int  // TimeStamp	
+	
 	spike_end_buff_control_cntr = 0; 
 	spike_timestamp_buff_control_cntr = 0;	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
@@ -61,8 +64,10 @@ void rt_handler(int t)
 	while (rt_task_stay_alive) 
 	{
 		rt_task_wait_period();
-
-		current_time_ns += rt_get_cpu_time_ns();
+		
+		curr_time = rt_get_cpu_time_ns();
+		current_time_ns += (curr_time - prev_time);
+		prev_time = curr_time;
 		
 		*kernel_task_idle = 0;
 		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
@@ -134,8 +139,6 @@ void rt_handler(int t)
 			}
 		}
 		*kernel_task_idle = 1;		
-		previous_time_ns = current_time_ns;
-
 	}
 
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
@@ -756,8 +759,10 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 			spike_end->spike_end_buff[spike_end->buff_idx_write].recording_data_buff_idx = spike_end_idx;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].mwa = mwa;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].chan = mwa_chan;
-			spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time = previous_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
-			spike_end->buff_idx_write++;
+			spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time = current_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
+			if ((spike_end->spike_end_buff[spike_end->buff_idx_write].recording_data_buff_idx == 0) && (spike_end->spike_end_buff[spike_end->buff_idx_write].mwa == 0) && (spike_end->spike_end_buff[spike_end->buff_idx_write].chan == 0) && (spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time == 0))
+				printk("N\n");
+			(spike_end->buff_idx_write)++;
 			if (spike_end->buff_idx_write == SPIKE_END_DATA_BUFF_SIZE)
 				spike_end->buff_idx_write = 0;
 			spike_end_buff_control_cntr++;		// to check if the buffer gets full in one rt task period
