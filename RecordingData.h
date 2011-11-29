@@ -10,7 +10,7 @@
 #define RECORDING_DATA_BUFF_SIZE_3 39997
 #define RECORDING_DATA_BUFF_SIZE_4 39996
 
-typedef float RecordingDataChanBuff[RECORDING_DATA_BUFF_SIZE];
+typedef double RecordingDataChanBuff[RECORDING_DATA_BUFF_SIZE];
 
 typedef RecordingDataChanBuff RecordingDataBuff[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 

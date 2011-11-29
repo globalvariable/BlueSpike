@@ -286,7 +286,7 @@ gboolean timeout_callback(gpointer user_data)
 		{
 			Y_raw[i] = (*handling_data_chan_buff)[i+start_idx];
 		}		
-		gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV, LOWEST_VOLTAGE_MV);	
+		gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
 	}
 	
 	spike_end_start_idx = spike_end_buff_read_idx;
