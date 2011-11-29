@@ -143,7 +143,7 @@ void create_gui(void)
         gtk_box_pack_start(GTK_BOX(hbox),entryThreshold, FALSE,FALSE,0);
 
 	char thres[20];
-	sprintf(thres, "%.0f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
+	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);
 
     	hbox = gtk_hbox_new(FALSE, 0);
@@ -415,6 +415,7 @@ gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box)
 gboolean combo_mwa_func (GtkDatabox * box)
 {
 	int idx;
+	char thres[20];
 	idx = gtk_combo_box_get_active (GTK_COMBO_BOX(combo_mwa));
 	if ((idx < 0) || (idx >= MAX_NUM_OF_MWA))
 	{
@@ -429,12 +430,18 @@ gboolean combo_mwa_func (GtkDatabox * box)
 		printf("SpikeViewer:\n");	
 		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
 		printf("ERROR: No data will be plotted.\n");
-	}	
+	}
+
+	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
+	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
+	clear_spike_screen();
+	clear_raw_data_screen();		
 	return TRUE;	
 }
 gboolean combo_chan_func (GtkDatabox * box)
 {
 	int idx;
+	char thres[20];	
 	idx = gtk_combo_box_get_active (GTK_COMBO_BOX(combo_chan));
 	if ((idx < 0) || (idx >= MAX_NUM_OF_CHAN_PER_MWA))
 	{
@@ -450,6 +457,10 @@ gboolean combo_chan_func (GtkDatabox * box)
 		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
 		printf("ERROR: No data will be plotted.\n");
 	}	
+	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
+	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
+	clear_spike_screen();
+	clear_raw_data_screen();		
 	return TRUE;	
 }
 
@@ -508,6 +519,13 @@ gboolean threshold_but_func (GtkDatabox * box)
 
 gboolean clear_screen_but_func (GtkDatabox * box)
 {
+	clear_spike_screen();
+	clear_raw_data_screen();
+	return TRUE;	
+}
+
+void clear_spike_screen(void)
+{
 	float *Y_local;
 	int i,j;
 
@@ -519,10 +537,16 @@ gboolean clear_screen_but_func (GtkDatabox * box)
 			Y_local[j] = 0;
 		}
 	}
-
-	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE, +2200, -2200);	
-
-	return TRUE;	
+	gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
 }
 
+void clear_raw_data_screen(void)
+{
+	int i;
 
+	for (i = 0; i < NUM_OF_RAW_SAMPLE_TO_DISPLAY; i++)
+	{
+		Y_raw[i] = 0;
+	}		
+	gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+}

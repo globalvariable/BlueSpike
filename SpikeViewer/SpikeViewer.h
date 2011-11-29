@@ -88,3 +88,5 @@ gboolean pause_button_func (GtkDatabox * box);
 gboolean print_spike_end_buff_button_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
+void clear_spike_screen(void);
+void clear_raw_data_screen(void);
