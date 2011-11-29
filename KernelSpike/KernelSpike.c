@@ -760,8 +760,6 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 			spike_end->spike_end_buff[spike_end->buff_idx_write].mwa = mwa;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].chan = mwa_chan;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time = current_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
-			if ((spike_end->spike_end_buff[spike_end->buff_idx_write].recording_data_buff_idx == 0) && (spike_end->spike_end_buff[spike_end->buff_idx_write].mwa == 0) && (spike_end->spike_end_buff[spike_end->buff_idx_write].chan == 0) && (spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time == 0))
-				printk("N\n");
 			(spike_end->buff_idx_write)++;
 			if (spike_end->buff_idx_write == SPIKE_END_DATA_BUFF_SIZE)
 				spike_end->buff_idx_write = 0;
