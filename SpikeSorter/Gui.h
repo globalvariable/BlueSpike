@@ -99,12 +99,8 @@ int front, back, size;
 float *X;
 float *Y;
 
-float *X_axis;
-float *Y_all_spike;
-float *Y_spike_0;
-float *Y_spike_1;
-float *Y_spike_2;
-float *Y_spike_nonsorted;
+
+
 
 float *Y_spike_0_template;
 float *Y_spike_1_template;
@@ -129,13 +125,6 @@ float x_upper_1, x_lower_1, y_upper_1, y_lower_1;
 float x_upper_2, x_lower_2, y_upper_2, y_lower_2; 
 int rect_switch;
 
-GdkColor color_bg;
-GdkColor color_all_spike;
-GdkColor color_spike_0;
-GdkColor color_spike_1;
-GdkColor color_spike_2;
-GdkColor color_spike_nonsorted;
-GdkColor color_spike_template;
 
 // Functions
 void create_gui(void);

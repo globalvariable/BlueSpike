@@ -20,33 +20,6 @@
 void create_gui(void)
 {
 
-	color_bg.red = 0;
-	color_bg.green = 0;
-	color_bg.blue = 0;
-
-	color_all_spike.red = 65535;
-	color_all_spike.green = 65535;
-	color_all_spike.blue = 65535;
-
-	color_spike_0.red = 0;
-	color_spike_0.green = 32768;
-	color_spike_0.blue = 65535;
-
-	color_spike_1.red = 65535;
-	color_spike_1.green = 0;
-	color_spike_1.blue = 0;
-
-	color_spike_2.red = 65535;
-	color_spike_2.green = 65535;
-	color_spike_2.blue = 0;
-
-	color_spike_nonsorted.red = 65535;
-	color_spike_nonsorted.green = 65535;
-	color_spike_nonsorted.blue = 65535;
-
-	color_spike_template.red = 65535;
-	color_spike_template.green = 65535;
-	color_spike_template.blue = 65535;
 
 	disp_paused = 0;
 	spike_filter_mode = 0;

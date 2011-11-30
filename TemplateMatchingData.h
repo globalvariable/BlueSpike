@@ -6,7 +6,7 @@
 
 #include <stdbool.h>
 
-#define MAX_NUM_OF_UNIT_PER_CHAN 3
+#define MAX_NUM_OF_UNIT_PER_CHAN 4
 #define NUM_OF_SAMP_PER_SPIKE 30
 
 typedef struct __TemplateMatchingData
