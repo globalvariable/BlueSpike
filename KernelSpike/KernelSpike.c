@@ -30,7 +30,7 @@ void rt_handler(int t)
 	
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
-	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *spike_sorting_on ,*kernel_task_idle; 
 	
 	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
 	int curr_time ;		// local_time  unsigned int
@@ -51,7 +51,8 @@ void rt_handler(int t)
 	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
 	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;
 	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;	
-
+	spike_sorting_on = &kernel_task_ctrl->spike_sorting_on;
+	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		front[i] = 0;
@@ -135,10 +136,13 @@ void rt_handler(int t)
 					find_spike_end(spike_end, filtered_recording_data, k, m);
 				}
 			}
-			template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
+			if (spike_sorting_on)
+			{
+				template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
+			}
 		}
-
 		print_buffer_warning_and_errors();		
+
 		//save index for next use
 		for (k=0; k<MAX_NUM_OF_MWA; k++)
 		{
