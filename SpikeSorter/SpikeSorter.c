@@ -91,6 +91,9 @@ void create_gui(void)
 		}
 	}	
 
+	disp_mwa = 0;
+	disp_chan = 0;
+	disp_unit = 0;
 
 	GtkWidget *window;
 	GtkWidget *hbox, *vbox, *lbl;
@@ -161,8 +164,13 @@ void create_gui(void)
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
   	
-  	btn_sorting_on_off = gtk_button_new_with_label("Sorting: OFF");
+  	btn_sorting_on_off = gtk_button_new_with_label("Spike Sorting: OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_sorting_on_off, TRUE, TRUE, 0);
+	
+	if (shared_memory->kernel_task_ctrl.spike_sorting_on)
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_sorting_on_off),"Spike Sorting: ON");
+	}	
  
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 
@@ -206,9 +214,19 @@ void create_gui(void)
   	
   	btn_unit_sorting_on_off = gtk_button_new_with_label("Unit Sorting: OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_unit_sorting_on_off, TRUE, TRUE, 0);
+
+	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
+	}	
 	
   	btn_include_unit_on_off = gtk_button_new_with_label("Include Unit: OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_include_unit_on_off, TRUE, TRUE, 0);	
+	
+	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Include Unit: ON");
+	}		
 	
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 
@@ -237,10 +255,10 @@ void create_gui(void)
         entry_probability_thres  = gtk_entry_new();
         gtk_box_pack_start(GTK_BOX(hbox),entry_probability_thres , FALSE,FALSE,0);
 
-/*	char thres[20];
-	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
-	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres); 	
- */ 	
+	char thres[40];
+	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
+	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres); 	
+ 	
   	btn_submit_probability_thres = gtk_button_new_with_label("Submit Probabilty Threshold");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_submit_probability_thres, TRUE, TRUE, 0);			
 

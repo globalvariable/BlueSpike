@@ -76,7 +76,9 @@ GtkWidget *btn_select_template_file_directory_to_save;
 GtkWidget *entry_template_file_name;
 GtkWidget *btn_save_template_file;
 
-
+int disp_mwa;
+int disp_chan;
+int disp_unit;
 
 void create_gui(void);
 void combo_mwa_func (void);
