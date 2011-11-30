@@ -135,10 +135,10 @@ void rt_handler(int t)
 					find_spike_end(spike_end, filtered_recording_data, k, m);
 				}
 			}
-//			template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
-			print_buffer_warning_and_errors();
+			template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
 		}
-		
+
+		print_buffer_warning_and_errors();		
 		//save index for next use
 		for (k=0; k<MAX_NUM_OF_MWA; k++)
 		{
@@ -844,10 +844,10 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 			for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 			{
 				{
-					if (spike_end_idx_in_filtered_recording < i)
-						diff[unit_num][i] = ((double)(*filtered_recording_data_chan_buff)[spike_end_idx_in_filtered_recording-i+RECORDING_DATA_BUFF_SIZE])-unit_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+					if (spike_end_idx_in_filtered_recording < i)   //  spike_end_idx_in_filtered_recording - i  < 0
+						diff[unit_num][i] = (*filtered_recording_data_chan_buff)[spike_end_idx_in_filtered_recording-i+RECORDING_DATA_BUFF_SIZE] - unit_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 					else
-						diff[unit_num][i] = ((double)(*filtered_recording_data_chan_buff)[spike_end_idx_in_filtered_recording-i])-unit_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+						diff[unit_num][i] = (*filtered_recording_data_chan_buff)[spike_end_idx_in_filtered_recording-i] - unit_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 				}
 			}
 			for (i=0; i <NUM_OF_SAMP_PER_SPIKE;i++)
@@ -867,6 +867,7 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 			}
 			exponent[unit_num] = exp((-0.5)*g_x[unit_num]);
 			probabl[unit_num] = (1.06488319787324016356e-12/unit_data->sqrt_det_S)*exponent[unit_num];       //   ( 1/ (   ((2*pi)^(d/2)) * (det_S^(1/2)) ) * exp( (-1/2) * (x-u)' * (S^ (-1)) - (x-u) )   d= 30
+			probabl[unit_num] = (probabl[unit_num] + 1) - 1;    // to check DBL_EPSILON 
 			g_x[unit_num] = 0 - (unit_data->log_det_S) - (g_x[unit_num]);		
 		}
 	}
@@ -876,7 +877,7 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 	for (i=0; i<MAX_NUM_OF_UNIT_PER_CHAN; i++)
 	{
 		unit_data =  template_matching_data[mwa][mwa_chan][unit_num];
- 		if ((g_x[i] > greatest) && (unit_data->sorting_on) && unit_data->probability_thres)
+ 		if ((g_x[i] > greatest) && (unit_data->sorting_on) && (probabl[i] > unit_data->probability_thres))
  		{
 			greatest = g_x[i];
 			greatest_idx = i;
