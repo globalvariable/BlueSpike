@@ -8,13 +8,14 @@
 
 #define MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE 10000
 
-typedef double MovingObjLocation;
+
 
 typedef struct __MovingObjEventTimeStampItem
 {
 	TimeStamp 			time;
-	MovingObjLocation		Location[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];             // Location data for each component of moving object 
+	MovingObjSpeed		Speed[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];             // Location data for each component of moving object 
 	MovingObjDirection		Direction[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];	     // Current direction of each component of moving object 
+	MovingObjLocation		Location[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];  
 } MovingObjEventTimeStampItem;
 
 typedef MovingObjEventTimeStampItem	MovingObjEventTimeStampBuff[MAX_NUM_OF_MOVING_OBJECTS][MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE];

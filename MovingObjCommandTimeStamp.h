@@ -12,13 +12,16 @@
 
 typedef enum __MovingObjDirection{NO_DIRECTION_DATA, BACKWARD, STATIONARY, FORWARD } MovingObjDirection;   // Forward increases Location parameter in that dimension
  
- typedef short int MovingObjSpeed;
+ typedef double MovingObjSpeed;
+ 
+ typedef double MovingObjLocation;
  
 typedef struct __MovingObjCommandTimeStampItem
 {
 	TimeStamp 			time;
 	MovingObjSpeed		Speed[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];             // Location data for each component of moving object 
 	MovingObjDirection		Direction[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];	     // Current direction of each component of moving object 
+	MovingObjLocation		Location[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];  
 } MovingObjCommandTimeStampItem;
 
 typedef MovingObjCommandTimeStampItem	MovingObjCommandTimeStampBuff[MAX_NUM_OF_MOVING_OBJECTS][MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE];
