@@ -330,7 +330,6 @@ gboolean timeout_callback(gpointer user_data)
 
 gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 {
-	int i,j;
 	if (shared_memory->kernel_task_ctrl.highpass_150Hz_on)
 	{
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }
@@ -339,15 +338,6 @@ gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 	}
 	else
 	{
-
-		for (i=0; i<MAX_NUM_OF_MWA; i++)
-		{
-			for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-			{
-				while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }											
-				shared_memory->filtered_recording_data.buff_idx_write[i][j] = shared_memory->recording_data.buff_idx_write[i][j];
-			}
-		}
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }								
 		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 1;	
 		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 0;		
@@ -359,7 +349,6 @@ gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 
 gboolean filter_highpass_400Hz_button_func (GtkDatabox * box)
 {
-	int i,j;
 	if (shared_memory->kernel_task_ctrl.highpass_400Hz_on)
 	{
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }										
@@ -368,15 +357,6 @@ gboolean filter_highpass_400Hz_button_func (GtkDatabox * box)
 	}
 	else
 	{
-
-		for (i=0; i<MAX_NUM_OF_MWA; i++)
-		{
-			for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-			{
-				while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }																			
-				shared_memory->filtered_recording_data.buff_idx_write[i][j] = shared_memory->recording_data.buff_idx_write[i][j];
-			}
-		}
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }																					
 		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 1;		
 		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 0;	

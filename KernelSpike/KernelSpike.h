@@ -47,6 +47,5 @@ void print_cmd(int card_number);
 void filter_recording_data( RecordingData *recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on);
 void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data, int mwa, int mwa_chan);
 void template_matching(RecordingData *filtered_recording_data, SpikeEnd *spike_end, SpikeTimeStamp *spike_time_stamp, TemplateMatchingData *template_matching_data);
-bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
 void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spike_end, SpikeTimeStamp *spike_time_stamp, TemplateMatchingData *template_matching_data, int spike_end_buffer_index_to_read);
 void print_buffer_warning_and_errors(void);

@@ -8,7 +8,7 @@
 
 typedef struct __SpikeTimeStampItem
 {
-	TimeStamp 	time;
+	TimeStamp 	peak_time;	// spike peak time
 	char 		mwa;      		// mwa from which spike sorted
 	char 		channel;		// channel from which spike sorted
 	char 		unit;			// channel from which spike sorted
