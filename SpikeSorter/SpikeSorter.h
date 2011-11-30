@@ -48,4 +48,54 @@ GtkWidget *box_sorted_all_spike;
 GtkWidget *databox_units[MAX_NUM_OF_UNIT_PER_CHAN+1];
 GtkWidget *box_units[MAX_NUM_OF_UNIT_PER_CHAN+1];
 
+GtkWidget *combo_mwa;
+GtkWidget *combo_chan;
+GtkWidget *combo_unit;
+
+GtkWidget *btn_clear_spike_select_screen;
+GtkWidget *btn_clear_unit_screen;
+GtkWidget *btn_clear_nonsorted_unit_screen;
+
+GtkWidget *btn_clear_unit_template;
+
+GtkWidget *btn_sorting_on_off;
+GtkWidget *btn_unit_sorting_on_off;
+GtkWidget *btn_include_unit_on_off;
+
+GtkWidget *btn_spike_filter_on_off;
+
+GtkWidget *entry_probability_thres;
+GtkWidget *btn_submit_probability_thres;
+
+GtkWidget *btn_pause;
+
+GtkWidget *btn_select_template_file_to_load;
+GtkWidget *btn_load_template_file; 
+
+GtkWidget *btn_select_template_file_directory_to_save;
+GtkWidget *entry_template_file_name;
+GtkWidget *btn_save_template_file;
+
+
+
 void create_gui(void);
+void combo_mwa_func (void);
+void combo_chan_func (void);
+void combo_unit_func (void);
+void clear_spike_select_screen_button_func(void);
+void clear_unit_screen_button_func(void);
+void clear_nonsorted_unit_screen_button_func(void);
+void clear_unit_template_button_func(void);
+void sorting_on_off_button_func(void);
+void unit_sorting_on_off_button_func(void);
+void include_unit_on_off_button_func(void);
+void spike_filter_on_off_button_func(void);
+void submit_probability_thres_button_func(void);
+void pause_button_func(void);
+void load_template_file_button_func(void);
+void save_template_file_button_func(void);
+
+
+
+
+
