@@ -136,7 +136,7 @@ void rt_handler(int t)
 					find_spike_end(spike_end, filtered_recording_data, k, m);
 				}
 			}
-			if (spike_sorting_on)
+			if (*spike_sorting_on)
 			{
 				template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
 			}
