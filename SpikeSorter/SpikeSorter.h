@@ -30,12 +30,15 @@
 
 GdkColor color_bg;
 GdkColor color_non_sorted_all_spike;
-GdkColor color_spike[MAX_NUM_OF_UNIT_PER_CHAN+1];
+GdkColor color_spike[MAX_NUM_OF_UNIT_PER_CHAN];
+GdkColor color_spike_non_sorted;
 GdkColor color_spike_template;
 
 float *X_axis;
 GPtrArray *Y_non_sorted_all_spikes;
-GPtrArray *Y_spikes_arr[MAX_NUM_OF_UNIT_PER_CHAN+1];
+GPtrArray *Y_spikes_arr[MAX_NUM_OF_UNIT_PER_CHAN];
+GPtrArray *Y_non_sorted_spike;
+float *Y_templates[MAX_NUM_OF_UNIT_PER_CHAN];
 
 GtkWidget *main_table;
 
@@ -45,14 +48,17 @@ GtkWidget *box_nonsorted_all_spike;
 GtkWidget *databox_sorted_all_spike;
 GtkWidget *box_sorted_all_spike;
 
-GtkWidget *databox_units[MAX_NUM_OF_UNIT_PER_CHAN+1];
-GtkWidget *box_units[MAX_NUM_OF_UNIT_PER_CHAN+1];
+GtkWidget *databox_units[MAX_NUM_OF_UNIT_PER_CHAN];
+GtkWidget *box_units[MAX_NUM_OF_UNIT_PER_CHAN];
+
+GtkWidget *databox_non_sorted_spike;
+GtkWidget *box_non_sorted_spike;
 
 GtkWidget *combo_mwa;
 GtkWidget *combo_chan;
 GtkWidget *combo_unit;
 
-GtkWidget *btn_clear_spike_select_screen;
+GtkWidget *btn_clear_spike_selection_screen;
 GtkWidget *btn_clear_unit_screen;
 GtkWidget *btn_clear_nonsorted_unit_screen;
 
@@ -80,11 +86,14 @@ int disp_mwa;
 int disp_chan;
 int disp_unit;
 
+int spike_filter_on;
+int disp_paused;
+
 void create_gui(void);
 void combo_mwa_func (void);
 void combo_chan_func (void);
 void combo_unit_func (void);
-void clear_spike_select_screen_button_func(void);
+void clear_spike_selection_screen_button_func(void);
 void clear_unit_screen_button_func(void);
 void clear_nonsorted_unit_screen_button_func(void);
 void clear_unit_template_button_func(void);
@@ -96,8 +105,8 @@ void submit_probability_thres_button_func(void);
 void pause_button_func(void);
 void load_template_file_button_func(void);
 void save_template_file_button_func(void);
-
-
+void clear_spikes_screen(void);
+void timeout_callback(void);
 
 
 

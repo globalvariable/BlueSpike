@@ -880,7 +880,7 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
 	for (i=0; i<MAX_NUM_OF_UNIT_PER_CHAN; i++)
 	{
-		unit_data =  template_matching_data[mwa][mwa_chan][unit_num];
+		unit_data =  template_matching_data[mwa][mwa_chan][i];
  		if ((g_x[i] > greatest) && (unit_data->sorting_on) && (probabl[i] > unit_data->probability_thres))
  		{
 			greatest = g_x[i];
