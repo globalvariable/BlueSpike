@@ -82,6 +82,7 @@ void create_gui(void)
 	}	
 	
 	float *f_temp;
+	Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;	
 	Y_non_sorted_all_spikes = g_ptr_array_new();
 	for (i=0; i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE; i++)
 	{		
@@ -91,11 +92,11 @@ void create_gui(void)
 
 	for (i=0; i<MAX_NUM_OF_UNIT_PER_CHAN; i++)  // including non-sorted
 	{
-		Y_spikes_arr[i] = g_ptr_array_new();
+		Y_sorted_spikes_arr[i] = g_ptr_array_new();
 		for (j=0; j<SPIKE_MEM_TO_DISPLAY_UNIT; j++)
 		{		
 			f_temp = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
-			g_ptr_array_add  (Y_spikes_arr[i], f_temp);
+			g_ptr_array_add  (Y_sorted_spikes_arr[i], f_temp);
 		}
 	}	
 
@@ -149,7 +150,7 @@ void create_gui(void)
 	{
 		for (j=0; j<SPIKE_MEM_TO_DISPLAY_UNIT; j++)
 		{		
-			f_temp = g_ptr_array_index(Y_spikes_arr[i], j);
+			f_temp = g_ptr_array_index(Y_sorted_spikes_arr[i], j);
 			gtk_databox_graph_add (GTK_DATABOX (box_sorted_all_spike), gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, f_temp, &color_spike[i], 0));
 		}
 	}
@@ -173,7 +174,7 @@ void create_gui(void)
 		
 		for (j=0; j<SPIKE_MEM_TO_DISPLAY_UNIT; j++)
 		{		
-			f_temp = g_ptr_array_index(Y_spikes_arr[i], j);
+			f_temp = g_ptr_array_index(Y_sorted_spikes_arr[i], j);
 			gtk_databox_graph_add (GTK_DATABOX (box_units[i]), gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, f_temp, &color_spike[i], 0));
 		}
     		gtk_table_attach_defaults(GTK_TABLE(main_table), databox_units[i], i,i+1,0,2);
@@ -388,7 +389,11 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_load_template_file ), "clicked", G_CALLBACK(load_template_file_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_save_template_file), "clicked", G_CALLBACK(save_template_file_button_func), NULL);
 
+	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
+	spike_end_buff_read_idx = shared_memory->spike_end.buff_idx_write;
+
 	g_timeout_add(50, timeout_callback, NULL);
+	
 }
 
 void combo_mwa_func (void)
@@ -489,7 +494,7 @@ void clear_unit_screen_button_func(void)
 
 	for (i = 0; i <SPIKE_MEM_TO_DISPLAY_UNIT; i++)
 	{
-		Y_local = g_ptr_array_index(Y_spikes_arr[disp_unit],i);
+		Y_local = g_ptr_array_index(Y_sorted_spikes_arr[disp_unit],i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
 			Y_local[j] = 0;
@@ -707,7 +712,7 @@ void clear_spikes_screen(void)
 	{
 		for (j = 0; j <SPIKE_MEM_TO_DISPLAY_UNIT; j++)
 		{
-			Y_local = g_ptr_array_index(Y_spikes_arr[i],j);
+			Y_local = g_ptr_array_index(Y_sorted_spikes_arr[i],j);
 			for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
 			{
 				Y_local[k] = 0;
@@ -733,4 +738,46 @@ void clear_spikes_screen(void)
 
 void timeout_callback(void)
 {
+	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
+	SpikeEnd *spike_end;
+	int idx, spike_time_stamp_buff_end_idx, spike_end_buff_end_idx;
+	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx; 	
+	int spike_idx;	
+	float *Y_temp;
+	int i;
+	
+	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
+		return TRUE; 
+	
+	filtered_recording_data_chan_buff = &shared_memory->filtered_recording_data.recording_data_buff[disp_mwa][disp_chan];
+	spike_end = &shared_memory->spike_end;	
+	
+	idx = spike_end_buff_read_idx;
+	spike_end_buff_end_idx = spike_end->buff_idx_write;
+	while (idx != spike_end_buff_end_idx)
+	{
+		spike_end_buff_recording_data_idx = spike_end->spike_end_buff[idx].recording_data_buff_idx;
+		spike_end_buff_mwa = spike_end->spike_end_buff[idx].mwa;
+		spike_end_buff_chan = spike_end->spike_end_buff[idx].chan;
+		spike_idx = spike_end_buff_recording_data_idx;
+		if ((spike_end_buff_mwa == disp_mwa) && (spike_end_buff_chan == disp_chan))
+		{
+			Y_temp = g_ptr_array_index(Y_non_sorted_all_spikes,Y_non_sorted_all_spikes_last_g_ptr_array_idx);
+				Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
+			if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
+				Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;
+			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+			{
+				Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
+				spike_idx--;
+				if (spike_idx < 0)
+					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+			}
+			gtk_databox_set_total_limits (GTK_DATABOX (box_nonsorted_all_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+		}
+		idx++;	
+		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
+			idx = 0;	
+	}
+	spike_end_buff_read_idx = spike_end_buff_end_idx;
 }

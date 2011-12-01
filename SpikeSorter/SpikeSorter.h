@@ -36,8 +36,14 @@ GdkColor color_spike_template;
 
 float *X_axis;
 GPtrArray *Y_non_sorted_all_spikes;
-GPtrArray *Y_spikes_arr[MAX_NUM_OF_UNIT_PER_CHAN];
+int Y_non_sorted_all_spikes_last_g_ptr_array_idx;
+
+GPtrArray *Y_sorted_spikes_arr[MAX_NUM_OF_UNIT_PER_CHAN];
+int Y_sorted_spikes_last_g_ptr_array_idx[MAX_NUM_OF_UNIT_PER_CHAN];
+
 GPtrArray *Y_non_sorted_spike;
+int Y_non_sorted_spike_last_g_ptr_array_idx;
+
 float *Y_templates[MAX_NUM_OF_UNIT_PER_CHAN];
 
 GtkWidget *main_table;
@@ -88,6 +94,9 @@ int disp_unit;
 
 int spike_filter_on;
 int disp_paused;
+
+int spike_time_stamp_buff_read_idx;  
+int spike_end_buff_read_idx;  
 
 void create_gui(void);
 void combo_mwa_func (void);
