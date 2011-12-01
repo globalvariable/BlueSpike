@@ -893,6 +893,7 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].mwa = mwa;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].channel = mwa_chan;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].unit = greatest_idx;
+	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = (*spike_end_buff[spike_end_buffer_index_to_read]).recording_data_buff_idx;
 	spike_time_stamp->buff_idx_write++;
 	if (spike_time_stamp->buff_idx_write == SPIKE_TIMESTAMP_BUFF_SIZE)
 		spike_time_stamp->buff_idx_write  = 0;	
