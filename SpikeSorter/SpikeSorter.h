@@ -98,6 +98,8 @@ int disp_paused;
 int spike_time_stamp_buff_read_idx;  
 int spike_end_buff_read_idx;  
 
+int plotting_in_progress;
+
 void create_gui(void);
 void combo_mwa_func (void);
 void combo_chan_func (void);

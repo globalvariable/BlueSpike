@@ -93,6 +93,7 @@ void create_gui(void)
 	for (i=0; i<MAX_NUM_OF_UNIT_PER_CHAN; i++)  // including non-sorted
 	{
 		Y_sorted_spikes_arr[i] = g_ptr_array_new();
+		Y_sorted_spikes_last_g_ptr_array_idx[i] = 0;
 		for (j=0; j<SPIKE_MEM_TO_DISPLAY_UNIT; j++)
 		{		
 			f_temp = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
@@ -104,7 +105,8 @@ void create_gui(void)
 	{	
 		Y_templates[i] = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 	}	
-
+	
+	Y_non_sorted_spike_last_g_ptr_array_idx = 0;
 	Y_non_sorted_spike = g_ptr_array_new();
 	for (i=0; i<SPIKE_MEM_TO_DISPLAY_UNIT; i++)
 	{		
@@ -117,6 +119,7 @@ void create_gui(void)
 	disp_unit = 0;
 	spike_filter_on = 0;
 	disp_paused = 0;
+	plotting_in_progress = 0;
 	
 	GtkWidget *window;
 	GtkWidget *hbox, *vbox, *lbl;
@@ -408,6 +411,7 @@ void combo_mwa_func (void)
 		printf ("BUG: 0th Microwire Array selected automatically\n");
 		idx = 0;
 	}
+	while (plotting_in_progress) { usleep(1); }	
 	disp_mwa = idx;
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
 	{
@@ -434,6 +438,7 @@ void combo_chan_func (void)
 		printf ("BUG: 0th Microwire Array Channel selected automatically\n");
 		idx = 0;
 	}
+	while (plotting_in_progress) { usleep(1); }		
 	disp_chan = idx;	
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
 	{
@@ -459,6 +464,7 @@ void combo_unit_func (void)
 		printf ("BUG: 0th Microwire Array Channel Unit selected automatically\n");
 		idx = 0;
 	}
+	while (plotting_in_progress) { usleep(1); }		
 	disp_unit = idx;	
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_mwa].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
 	{
@@ -740,25 +746,33 @@ void timeout_callback(void)
 {
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
 	SpikeEnd *spike_end;
+	SpikeTimeStamp 		*spike_time_stamp;	
 	int idx, spike_time_stamp_buff_end_idx, spike_end_buff_end_idx;
-	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx; 	
+	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx;
+	long long unsigned int spike_end_buff_peak_time;	
+	int spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_unit, spike_time_stamp_buff_recording_data_idx;	
+	long long unsigned int spike_time_stamp_buff_peak_time;	
 	int spike_idx;	
 	float *Y_temp;
 	int i;
 	
+	spike_end = &shared_memory->spike_end;	
+	spike_time_stamp = &shared_memory->spike_time_stamp;
+
+	plotting_in_progress = 1;
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
-		return TRUE; 
+		return; 
 	
 	filtered_recording_data_chan_buff = &shared_memory->filtered_recording_data.recording_data_buff[disp_mwa][disp_chan];
-	spike_end = &shared_memory->spike_end;	
-	
-	idx = spike_end_buff_read_idx;
+		
+	idx = spike_end_buff_read_idx;		// spike_end_buff_read_idx first initialized in create_gui() to be shared_memory->spike_end.buff_idx_write
 	spike_end_buff_end_idx = spike_end->buff_idx_write;
 	while (idx != spike_end_buff_end_idx)
 	{
 		spike_end_buff_recording_data_idx = spike_end->spike_end_buff[idx].recording_data_buff_idx;
 		spike_end_buff_mwa = spike_end->spike_end_buff[idx].mwa;
 		spike_end_buff_chan = spike_end->spike_end_buff[idx].chan;
+		spike_end_buff_peak_time = spike_end->spike_end_buff[idx].peak_time;					
 		spike_idx = spike_end_buff_recording_data_idx;
 		if ((spike_end_buff_mwa == disp_mwa) && (spike_end_buff_chan == disp_chan))
 		{
@@ -780,4 +794,35 @@ void timeout_callback(void)
 			idx = 0;	
 	}
 	spike_end_buff_read_idx = spike_end_buff_end_idx;
+	
+	idx = spike_time_stamp_buff_read_idx;				// spike_time_stamp_buff_read_idx first initialized in create_gui() to be shared_memory->spike_time_stamp.buff_idx_write
+	spike_time_stamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	while (idx != spike_time_stamp_buff_end_idx)
+	{
+		spike_time_stamp_buff_recording_data_idx = spike_time_stamp->spike_timestamp_buff[idx].recording_data_buff_idx;
+		spike_time_stamp_buff_mwa = spike_time_stamp->spike_timestamp_buff[idx].mwa;
+		spike_time_stamp_buff_chan = spike_time_stamp->spike_timestamp_buff[idx].channel;
+		spike_time_stamp_buff_unit = spike_time_stamp->spike_timestamp_buff[idx].unit;		
+		spike_idx = spike_time_stamp_buff_recording_data_idx;
+		if ((spike_time_stamp_buff_mwa == disp_mwa) && (spike_time_stamp_buff_chan == disp_chan))
+		{
+			Y_temp = g_ptr_array_index(Y_sorted_spikes_arr[spike_time_stamp_buff_unit],Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit]);
+				Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] ++;
+			if (Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] == SPIKE_MEM_TO_DISPLAY_UNIT)
+				Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] = 0;
+			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+			{
+				Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
+				spike_idx--;
+				if (spike_idx < 0)
+					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+			}
+			gtk_databox_set_total_limits (GTK_DATABOX (box_units[spike_time_stamp_buff_unit]), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+		}
+		idx++;	
+		if (idx ==	SPIKE_TIMESTAMP_BUFF_SIZE)
+			idx = 0;	
+	}
+	spike_end_buff_read_idx = spike_end_buff_end_idx;	
+	plotting_in_progress = 0;
 }
