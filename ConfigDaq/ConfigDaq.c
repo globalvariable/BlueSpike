@@ -454,7 +454,7 @@ void save_config_file_button_func(void)
 {
 	int i,j;
 	char *path_temp = NULL, *path = NULL, path_file[500];
-	FILE *fp;
+	FILE *fp = NULL;
 	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_config_file_directory_to_save));
 	path = &path_temp[7];   // since     uri returns file:///home/....
 	strcpy(path_file, path);
@@ -466,6 +466,12 @@ void save_config_file_button_func(void)
 	if (interrogate_mapping())
 	{
 		fp = fopen(path_file, "w");
+		if (fp == NULL)
+		{
+			printf("ConfigDaq:\n");
+			printf("ERROR: fopen failed for file %s:\n", path_file);					
+			return;
+		}
 		fprintf(fp, "Data Acquisiton Cards vs Microwire Arrays Mapping File\n");	
 		fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
 		fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
@@ -479,8 +485,7 @@ void save_config_file_button_func(void)
 				fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].channel);				
 			}
 		}
-		if (fp != NULL)
-			fclose(fp);
+		fclose(fp);
 	}
 	else
 	{

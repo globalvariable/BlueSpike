@@ -646,11 +646,10 @@ void pause_button_func(void)
 
 void load_template_file_button_func(void)
 {
-	int i,j, line_cntr=0;
-	int max_num_of_daq_card, max_num_of_channel_per_daq_card, max_num_of_mwa, max_num_of_channel_per_mwa;
+	int i,j, k,m ,n , line_cntr=0;
+	int max_num_of_daq_card, max_num_of_channel_per_daq_card, max_num_of_mwa, max_num_of_channel_per_mwa, max_num_of_unit_per_chan;
 	char *path = NULL, *path_file = NULL, line[200];
 	FILE *fp=NULL;
-	int mwa, mwa_channel;
 
 	path = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_to_load));
 
@@ -669,6 +668,190 @@ void load_template_file_button_func(void)
 		printf("ERROR: Couldn't fopen the config file\n");
 		return;		
 	}
+
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
+	if (strcmp(line, "--------------SpikeSorter Configuration File--------------\n") != 0)
+	{
+		printf("SpikeSorter:\n");	
+		printf("ERROR: Not a valid SpikeSorter Config File\n");
+		fclose(fp); return;
+		return;
+	}  	
+	
+	line_cntr++;	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }         
+	max_num_of_daq_card = (int)atof(line);	
+	if (MAX_NUM_OF_DAQ_CARD	< max_num_of_daq_card )
+	{
+		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
+		fclose(fp); return;
+	}
+	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
+	{
+		printf("WARNING: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
+	
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	max_num_of_channel_per_daq_card = (int)atof(line);
+	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD < max_num_of_channel_per_daq_card)
+	{
+		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
+		fclose(fp); return;
+	}
+	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
+	{
+		printf("WARNING: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}	
+	
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }         
+	max_num_of_mwa = (int)atof(line);
+	if (MAX_NUM_OF_MWA < max_num_of_mwa)
+	{
+		printf("ERROR: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
+		fclose(fp); return;
+	}
+	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
+	{
+		printf("WARNING: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
+	
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	max_num_of_channel_per_mwa = (int)atof(line);
+	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
+	{
+		printf("ERROR: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+		fclose(fp); return;
+	}
+	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
+	{
+		printf("WARNING: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}	
+	
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	max_num_of_unit_per_chan = (int)atof(line);
+	if (MAX_NUM_OF_UNIT_PER_CHAN < max_num_of_channel_per_mwa)
+	{
+		printf("ERROR: Config file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_UNIT_PER_CHAN = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);	
+		fclose(fp); return;
+	}
+	else if (MAX_NUM_OF_UNIT_PER_CHAN > max_num_of_channel_per_mwa)
+	{
+		printf("WARNING: Config file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_UNIT_PER_CHAN = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}				
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					line_cntr++;
+					if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+					shared_memory->template_matching_data[i][j][k].template[m] = atof(line);
+				}	
+			}
+		}
+	}
+	
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+					{				
+						line_cntr++;
+						if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+						shared_memory->template_matching_data[i][j][k].S[m][n] = atof(line);						
+					}
+				}	
+			}
+		}
+	}
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+					{				
+						line_cntr++;
+						if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+						shared_memory->template_matching_data[i][j][k].inv_S[m][n] = atof(line);	
+					}
+				}	
+			}
+		}
+	}	
+	
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				line_cntr++;
+				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+				shared_memory->template_matching_data[i][j][k].sqrt_det_S = atof(line);				
+				line_cntr++;
+				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+				shared_memory->template_matching_data[i][j][k].log_det_S = atof(line);			
+				line_cntr++;
+				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+				shared_memory->template_matching_data[i][j][k].probability_thres = atof(line);
+				line_cntr++;
+				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+				shared_memory->template_matching_data[i][j][k].sorting_on = (bool)atof(line);
+				line_cntr++;
+				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+				shared_memory->template_matching_data[i][j][k].include_unit = (bool)atof(line);
+			}
+			line_cntr++;
+			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
+			shared_memory->spike_end.amplitude_thres[i][j] = (bool)atof(line);			
+		}
+	}	
+
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
+	if (strcmp(line, "---------------End of SpikeSorter Configuration File--------------\n") != 0)
+	{
+		printf("SpikeSorter:\n");	
+		printf("ERROR: Not a valid SpikeSorter Config File\n");
+		printf("ERROR: Couldn't find the end of file\n\n");		
+		fclose(fp); return;
+		return;
+	}  				
+	
 	
 	fclose(fp);	
 	printf("Loading template file complete.\n");	
@@ -676,18 +859,145 @@ void load_template_file_button_func(void)
 
 void save_template_file_button_func(void)
 {
-	int i,j;
+	int i,j,k,m,n;
 	char *path_temp = NULL, *path = NULL, path_file[500];
-	FILE *fp;
+	FILE *fp = NULL;
+	time_t rawtime;
+	struct tm * timeinfo;
+	char * time_str;
+	double check_S[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA][MAX_NUM_OF_UNIT_PER_CHAN];
+	
 	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_directory_to_save));
 	path = &path_temp[7];   // since     uri returns file:///home/....
 	strcpy(path_file, path);
 	strcat(path_file, "/");
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);	
+	time_str = asctime (timeinfo);
+	time_str[7]='_';
+	time_str[10]='_';
+	time_str[13]='_';
+	time_str[16]='_';
+	time_str[19]='_';
+	time_str[24]='_';
+	time_str[25]='_';	
+	strcat(path_file, time_str+4);	
+	
 	strcat(path_file, gtk_entry_get_text(GTK_ENTRY(entry_template_file_name)));
 	
 	printf("Saving template file...\n");
 	
 	fp = fopen(path_file, "w");
+	if (fp == NULL)
+	{
+		printf("ConfigDaq:\n");
+		printf("ERROR: fopen failed for file %s:\n", path_file);					
+		return;
+	}
+	fprintf(fp, "--------------SpikeSorter Configuration File--------------\n");	
+
+	fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
+	fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
+	fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);
+	fprintf(fp, "%d\n", MAX_NUM_OF_UNIT_PER_CHAN);
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				check_S[i][j][k] = 0;
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+					{				
+						check_S[i][j][k] = check_S[i][j][k] + fabs(shared_memory->template_matching_data[i][j][k].S[m][n]);
+					}
+				}	
+			}
+		}
+	}
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					if ((check_S[i][j][k] == 0) && (shared_memory->template_matching_data[i][j][k].template[m] != 0))
+					{
+						printf("SpikeSorter:\n");
+						printf("BUG: All template samples cannot be zero when covariance matrix for unit is non-zero\n");
+						printf("BUG: MWA: %d Channel:%d Unit: %d\n", i , j, k);
+					}
+					else 	
+					{
+						fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].template[m]);
+					}	
+				}	
+			}
+		}
+	}
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+					{				
+						fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].S[m][n]);
+					}
+				}	
+			}
+		}
+	}
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+					{				
+						fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].inv_S[m][n]);
+					}
+				}	
+			}
+		}
+	}
+
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].sqrt_det_S);
+				fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].log_det_S);	
+				fprintf(fp, "%E\n", shared_memory->template_matching_data[i][j][k].probability_thres);
+				if (check_S[i][j][k] == 0)
+				{
+					shared_memory->template_matching_data[i][j][k].sorting_on = 0;
+					shared_memory->template_matching_data[i][j][k].include_unit = 0;
+				}
+				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].sorting_on);		
+				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].include_unit);																
+			}
+			fprintf(fp, "%f\n", shared_memory->spike_end.amplitude_thres[i][j]);																			
+		}
+	}
+	fprintf(fp, "---------------End of SpikeSorter Configuration File--------------\n");	
 
 	fclose(fp);	
 	printf("Saving template file complete.\n");	 
@@ -946,7 +1256,8 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		y_upper = selectionValues->y2;
 	}
 	
-	float *Y_analyze, *Y_mean, *Y_temp, Y_sum = 0;
+	float *Y_analyze, *Y_temp, Y_sum = 0;
+	double *Y_mean;
 	int i ,j, k, idx;
 	idx= 0;
 	GPtrArray *Y_spikes_in_range_array;
@@ -995,13 +1306,13 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		return;
 	}
 	
-	Y_mean = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);	
+	Y_mean = g_new0 (double, NUM_OF_SAMP_PER_SPIKE);	
 	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 	{
 		for (j=0; j<MIN_SPIKE_NUM_FOR_TEMPLATE; j++)
 		{
 			Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));    // to select more distributed spikes in time.
-			Y_mean[i] = Y_mean[i]+Y_temp[i];
+			Y_mean[i] = Y_mean[i]+(double)(Y_temp[i]);
 		}
 	}
 	
@@ -1071,11 +1382,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	double determinant = 1.0;
 	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 	{
-		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
-		{
-			if (i == j)
-				determinant = determinant * (LU->me[i][j]);
-		}
+		determinant = determinant * (LU->me[i][i]);
 	}
 		
 	m_inverse(S,S_inv);
