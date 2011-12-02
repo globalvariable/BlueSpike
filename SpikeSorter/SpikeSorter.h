@@ -24,9 +24,15 @@
 #include <gtkdatabox_lines.h>
 #include <gtkdatabox_grid.h>
 
+#include <meschach/matrix.h>
+#include <meschach/matrix2.h>
+
+#include <math.h>
 
 #define SPIKE_MEM_TO_DISPLAY_UNIT 30
 #define SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE 150
+
+#define MIN_SPIKE_NUM_FOR_TEMPLATE 60
 
 GdkColor color_bg;
 GdkColor color_non_sorted_all_spike;
@@ -92,7 +98,11 @@ int disp_mwa;
 int disp_chan;
 int disp_unit;
 
-int spike_filter_on;
+int spike_filter_mode_on;
+int rect_switch;
+float x_upper_1, x_lower_1, y_upper_1, y_lower_1;   // for rectangle to select areas for spike filtering
+float x_upper_2, x_lower_2, y_upper_2, y_lower_2; 
+
 int disp_paused;
 
 int spike_time_stamp_buff_read_idx;  
@@ -117,7 +127,8 @@ void pause_button_func(void);
 void load_template_file_button_func(void);
 void save_template_file_button_func(void);
 void clear_spikes_screen(void);
-void timeout_callback(void);
+void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle * selectionValues);
+gboolean timeout_callback(gpointer user_data);
 
 
 

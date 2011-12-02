@@ -36,7 +36,7 @@ void rt_handler(int t)
 	int curr_time ;		// local_time  unsigned int
 	 
 	current_time_ns = 0;		// global time  long long unsigned int  // TimeStamp	
-	
+	previous_time_ns = 0;
 	spike_end_buff_control_cntr = 0; 
 	spike_timestamp_buff_control_cntr = 0;	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
@@ -153,8 +153,9 @@ void rt_handler(int t)
 			}
 		}		
 		spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;
-
-		*kernel_task_idle = 1;		
+		*kernel_task_idle = 1;
+		previous_time_ns = current_time_ns;
+				
 	}
 
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
@@ -752,6 +753,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 					{
 						min =  (*filtered_recording_data_chan_buff)[handle_for_peak_idx];
 						min_idx = handle_for_peak_idx;
+						previous_acquisition_time_cntr--;
 					}	
 				}
 				else
@@ -761,6 +763,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 					{
 						min =  (*filtered_recording_data_chan_buff)[handle_for_peak_idx];
 						min_idx = handle_for_peak_idx;
+						previous_acquisition_time_cntr--;
 					}		
 				}
 			}
@@ -775,7 +778,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 			spike_end->spike_end_buff[spike_end->buff_idx_write].recording_data_buff_idx = spike_end_idx;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].mwa = mwa;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].chan = mwa_chan;
-			spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time = current_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
+			spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time = previous_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
 			(spike_end->buff_idx_write)++;
 			if (spike_end->buff_idx_write == SPIKE_END_DATA_BUFF_SIZE)
 				spike_end->buff_idx_write = 0;
