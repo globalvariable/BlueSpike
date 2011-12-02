@@ -749,9 +749,7 @@ void timeout_callback(void)
 	SpikeTimeStamp 		*spike_time_stamp;	
 	int idx, spike_time_stamp_buff_end_idx, spike_end_buff_end_idx;
 	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx;
-	long long unsigned int spike_end_buff_peak_time;	
 	int spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_unit, spike_time_stamp_buff_recording_data_idx;	
-	long long unsigned int spike_time_stamp_buff_peak_time;	
 	int spike_idx;	
 	float *Y_temp;
 	int i;
@@ -772,7 +770,6 @@ void timeout_callback(void)
 		spike_end_buff_recording_data_idx = spike_end->spike_end_buff[idx].recording_data_buff_idx;
 		spike_end_buff_mwa = spike_end->spike_end_buff[idx].mwa;
 		spike_end_buff_chan = spike_end->spike_end_buff[idx].chan;
-		spike_end_buff_peak_time = spike_end->spike_end_buff[idx].peak_time;					
 		spike_idx = spike_end_buff_recording_data_idx;
 		if ((spike_end_buff_mwa == disp_mwa) && (spike_end_buff_chan == disp_chan))
 		{
