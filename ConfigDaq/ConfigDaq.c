@@ -145,18 +145,12 @@ void create_gui(void)
 	btn_interrogate_mapping = gtk_button_new_with_label("Interrogate Mapping");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_interrogate_mapping, TRUE, FALSE, 0);		
 	
-    	hbox = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE, 20);		
-	
-	btn_finalize_mapping = gtk_button_new_with_label("Finalize Mapping");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_finalize_mapping, TRUE, FALSE, 0);
-	
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,20);	
 	
 	btn_select_config_file_to_load = gtk_file_chooser_button_new ("Select Config File", GTK_FILE_CHOOSER_ACTION_OPEN);
         gtk_box_pack_start(GTK_BOX(hbox),btn_select_config_file_to_load, TRUE,TRUE,0);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_config_file_to_load),"/home");	
+	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_config_file_to_load),"/usr/local/BlueSpike_Config");	
 
 	btn_load_config_file = gtk_button_new_with_label("Load Config File");
         gtk_box_pack_start(GTK_BOX(hbox),btn_load_config_file,TRUE,TRUE, 0);		
@@ -179,7 +173,6 @@ void create_gui(void)
 
         g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
         g_signal_connect(G_OBJECT(btn_map_channels), "clicked", G_CALLBACK(map_channels_button_func), NULL);
-        g_signal_connect(G_OBJECT(btn_finalize_mapping), "clicked", G_CALLBACK(finalize_mapping_button_func), NULL);   
         g_signal_connect(G_OBJECT(btn_interrogate_mapping), "clicked", G_CALLBACK(interrogate_mapping_button_func), NULL);      
         g_signal_connect(G_OBJECT(btn_load_config_file), "clicked", G_CALLBACK(load_config_file_button_func), NULL);
         g_signal_connect(G_OBJECT(btn_save_config_file), "clicked", G_CALLBACK(save_config_file_button_func), NULL);
@@ -284,7 +277,7 @@ void map_channels_button_func(void)
 			printf ("WARNING: Configured as DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", daq_num, i, shared_memory->daq_mwa_map[daq_num][i].mwa, shared_memory->daq_mwa_map[daq_num][i].channel);
 		}
 		
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }   // wait until rt_task_wait_period starts
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
 		// First delete ex mwa_daq_map
 		shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[daq_num][i].mwa][shared_memory->daq_mwa_map[daq_num][i].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
 		shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[daq_num][i].mwa][shared_memory->daq_mwa_map[daq_num][i].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;	
@@ -308,15 +301,9 @@ void interrogate_mapping_button_func(void)
 {
 	printf("Interrogating config file\n");
 	interrogate_mapping();
+	printf("Interrogating config file...complete\n");	
 	return;
 }
-
-void finalize_mapping_button_func(void)
-{
-	printf("Finalized mapping of DAQ Card and MWA Channels\n");
-	gtk_main_quit();
-	return;
-} 
 
 void load_config_file_button_func(void)
 {
@@ -349,6 +336,7 @@ void load_config_file_button_func(void)
 	if (strcmp(line, "Data Acquisiton Cards vs Microwire Arrays Mapping File\n" ) != 0)
 	{
 		printf("ERROR: Not a valid DAQ Card - MWA Mapping Config File\n");
+		fclose(fp);
 		return;
 	}  	
 	
@@ -359,6 +347,7 @@ void load_config_file_button_func(void)
 	{
 		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
+		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
@@ -375,6 +364,7 @@ void load_config_file_button_func(void)
 	{
 		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);	
+		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
@@ -391,6 +381,7 @@ void load_config_file_button_func(void)
 	{
 		printf("ERROR: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
+		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
@@ -407,6 +398,7 @@ void load_config_file_button_func(void)
 	{
 		printf("ERROR: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
@@ -430,7 +422,7 @@ void load_config_file_button_func(void)
 			mwa_channel = (int)atof(line);
 			if ((mwa_channel >= MAX_NUM_OF_CHAN_PER_MWA) || (mwa_channel < 0))  { printf("ERROR: Incompatible value at %d th line of config file\n", line_cntr);  fclose(fp); return;} 
 						
-			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }   // wait until rt_task_wait_period starts
+			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
 			// First delete mwa to daq mapping			
 			shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
 			shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
@@ -442,7 +434,15 @@ void load_config_file_button_func(void)
 			shared_memory->mwa_daq_map[mwa][mwa_channel].daq_chan = j;				
 		}
 	}
-	
+	line_cntr++;
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
+	if (strcmp(line, "End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n" ) != 0)
+	{
+		printf("ERROR: Not a valid DAQ Card - MWA Mapping Config File\n");
+		printf("ERROR: End of File Coudln' t be found\n");
+		fclose(fp);
+		return;
+	}  		
 
 	fclose(fp);
 
@@ -458,7 +458,7 @@ void save_config_file_button_func(void)
 	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_config_file_directory_to_save));
 	path = &path_temp[7];   // since     uri returns file:///home/....
 	strcpy(path_file, path);
-	strcat(path_file, "/");
+	strcat(path_file, "/ConfigDaq_");
 	strcat(path_file, gtk_entry_get_text(GTK_ENTRY(entry_config_file_name)));
 	
 	printf("Saving Config file...\n");
@@ -485,6 +485,30 @@ void save_config_file_button_func(void)
 				fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].channel);				
 			}
 		}
+		fprintf(fp, "End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n");
+		fprintf(fp, "---------------------------------------------------------------------------------------------\n");			
+		fprintf(fp, "---------------------------------------------------------------------------------------------\n");					
+		fprintf(fp, "MAX_NUM_OF_DAQ_CARD: %d\n", MAX_NUM_OF_DAQ_CARD);
+		fprintf(fp, "MAX_NUM_OF_CHANNEL_PER_DAQ_CARD: %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
+		fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_MWA);
+		fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+		fprintf(fp, "DAQ Card Channels MWA Channels Mapping:\n");		
+		for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+		{	
+			for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+			{	
+				fprintf(fp, "DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);	
+			}
+		}
+		fprintf(fp, "---------------------------------------------------------------------------------------------\n");							
+		fprintf(fp, "MWA Channels DAQ Card Channels Mapping:\n");		
+		for (i = 0; i<MAX_NUM_OF_MWA; i++)
+		{	
+			for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+			{	
+				fprintf(fp, "MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
+			}
+		}								
 		fclose(fp);
 	}
 	else
@@ -533,8 +557,18 @@ bool interrogate_mapping(void)
 			}
 		}
 	}
-	if (check == 1)	
+	if (check == 1)
+	{
+		printf("---------------------------------------------------------------------------------------------\n");						
+		for (i = 0; i<MAX_NUM_OF_MWA; i++)
+		{	
+			for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+			{	
+				printf("MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
+			}
+		}
 		return TRUE;
+	}
 	else
 	{
 		printf("ERROR: None of the channels of any DAQ Card was mapped\n");

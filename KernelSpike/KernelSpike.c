@@ -30,7 +30,7 @@ void rt_handler(int t)
 	
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
-	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *spike_sorting_on ,*kernel_task_idle; 
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
 	
 	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
 	int curr_time ;		// local_time  unsigned int
@@ -51,7 +51,6 @@ void rt_handler(int t)
 	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
 	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;
 	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;	
-	spike_sorting_on = &kernel_task_ctrl->spike_sorting_on;
 	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -136,22 +135,10 @@ void rt_handler(int t)
 					find_spike_end(spike_end, filtered_recording_data, k, m);
 				}
 			}
-			if (*spike_sorting_on)
-			{
-				template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
-			}
+			template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
 		}
 		print_buffer_warning_and_errors();		
 
-		//save index for next use
-		for (k=0; k<MAX_NUM_OF_MWA; k++)
-		{
-			for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
-			{
-				filtered_recording_data->buff_idx_write[k][m] = recording_data->buff_idx_write[k][m];
-				spike_end->search_idx_start[k][m] = filtered_recording_data->buff_idx_write[k][m];
-			}
-		}		
 		spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;
 		*kernel_task_idle = 1;
 		previous_time_ns = current_time_ns;
@@ -706,7 +693,7 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *filter
 				idx = 0;
 		}
 	}
-	// filtered_recording_data->buff_idx_write[mwa][mwa_chan] = end_idx;    moved into kernelspike rt_handler
+	filtered_recording_data->buff_idx_write[mwa][mwa_chan] = end_idx;   
 }
 
 void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data, int mwa, int mwa_chan)
@@ -788,7 +775,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 		if (idx ==	RECORDING_DATA_BUFF_SIZE)
 			idx = 0;
 	}											
-//	spike_end->search_idx_start[mwa][mwa_chan] = end_idx;		// moved into rt_handler
+	spike_end->search_idx_start[mwa][mwa_chan] = end_idx;	
 }
 
 
@@ -801,20 +788,19 @@ void template_matching(RecordingData *filtered_recording_data, SpikeEnd *spike_e
 	
 	spike_end_buff_start_idx = spike_time_stamp->spike_end_buff_read_idx;
 	spike_end_buff_end_idx = spike_end->buff_idx_write;
-	
-	spike_end_buff = &(spike_end->spike_end_buff);
-	
-	idx = spike_end_buff_start_idx;
 
-	while (idx != spike_end_buff_end_idx)
-	{	
-		run_template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data, idx);
-
-		idx ++;
-		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
-			idx = 0;
+	if (shared_memory->kernel_task_ctrl.spike_sorting_on)
+	{
+		idx = spike_end_buff_start_idx;
+		while (idx != spike_end_buff_end_idx)
+		{	
+			run_template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data, idx);
+			idx ++;
+			if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
+				idx = 0;
+		}
 	}
-	//spike_time_stamp->spike_end_buff_read_idx = spike_end_buff_end_idx;   // moved into rt_handler
+	spike_time_stamp->spike_end_buff_read_idx = spike_end_buff_end_idx;   // set read index even though spike sorting is off. otherwise template mathing might work through all spike ends saved before enabling spike sorting. 
 }
 
 void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spike_end, SpikeTimeStamp *spike_time_stamp, TemplateMatchingData *template_matching_data, int spike_end_buffer_index_to_read)

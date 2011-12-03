@@ -388,6 +388,7 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_clear_nonsorted_unit_screen), "clicked", G_CALLBACK(clear_nonsorted_unit_screen_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_clear_unit_template), "clicked", G_CALLBACK(clear_unit_template_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_sorting_on_off), "clicked", G_CALLBACK(sorting_on_off_button_func), NULL);
+	g_signal_connect(G_OBJECT(btn_unit_sorting_on_off), "clicked", G_CALLBACK(unit_sorting_on_off_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_include_unit_on_off), "clicked", G_CALLBACK(include_unit_on_off_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_spike_filter_on_off), "clicked", G_CALLBACK(spike_filter_on_off_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_submit_probability_thres), "clicked", G_CALLBACK(submit_probability_thres_button_func), NULL);
@@ -589,13 +590,13 @@ void include_unit_on_off_button_func(void)
 	{
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }										
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit = 0;
-		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	}
 	else
 	{
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }															
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit = 1;
-		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	}
 	return;
 }
@@ -634,12 +635,12 @@ void pause_button_func(void)
 {
 	if (disp_paused)
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_spike_filter_on_off),"Resume");	
+		gtk_button_set_label (GTK_BUTTON(btn_pause),"Resume");	
 		disp_paused = 0;
 	}
 	else
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_spike_filter_on_off),"Pause");	
+		gtk_button_set_label (GTK_BUTTON(btn_pause),"Pause");	
 		disp_paused = 1;
 	}	
 }
@@ -1071,6 +1072,13 @@ gboolean timeout_callback(gpointer user_data)
 	spike_end = &shared_memory->spike_end;	
 	spike_time_stamp = &shared_memory->spike_time_stamp;
 
+	if (disp_paused)
+	{
+		spike_end_buff_read_idx = spike_end->buff_idx_write;
+		spike_time_stamp_buff_read_idx = spike_time_stamp->buff_idx_write;
+		return TRUE;
+	}
+
 	plotting_in_progress = 1;
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
 		return TRUE; 
@@ -1170,7 +1178,7 @@ gboolean timeout_callback(gpointer user_data)
 		if (idx ==	SPIKE_TIMESTAMP_BUFF_SIZE)
 			idx = 0;	
 	}
-	spike_end_buff_read_idx = spike_end_buff_end_idx;	
+	spike_time_stamp_buff_read_idx = spike_time_stamp_buff_end_idx;
 	plotting_in_progress = 0;
 	return TRUE; 	
 }

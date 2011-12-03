@@ -23,7 +23,6 @@ GtkWidget *entry_mwa_chan_range_lower;
 GtkWidget *entry_mwa_chan_range_upper;
 
 GtkWidget *btn_map_channels;
-GtkWidget *btn_finalize_mapping;
 GtkWidget *btn_interrogate_mapping;
 
 GtkWidget *btn_select_config_file_to_load;
@@ -35,8 +34,7 @@ GtkWidget *btn_save_config_file;
 
 void create_gui(void);
 void map_channels_button_func(void); 
-void finalize_mapping_button_func(void); 
 void interrogate_mapping_button_func(void); 
 void load_config_file_button_func(void); 
 void save_config_file_button_func(void); 
-bool  interrogate_mapping(void);
+bool interrogate_mapping(void);

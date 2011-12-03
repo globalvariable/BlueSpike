@@ -105,8 +105,8 @@ float x_upper_2, x_lower_2, y_upper_2, y_lower_2;
 
 int disp_paused;
 
-int spike_time_stamp_buff_read_idx;  
 int spike_end_buff_read_idx;  
+int spike_time_stamp_buff_read_idx;
 
 int plotting_in_progress;
 
