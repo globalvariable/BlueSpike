@@ -143,7 +143,7 @@ void create_gui(void)
         gtk_box_pack_start(GTK_BOX(hbox),entryThreshold, FALSE,FALSE,0);
 
 	char thres[20];
-	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
+	sprintf(thres, "%.2f" , shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);
 
     	hbox = gtk_hbox_new(FALSE, 0);
@@ -409,7 +409,7 @@ gboolean combo_mwa_func (GtkDatabox * box)
 		printf("ERROR: No data will be plotted.\n");
 	}
 
-	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
+	sprintf(thres, "%.2f" , shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
 	clear_spike_screen();
 	clear_raw_data_screen();		
@@ -434,7 +434,7 @@ gboolean combo_chan_func (GtkDatabox * box)
 		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
 		printf("ERROR: No data will be plotted.\n");
 	}	
-	sprintf(thres, "%.2f" , shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]);
+	sprintf(thres, "%.2f" , shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
 	clear_spike_screen();
 	clear_raw_data_screen();		
@@ -480,7 +480,7 @@ gboolean threshold_but_func (GtkDatabox * box)
 	if (threshold <= 0.0)
 	{
 		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }
-		shared_memory->spike_end.amplitude_thres[display_mwa][display_mwa_chan]=threshold;
+		shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]=threshold;
 		if (threshold == 0.0)
 		{
 			printf("Spike detection is disable for this channel by applying 0.0 Volts as threshold\n");		

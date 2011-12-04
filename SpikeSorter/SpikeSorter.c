@@ -415,6 +415,14 @@ void combo_mwa_func (void)
 
 	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
+	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
+	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	clear_spikes_screen();
 	return;
 }
@@ -441,6 +449,14 @@ void combo_chan_func (void)
 	}	
 	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
+	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
+	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");	
 	clear_spikes_screen();		
 	return;	
 }
@@ -467,6 +483,14 @@ void combo_unit_func (void)
 	}	
 	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
+	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
+	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	return;	
 }
 
@@ -801,7 +825,7 @@ void load_template_file_button_func(void)
 			}
 			line_cntr++;
 			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-			shared_memory->spike_end.amplitude_thres[i][j] = (bool)atof(line);			
+			shared_memory->spike_thresholding.amplitude_thres[i][j] = atof(line);			
 		}
 	}	
 
@@ -958,7 +982,7 @@ void save_template_file_button_func(void)
 				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].sorting_on);		
 				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].include_unit);																
 			}
-			fprintf(fp, "%f\n", shared_memory->spike_end.amplitude_thres[i][j]);																			
+			fprintf(fp, "%f\n", shared_memory->spike_thresholding.amplitude_thres[i][j]);																			
 		}
 	}
 	fprintf(fp, "---------------End of SpikeSorter Configuration File--------------\n");	
