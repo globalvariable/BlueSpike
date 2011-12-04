@@ -51,7 +51,7 @@ GtkWidget *btn_filter_highpass_400Hz;
 GtkWidget *btn_filter_lowpass_8KHz;
 GtkWidget *btn_print_spike_end_buff;
 
-int spike_end_buff_read_idx;
+int spike_time_stamp_buff_read_idx;
 
 GtkWidget *entryThreshold;
 

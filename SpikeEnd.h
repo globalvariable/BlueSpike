@@ -22,6 +22,7 @@ typedef struct __SpikeEnd
 {
 	SpikeEndBuff		spike_end_buff;
 	int				buff_idx_write;
+	int				buff_idx_start;	
 	int				search_idx_start[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 	float 			amplitude_thres[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 	bool 			in_spike[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];

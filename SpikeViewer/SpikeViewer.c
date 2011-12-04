@@ -228,7 +228,7 @@ void create_gui(void)
 
  	gtk_widget_show_all(window);
  	
-	spike_end_buff_read_idx = shared_memory->spike_end.buff_idx_write;
+	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
 
   	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 	g_signal_connect(G_OBJECT(btn_filter_highpass_150Hz), "clicked", G_CALLBACK(filter_highpass_150Hz_button_func), NULL);
@@ -250,14 +250,14 @@ void create_gui(void)
 gboolean timeout_callback(gpointer user_data) 
 {
 	int start_idx, i;
-	int spike_end_buff_end_idx, idx;
-	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx; 
-	long long unsigned int spike_end_buff_peak_time;
+	int spike_time_stamp_buff_end_idx, idx;
+	int spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_recording_data_idx; 
+	long long unsigned int spike_time_stamp_buff_peak_time;
 	int spike_idx;
 	float *Y_temp_spike;
 	RecordingData	*handling_data;
 	RecordingDataChanBuff	*handling_data_chan_buff;
-	SpikeEnd *spike_end;
+	SpikeTimeStamp *spike_time_stamp;
 	
 	if ((shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
 		return TRUE;
@@ -271,7 +271,7 @@ gboolean timeout_callback(gpointer user_data)
 		handling_data = &shared_memory->recording_data;
 	}
 	handling_data_chan_buff = &(handling_data->recording_data_buff[display_mwa][display_mwa_chan]);
-	spike_end = &shared_memory->spike_end;	
+	spike_time_stamp = &shared_memory->spike_time_stamp;	
 			
 	start_idx = handling_data->buff_idx_write[display_mwa][display_mwa_chan] / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
 
@@ -290,16 +290,16 @@ gboolean timeout_callback(gpointer user_data)
 		gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
 	}
 	
-	idx = spike_end_buff_read_idx;
-	spike_end_buff_end_idx = spike_end->buff_idx_write;
-	while (idx != spike_end_buff_end_idx)
+	idx = spike_time_stamp_buff_read_idx;
+	spike_time_stamp_buff_end_idx = shared_memory->spike_time_stamp.buff_idx_write;
+	while (idx != spike_time_stamp_buff_end_idx)
 	{
-		spike_end_buff_recording_data_idx = spike_end->spike_end_buff[idx].recording_data_buff_idx;
-		spike_end_buff_mwa = spike_end->spike_end_buff[idx].mwa;
-		spike_end_buff_chan = spike_end->spike_end_buff[idx].chan;
-		spike_end_buff_peak_time = spike_end->spike_end_buff[idx].peak_time;			
-		spike_idx = spike_end_buff_recording_data_idx;
-		if ((spike_end_buff_mwa == display_mwa) && (spike_end_buff_chan == display_mwa_chan))
+		spike_time_stamp_buff_recording_data_idx = spike_time_stamp->spike_timestamp_buff[idx].recording_data_buff_idx;
+		spike_time_stamp_buff_mwa = spike_time_stamp->spike_timestamp_buff[idx].mwa;
+		spike_time_stamp_buff_chan = spike_time_stamp->spike_timestamp_buff[idx].channel;
+		spike_time_stamp_buff_peak_time = spike_time_stamp->spike_timestamp_buff[idx].peak_time;			
+		spike_idx = spike_time_stamp_buff_recording_data_idx;
+		if ((spike_time_stamp_buff_mwa == display_mwa) && (spike_time_stamp_buff_chan == display_mwa_chan))
 		{
 			Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
 			Y_spikes_idx ++;
@@ -315,12 +315,12 @@ gboolean timeout_callback(gpointer user_data)
 			gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 		}
 		if (print_spike_end_buff)
-			printf ("%d %d %llu %d\n", spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_peak_time, spike_end_buff_recording_data_idx);	
+			printf ("%d %d %llu %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_peak_time, spike_time_stamp_buff_recording_data_idx);	
 		idx++;	
 		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
 			idx = 0;	
 	}
-	spike_end_buff_read_idx = spike_end_buff_end_idx;
+	spike_time_stamp_buff_read_idx = spike_time_stamp_buff_end_idx;
 	return TRUE;  
 
 }

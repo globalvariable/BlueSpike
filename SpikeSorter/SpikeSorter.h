@@ -105,7 +105,6 @@ float x_upper_2, x_lower_2, y_upper_2, y_lower_2;
 
 int disp_paused;
 
-int spike_end_buff_read_idx;  
 int spike_time_stamp_buff_read_idx;
 
 int plotting_in_progress;
@@ -118,7 +117,6 @@ void clear_spike_selection_screen_button_func(void);
 void clear_unit_screen_button_func(void);
 void clear_nonsorted_unit_screen_button_func(void);
 void clear_unit_template_button_func(void);
-void sorting_on_off_button_func(void);
 void unit_sorting_on_off_button_func(void);
 void include_unit_on_off_button_func(void);
 void spike_filter_on_off_button_func(void);

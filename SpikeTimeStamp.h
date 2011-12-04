@@ -21,5 +21,4 @@ typedef struct __SpikeTimeStamp
 {
 	SpikeTimeStampBuff		spike_timestamp_buff;
 	int					buff_idx_write;
-	int					spike_end_buff_read_idx;
 } SpikeTimeStamp;

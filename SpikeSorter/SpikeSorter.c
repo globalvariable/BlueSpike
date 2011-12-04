@@ -210,17 +210,6 @@ void create_gui(void)
 	gtk_box_pack_start (GTK_BOX (hbox), btn_pause, TRUE, TRUE, 0);	
  
   	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
-  	
-  	btn_sorting_on_off = gtk_button_new_with_label("Spike Sorting: OFF");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_sorting_on_off, TRUE, TRUE, 0);
-	
-	if (shared_memory->kernel_task_ctrl.spike_sorting_on)
-	{
-		gtk_button_set_label (GTK_BUTTON(btn_sorting_on_off),"Spike Sorting: ON");
-	}	
- 
-  	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 
   	
   	hbox = gtk_hbox_new(FALSE, 0);
@@ -387,7 +376,6 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_clear_unit_screen), "clicked", G_CALLBACK(clear_unit_screen_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_clear_nonsorted_unit_screen), "clicked", G_CALLBACK(clear_nonsorted_unit_screen_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_clear_unit_template), "clicked", G_CALLBACK(clear_unit_template_button_func), NULL);
-	g_signal_connect(G_OBJECT(btn_sorting_on_off), "clicked", G_CALLBACK(sorting_on_off_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_unit_sorting_on_off), "clicked", G_CALLBACK(unit_sorting_on_off_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_include_unit_on_off), "clicked", G_CALLBACK(include_unit_on_off_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_spike_filter_on_off), "clicked", G_CALLBACK(spike_filter_on_off_button_func), NULL);
@@ -397,7 +385,8 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_save_template_file), "clicked", G_CALLBACK(save_template_file_button_func), NULL);
 	g_signal_connect(G_OBJECT(box_nonsorted_all_spike), "selection-finalized", G_CALLBACK(spike_selection_rectangle_func), NULL);
 	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
-	spike_end_buff_read_idx = shared_memory->spike_end.buff_idx_write;
+	
+	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
 
 	g_timeout_add(50, timeout_callback, NULL);
 	
@@ -541,32 +530,6 @@ void clear_unit_template_button_func(void)
 	}
 }
 
-void sorting_on_off_button_func(void)
-{
-	if (shared_memory->kernel_task_ctrl.spike_sorting_on)
-	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }										
-		shared_memory->kernel_task_ctrl.spike_sorting_on = 0;
-		gtk_button_set_label (GTK_BUTTON(btn_sorting_on_off),"Spike Sorting: OFF");
-	}
-	else
-	{
-		if ((shared_memory->kernel_task_ctrl.highpass_150Hz_on) || (shared_memory->kernel_task_ctrl.highpass_400Hz_on))
-		{
-			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }															
-			shared_memory->kernel_task_ctrl.spike_sorting_on = 1;
-			gtk_button_set_label (GTK_BUTTON(btn_sorting_on_off),"Spike Sorting: ON");
-		}
-		else
-		{
-			printf("SpikeSorter:\n");	
-			printf("WARNING: Cannot turn Spike Sorting on\n");
-			printf("WARNNG: First turn one High-pass filter on\n");			
-		}
-	}	
-	return;	
-}
-
 void unit_sorting_on_off_button_func(void)
 {
 	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
@@ -635,12 +598,12 @@ void pause_button_func(void)
 {
 	if (disp_paused)
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_pause),"Resume");	
+		gtk_button_set_label (GTK_BUTTON(btn_pause),"Pause");	
 		disp_paused = 0;
 	}
 	else
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_pause),"Pause");	
+		gtk_button_set_label (GTK_BUTTON(btn_pause),"Resume");	
 		disp_paused = 1;
 	}	
 }
@@ -1061,8 +1024,7 @@ gboolean timeout_callback(gpointer user_data)
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
 	SpikeEnd *spike_end;
 	SpikeTimeStamp 		*spike_time_stamp;	
-	int idx, spike_time_stamp_buff_end_idx, spike_end_buff_end_idx;
-	int spike_end_buff_mwa, spike_end_buff_chan, spike_end_buff_recording_data_idx;
+	int idx, spike_time_stamp_buff_end_idx;
 	int spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_unit, spike_time_stamp_buff_recording_data_idx;	
 	int spike_idx;	
 	float *Y_temp;
@@ -1074,7 +1036,6 @@ gboolean timeout_callback(gpointer user_data)
 
 	if (disp_paused)
 	{
-		spike_end_buff_read_idx = spike_end->buff_idx_write;
 		spike_time_stamp_buff_read_idx = spike_time_stamp->buff_idx_write;
 		return TRUE;
 	}
@@ -1085,70 +1046,6 @@ gboolean timeout_callback(gpointer user_data)
 	
 	filtered_recording_data_chan_buff = &shared_memory->filtered_recording_data.recording_data_buff[disp_mwa][disp_chan];
 		
-	idx = spike_end_buff_read_idx;		// spike_end_buff_read_idx first initialized in create_gui() to be shared_memory->spike_end.buff_idx_write
-	spike_end_buff_end_idx = spike_end->buff_idx_write;
-	while (idx != spike_end_buff_end_idx)
-	{
-		spike_end_buff_recording_data_idx = spike_end->spike_end_buff[idx].recording_data_buff_idx;
-		spike_end_buff_mwa = spike_end->spike_end_buff[idx].mwa;
-		spike_end_buff_chan = spike_end->spike_end_buff[idx].chan;
-		spike_idx = spike_end_buff_recording_data_idx;
-		if ((spike_end_buff_mwa == disp_mwa) && (spike_end_buff_chan == disp_chan))
-		{
-			Y_temp = g_ptr_array_index(Y_non_sorted_all_spikes,Y_non_sorted_all_spikes_last_g_ptr_array_idx);
-			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
-			{
-				Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
-				spike_idx--;
-				if (spike_idx < 0)
-					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
-			}
-			if (spike_filter_mode_on)
-			{
-				spike_in_range = 0;
-				for (i = 0; i < NUM_OF_SAMP_PER_SPIKE; i++)
-				{
-					if ((Y_temp[i]  >=  y_lower_1) && (Y_temp[i] <=  y_upper_1) && (i >= x_lower_1) && (i <= x_upper_1)) 
-					{
-						for (j = 0; j < NUM_OF_SAMP_PER_SPIKE; j++)
-						{
-							if ((Y_temp[j]  >=  y_lower_2) && (Y_temp[j] <=  y_upper_2) && (j >= x_lower_2) && (j <= x_upper_2))
-							{
-								spike_in_range = 1;
-								break;
-							} 							
-						}
-						if (spike_in_range)
-						{
-							gtk_databox_set_total_limits (GTK_DATABOX (box_nonsorted_all_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
-							Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
-							if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
-								Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;	
-							break;					
-						}				
-					}
-				}
-				if (!spike_in_range)
-				{
-					for (i = 0; i < NUM_OF_SAMP_PER_SPIKE; i++)
-					{
-						Y_temp[i] = 0;
-					}						
-				}							
-			}
-			else
-			{
-				Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
-				if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
-					Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;
-			}
-		}
-		idx++;	
-		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
-			idx = 0;	
-	}
-	spike_end_buff_read_idx = spike_end_buff_end_idx;
-	
 	idx = spike_time_stamp_buff_read_idx;				// spike_time_stamp_buff_read_idx first initialized in create_gui() to be shared_memory->spike_time_stamp.buff_idx_write
 	spike_time_stamp_buff_end_idx = spike_time_stamp->buff_idx_write;
 	while (idx != spike_time_stamp_buff_end_idx)
@@ -1188,6 +1085,55 @@ gboolean timeout_callback(gpointer user_data)
 						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
 				}
 			}
+			//    Plot all non sorted spikes
+			spike_idx = spike_time_stamp_buff_recording_data_idx;			
+			Y_temp = g_ptr_array_index(Y_non_sorted_all_spikes,Y_non_sorted_all_spikes_last_g_ptr_array_idx);
+			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+			{
+				Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
+				spike_idx--;
+				if (spike_idx < 0)
+					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+			}
+			if (spike_filter_mode_on)
+			{
+				spike_in_range = 0;
+				for (i = 0; i < NUM_OF_SAMP_PER_SPIKE; i++)
+				{
+					if ((Y_temp[i]  >=  y_lower_1) && (Y_temp[i] <=  y_upper_1) && (i >= x_lower_1) && (i <= x_upper_1)) 
+					{
+						for (j = 0; j < NUM_OF_SAMP_PER_SPIKE; j++)
+						{
+							if ((Y_temp[j]  >=  y_lower_2) && (Y_temp[j] <=  y_upper_2) && (j >= x_lower_2) && (j <= x_upper_2))
+							{
+								spike_in_range = 1;
+								break;
+							} 							
+						}
+						if (spike_in_range)
+						{
+							Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
+							if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
+								Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;	
+							break;					
+						}				
+					}
+				}
+				if (!spike_in_range)
+				{
+					for (i = 0; i < NUM_OF_SAMP_PER_SPIKE; i++)
+					{
+						Y_temp[i] = 0;
+					}						
+				}							
+			}
+			else
+			{
+				Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
+				if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
+					Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;
+			}			
+			
 		}
 		idx++;	
 		if (idx ==	SPIKE_TIMESTAMP_BUFF_SIZE)
