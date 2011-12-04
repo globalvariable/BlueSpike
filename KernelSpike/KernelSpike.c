@@ -79,7 +79,8 @@ void rt_handler(int t)
 				front[i] = front[i] - comedi_buff_size[i];
 			if(num_byte[i] == 0)
 			{
-				printk("num_byte[%d] = 0\n", i);
+				printk("CRITICAL ERROR: Must be exceeding rt_task_wait_period, num_byte[%d] = 0\n", i);
+				printk("CRITICAL ERROR: Task lsted too long > TICK_PERIOD.\n");
 				continue;
 			}
 				
@@ -136,6 +137,19 @@ void rt_handler(int t)
 				}
 			}
 			template_matching(filtered_recording_data, spike_end, spike_time_stamp, template_matching_data);
+		}
+		else
+		{
+			//   shouldn' t lose recording data write index when filtering is turn off.  
+			for (k=0; k<MAX_NUM_OF_MWA; k++)
+			{
+				for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
+				{
+					filtered_recording_data->buff_idx_write[k][m] = recording_data->buff_idx_write[k][m];
+				//	spike_end->search_idx_start[k][m] = filtered_recording_data->buff_idx_write[k][m];             //redundant
+				}
+			} 	
+			// spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;	// redundant
 		}
 		print_buffer_warning_and_errors();		
 
@@ -224,6 +238,7 @@ void __exit xcleanup_module(void)
 		comedi_close(ni6070_comedi_dev[i]);
 	}
     	rtai_kfree(nam2num(SHARED_MEM_NAME));
+    	printk("rmmod KernekSpike\n");
 	return;
 }
 
@@ -784,8 +799,6 @@ void template_matching(RecordingData *filtered_recording_data, SpikeEnd *spike_e
 	
 	int spike_end_buff_start_idx, spike_end_buff_end_idx, idx;
 
-	SpikeEndBuff *spike_end_buff;
-	
 	spike_end_buff_start_idx = spike_time_stamp->spike_end_buff_read_idx;
 	spike_end_buff_end_idx = spike_end->buff_idx_write;
 
