@@ -1138,7 +1138,6 @@ gboolean timeout_callback(gpointer user_data)
 			}
 			else
 			{
-				gtk_databox_set_total_limits (GTK_DATABOX (box_nonsorted_all_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 				Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
 				if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
 					Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;
@@ -1161,24 +1160,47 @@ gboolean timeout_callback(gpointer user_data)
 		spike_idx = spike_time_stamp_buff_recording_data_idx;
 		if ((spike_time_stamp_buff_mwa == disp_mwa) && (spike_time_stamp_buff_chan == disp_chan))
 		{
-			Y_temp = g_ptr_array_index(Y_sorted_spikes_arr[spike_time_stamp_buff_unit],Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit]);
-				Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] ++;
-			if (Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] == SPIKE_MEM_TO_DISPLAY_UNIT)
-				Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] = 0;
-			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+			if (spike_time_stamp_buff_unit == MAX_NUM_OF_UNIT_PER_CHAN)    // not sorted spike
 			{
-				Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
-				spike_idx--;
-				if (spike_idx < 0)
-					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				Y_temp = g_ptr_array_index(Y_non_sorted_spike,Y_non_sorted_spike_last_g_ptr_array_idx);
+				Y_non_sorted_spike_last_g_ptr_array_idx ++;
+				if (Y_non_sorted_spike_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_UNIT)
+					Y_non_sorted_spike_last_g_ptr_array_idx = 0;
+				for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+				{
+					Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
+					spike_idx--;
+					if (spike_idx < 0)
+						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				}
 			}
-			gtk_databox_set_total_limits (GTK_DATABOX (box_units[spike_time_stamp_buff_unit]), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+			else
+			{
+				Y_temp = g_ptr_array_index(Y_sorted_spikes_arr[spike_time_stamp_buff_unit],Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit]);
+				Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] ++;
+				if (Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] == SPIKE_MEM_TO_DISPLAY_UNIT)
+					Y_sorted_spikes_last_g_ptr_array_idx[spike_time_stamp_buff_unit] = 0;
+				for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+				{
+					Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
+					spike_idx--;
+					if (spike_idx < 0)
+						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				}
+			}
 		}
 		idx++;	
 		if (idx ==	SPIKE_TIMESTAMP_BUFF_SIZE)
 			idx = 0;	
 	}
 	spike_time_stamp_buff_read_idx = spike_time_stamp_buff_end_idx;
+	gtk_databox_set_total_limits (GTK_DATABOX (box_non_sorted_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);		
+	gtk_databox_set_total_limits (GTK_DATABOX (box_nonsorted_all_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+	gtk_databox_set_total_limits (GTK_DATABOX (box_sorted_all_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
+	for (i=0;i<MAX_NUM_OF_UNIT_PER_CHAN; i++)
+	{	
+		gtk_databox_set_total_limits (GTK_DATABOX (box_units[i]), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+	}				
 	plotting_in_progress = 0;
 	return TRUE; 	
 }

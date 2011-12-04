@@ -238,7 +238,7 @@ void __exit xcleanup_module(void)
 		comedi_close(ni6070_comedi_dev[i]);
 	}
     	rtai_kfree(nam2num(SHARED_MEM_NAME));
-    	printk("rmmod KernekSpike\n");
+    	printk("rmmod KernelSpike\n");
 	return;
 }
 
@@ -837,7 +837,6 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 	mwa_chan = (*spike_end_buff)[spike_end_buffer_index_to_read].chan;
 	spike_end_idx_in_filtered_recording = (*spike_end_buff)[spike_end_buffer_index_to_read].recording_data_buff_idx;		
 
-	spike_end_buff = &(spike_end->spike_end_buff);
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][mwa_chan]);
 
 
@@ -891,11 +890,11 @@ void run_template_matching(RecordingData *filtered_recording_data, SpikeEnd *spi
 	}
 	
 	//   Write spike time stamp into shared_memory->spike_time_stamp
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].peak_time = (*spike_end_buff[spike_end_buffer_index_to_read]).peak_time;
+	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].peak_time = (*spike_end_buff)[spike_end_buffer_index_to_read].peak_time;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].mwa = mwa;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].channel = mwa_chan;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].unit = greatest_idx;
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = (*spike_end_buff[spike_end_buffer_index_to_read]).recording_data_buff_idx;
+	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = (*spike_end_buff)[spike_end_buffer_index_to_read].recording_data_buff_idx;
 	spike_time_stamp->buff_idx_write++;
 	if (spike_time_stamp->buff_idx_write == SPIKE_TIMESTAMP_BUFF_SIZE)
 		spike_time_stamp->buff_idx_write  = 0;	
