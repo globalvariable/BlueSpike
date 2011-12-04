@@ -1309,7 +1309,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(i*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
-			temp_mtx_1[i][j] = (double)(Y_temp[j] - template_matching_unit_data->template[i]);
+			temp_mtx_1[i][j] = (double)(Y_temp[j] - template_matching_unit_data->template[j]);
 		}		
 	}
 	

@@ -908,14 +908,15 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	double diff[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
 	double diff_temporary[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
 	double exponent[MAX_NUM_OF_UNIT_PER_CHAN];	
-	double probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
-	int i, j, unit, greatest, greatest_idx;
+	double probabl[MAX_NUM_OF_UNIT_PER_CHAN];
+	double greatest;	
+	int i, j, unit, greatest_idx;
 
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][chan]);
 	template_matching_data = &shared_memory->template_matching_data;
 	spike_time_stamp = &shared_memory->spike_time_stamp;
 
-	greatest = g_x[0];
+	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
 
 	for (unit = 0; unit <MAX_NUM_OF_UNIT_PER_CHAN; unit++)
