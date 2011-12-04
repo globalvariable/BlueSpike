@@ -10,7 +10,7 @@
 
 typedef struct __SpikeEndItem
 {
-	int 			recording_data_buff_idx;    // index of SpikeEndData in filtered recording data buffer 
+	int 			end_of_spike_in_filtered_recording_data_buff;    // index of SpikeEndData in filtered recording data buffer 
 	int 			mwa;
 	int 			chan;
 	TimeStamp	peak_time;
@@ -22,10 +22,7 @@ typedef struct __SpikeEnd
 {
 	SpikeEndBuff		spike_end_buff;
 	int				buff_idx_write;
-	int				buff_idx_start;	
-	int				search_idx_start[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
-	float 			amplitude_thres[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
-	bool 			in_spike[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+	int				filtered_recording_data_start_idx_to_read[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 } SpikeEnd;
 
 #define SPIKE_MIN_END_SAMP_NUM   15

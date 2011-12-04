@@ -3,6 +3,7 @@
 #include "MwaDaqMap.h"
 #include "DaqMwaMap.h"
 #include "RecordingData.h"
+#include "SpikeThresholding.h"
 #include "SpikeEnd.h"
 #include "SpikeEndHandling.h"
 #include "SpikeTimeStamp.h"
@@ -26,6 +27,7 @@ typedef struct __SharedMemStruct
 	MwaDaqMap				mwa_daq_map;
 	RecordingData				recording_data;
 	RecordingData				filtered_recording_data;
+	SpikeThresholding			spike_thresholding;
 	SpikeEnd					spike_end;
 	SpikeEndHandling			spike_end_handling;	
 	SpikeTimeStamp 			spike_time_stamp;

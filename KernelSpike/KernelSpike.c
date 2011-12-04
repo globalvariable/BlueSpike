@@ -714,17 +714,17 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 	float amplitude_thres, min;
 	bool *in_spike;
 
-	amplitude_thres = spike_end->amplitude_thres[mwa][mwa_chan];
+	amplitude_thres = shared_memory->spike_thresholding.amplitude_thres[mwa][mwa_chan];
 	if (amplitude_thres == 0.0)
 	{
-		spike_end->search_idx_start[mwa][mwa_chan] = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
+		spike_end->filtered_recording_data_start_idx_to_read[mwa][mwa_chan] = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
 		return;
 	}
 	
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][mwa_chan]);
-	start_idx = spike_end->search_idx_start[mwa][mwa_chan];
+	start_idx = spike_end->filtered_recording_data_start_idx_to_read[mwa][mwa_chan];
 	end_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
-	in_spike = &(spike_end->in_spike[mwa][mwa_chan]);
+	in_spike = &(shared_memory->spike_thresholding.in_spike[mwa][mwa_chan]);
 
 	idx = start_idx;
 
@@ -772,7 +772,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 			
 	
 			//   Write spike end into shared_memory->spike_end
-			spike_end->spike_end_buff[spike_end->buff_idx_write].recording_data_buff_idx = spike_end_idx;
+			spike_end->spike_end_buff[spike_end->buff_idx_write].end_of_spike_in_filtered_recording_data_buff = spike_end_idx;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].mwa = mwa;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].chan = mwa_chan;
 			spike_end->spike_end_buff[spike_end->buff_idx_write].peak_time = previous_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
@@ -785,7 +785,7 @@ void find_spike_end(SpikeEnd *spike_end, RecordingData *filtered_recording_data,
 		if (idx ==	RECORDING_DATA_BUFF_SIZE)
 			idx = 0;
 	}											
-	spike_end->search_idx_start[mwa][mwa_chan] = end_idx;	
+	spike_end->filtered_recording_data_start_idx_to_read[mwa][mwa_chan] = filtered_recording_data->buff_idx_write[mwa][mwa_chan];	
 }
 
 
@@ -821,7 +821,7 @@ void template_matching(void)
 	{
 		mwa = (*spike_end_handling_buff)[idx].mwa;
 		chan = (*spike_end_handling_buff)[idx].chan;
-		filtered_recording_data_buff_idx = (*spike_end_handling_buff)[idx].recording_data_buff_idx;
+		filtered_recording_data_buff_idx = (*spike_end_handling_buff)[idx].end_of_spike_in_filtered_recording_data_buff;
 		peak_time = (*spike_end_handling_buff)[idx].peak_time;		
 		
 		if (is_index_between_indexes(spike_end_handling->filtered_recording_data_prev_idx[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
@@ -835,7 +835,7 @@ void template_matching(void)
 		{
 			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].mwa = mwa;		// push to the end off buffer to be handled later on
 			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].chan = chan;
-			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].recording_data_buff_idx = filtered_recording_data_buff_idx;
+			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
 			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].peak_time = peak_time;
 			spike_end_handling->buff_write_idx++;
 			if (spike_end_handling->buff_write_idx == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
@@ -863,7 +863,7 @@ void template_matching(void)
 	{	
 		mwa = (*spike_end_buff)[idx].mwa;
 		chan = (*spike_end_buff)[idx].chan;
-		filtered_recording_data_buff_idx = (*spike_end_buff)[idx].recording_data_buff_idx;
+		filtered_recording_data_buff_idx = (*spike_end_buff)[idx].end_of_spike_in_filtered_recording_data_buff;
 		peak_time = (*spike_end_buff)[idx].peak_time;
 			
 		if (is_index_between_indexes(spike_end_handling->filtered_recording_data_prev_idx[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
@@ -874,7 +874,7 @@ void template_matching(void)
 		{
 			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].mwa = mwa;		// push to the end off buffer to be handled later on
 			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].chan = chan;
-			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].recording_data_buff_idx = filtered_recording_data_buff_idx;
+			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
 			(*spike_end_handling_buff)[spike_end_handling->buff_write_idx].peak_time = peak_time;
 			spike_end_handling->buff_write_idx++;
 			if (spike_end_handling->buff_write_idx == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
@@ -891,7 +891,7 @@ void template_matching(void)
 			spike_end_handling->filtered_recording_data_prev_idx[i][j] =  filtered_recording_data->buff_idx_write[i][j];
 		}
 	}	
-	spike_end_handling->spike_end_buff_prev_idx = spike_end_buff_end_idx;   // set read index even though spike sorting is off. otherwise template mathing might work through all spike ends saved before enabling spike sorting. 
+	spike_end_handling->spike_end_buff_prev_idx = spike_end->buff_idx_write;   // set read index even though spike sorting is off. otherwise template mathing might work through all spike ends saved before enabling spike sorting. 
 }
 
 
