@@ -425,13 +425,13 @@ void combo_mwa_func (void)
 	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
 	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
-		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
-	else
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
-	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
-		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	clear_spikes_screen();
 	return;
 }
@@ -459,13 +459,13 @@ void combo_chan_func (void)
 	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
 	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
-		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
-	else
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
-	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
-		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	else
-		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");	
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");	
 	clear_spikes_screen();		
 	return;	
 }
@@ -493,13 +493,13 @@ void combo_unit_func (void)
 	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
 	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
-		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
-	else
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
-	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
-		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
+	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");	
 	return;	
 }
 
@@ -1293,7 +1293,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	
 	double *Y_analyze, *Y_temp, Y_sum = 0;
 	double *Y_mean;
-	int i ,j, k, idx;
+	int i ,j, idx;
 	idx= 0;
 	GPtrArray *Y_spikes_in_range_array;
 	Y_spikes_in_range_array = g_ptr_array_new();
@@ -1352,25 +1352,27 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	}
 	
 	TemplateMatchingUnitData *template_matching_unit_data = &shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit];
-		
+
 	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 	{
 		template_matching_unit_data->template[i] = Y_mean[i]/MIN_SPIKE_NUM_FOR_TEMPLATE;
 		Y_templates[disp_unit][i] = template_matching_unit_data->template[i];
 	}
 	gtk_databox_set_total_limits (GTK_DATABOX (box_units[disp_unit]), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
-	
-	double temp_mtx_1[MIN_SPIKE_NUM_FOR_TEMPLATE][NUM_OF_SAMP_PER_SPIKE];
-	double temp_mtx_2[MIN_SPIKE_NUM_FOR_TEMPLATE][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];
 
-	printf("SpikeSorter:\n");
-	printf("Selected spikes to form the template are: \n");
+	MAT *diff_mtx, *trans_diff_mtx;
+	MAT *S, *S_inv; 
+	S=m_get(NUM_OF_SAMP_PER_SPIKE,NUM_OF_SAMP_PER_SPIKE);
+	S_inv=m_get(NUM_OF_SAMP_PER_SPIKE,NUM_OF_SAMP_PER_SPIKE);	
+	diff_mtx = m_get(MIN_SPIKE_NUM_FOR_TEMPLATE, NUM_OF_SAMP_PER_SPIKE);
+	trans_diff_mtx = m_get(NUM_OF_SAMP_PER_SPIKE, MIN_SPIKE_NUM_FOR_TEMPLATE);
+
 	for (i=0; i<MIN_SPIKE_NUM_FOR_TEMPLATE; i++)
 	{
 		Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(i*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
-			temp_mtx_1[i][j] = (double)(Y_temp[j] - template_matching_unit_data->template[j]);
+			diff_mtx->me[i][j] =  Y_temp[j] - template_matching_unit_data->template[j];  
 		}
 		if (((int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE))) >= idx)
 		{
@@ -1385,36 +1387,19 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 			printf("%d\t", (int)(i*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 		}		
 	}
-	printf("\n");
-	for (i=0; i<MIN_SPIKE_NUM_FOR_TEMPLATE; i++)
-	{
-		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
-		{
-			for (k=0; k<NUM_OF_SAMP_PER_SPIKE; k++)
-			{
-				temp_mtx_2[i][j][k] = temp_mtx_1[i][j] * temp_mtx_1[i][k] ;
-			}
-		}	
-	}		
 	
-	MAT *S, *S_inv; 
-	S=m_get(NUM_OF_SAMP_PER_SPIKE,NUM_OF_SAMP_PER_SPIKE);
-	S_inv=m_get(NUM_OF_SAMP_PER_SPIKE,NUM_OF_SAMP_PER_SPIKE);
-	m_zero(S);
-	m_zero(S_inv);
+	m_transp(diff_mtx, trans_diff_mtx);	
+	m_mlt(trans_diff_mtx, diff_mtx, S);
+
 	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 	{
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
-			for (k=0; k<MIN_SPIKE_NUM_FOR_TEMPLATE; k++)
-			{
-				S->me[i][j] = S->me[i][j] + temp_mtx_2[k][i][j];
-			}
-			S->me[i][j] = S->me[i][j] / MIN_SPIKE_NUM_FOR_TEMPLATE;
-//			S->me[i][j] = ((int)((S->me[i][j] *1000000.0) +0.5))/ 1000000.0; 	// for removing precision after 10^(-6) and rounding
-		}	
+			S->me[i][j] = S->me[i][j] / (MIN_SPIKE_NUM_FOR_TEMPLATE-1);
+			S->me[i][j] = floor((S->me[i][j] * (1.0E+20)) + 0.5) /  (1.0E+20);					// to round at 10^(-20) th to get a more symmetrical inverted matrix (S_inv)
+		}
 	}	
-	
+		
 	MAT *LU; 
 	PERM *pivot; 
 	LU = m_get(S->m,S->n);
@@ -1438,7 +1423,8 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	
 	if (determinant < 0)
 		determinant = determinant *(-1.0);	
-	printf ("log(determinant) = %lf\n", log(determinant)); 		
+		
+	printf ("log(determinant) = %.10f\n", log(determinant)); 		
 
 	template_matching_unit_data->sqrt_det_S = sqrt(determinant); 
 	template_matching_unit_data->log_det_S = log(determinant);
@@ -1453,6 +1439,8 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	
 	m_free(S);
 	m_free(S_inv);
+	m_free(diff_mtx);
+	m_free(trans_diff_mtx);	
 
 	g_ptr_array_free(Y_spikes_in_range_array,FALSE);
 	g_free(Y_mean);

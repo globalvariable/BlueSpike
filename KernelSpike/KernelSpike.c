@@ -945,7 +945,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 			}
 			exponent[unit] = exp((-0.5)*g_x[unit]);
 			probabl[unit] = (1.06488319787324016356e-12/unit_template_data->sqrt_det_S)*exponent[unit];       //   ( 1/ (   ((2*pi)^(d/2)) * (det_S^(1/2)) ) * exp( (-1/2) * (x-u)' * (S^ (-1)) - (x-u) )   d= 30
-			probabl[unit] = (probabl[unit] + 1) - 1;    // to check DBL_EPSILON 
+
 			g_x[unit] = 0 - (unit_template_data->log_det_S) - (g_x[unit]);	
 			
 			if ((g_x[unit] > greatest) && (probabl[unit] > unit_template_data->probability_thres))    // assign spike to a unit.
