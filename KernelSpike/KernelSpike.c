@@ -94,10 +94,11 @@ void rt_handler(int t)
 					{
 						recording_data->recording_data_buff[mwa][mwa_chan][*recording_data_write_idx] = (*(sampl_t *)(comedi_map_ptr[i] + back[i] + j) - BASELINE_QUANT_6070E) / VOLTAGE_MULTIPLIER_MV_6070E;
 					}
-
-					(*recording_data_write_idx)++;
-					if ((*recording_data_write_idx) == RECORDING_DATA_BUFF_SIZE)
+					
+					if (((*recording_data_write_idx) +1) == RECORDING_DATA_BUFF_SIZE) 
 						(*recording_data_write_idx) = 0;
+					else
+						(*recording_data_write_idx)++;
 				}
 				else if (((mwa == MAX_NUM_OF_MWA) && (mwa_chan != MAX_NUM_OF_CHAN_PER_MWA)) || ((mwa != MAX_NUM_OF_MWA) && (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA)))
 				{
@@ -774,9 +775,10 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 			spike_end.spike_end_buff[spike_end.buff_idx_write].mwa = mwa;
 			spike_end.spike_end_buff[spike_end.buff_idx_write].chan = mwa_chan;
 			spike_end.spike_end_buff[spike_end.buff_idx_write].peak_time = previous_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
-			(spike_end.buff_idx_write)++;
-			if (spike_end.buff_idx_write == SPIKE_END_DATA_BUFF_SIZE)
+			if ((spike_end.buff_idx_write + 1) == SPIKE_END_DATA_BUFF_SIZE)
 				spike_end.buff_idx_write = 0;
+			else
+				(spike_end.buff_idx_write)++;
 			spike_end_buff_control_cntr++;		// to check if the buffer gets full in one rt task period
 		}
 		idx ++;
@@ -822,9 +824,10 @@ void template_matching(void)
 		if (is_index_between_indexes(spike_end_handling.filtered_recording_data_prev_idx[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
 		{
 			run_template_matching(filtered_recording_data, mwa, chan, filtered_recording_data_buff_idx, peak_time);
-			spike_end_handling.buff_start_idx++;
-			if (spike_end_handling.buff_start_idx == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
+			if ((spike_end_handling.buff_start_idx +1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 				spike_end_handling.buff_start_idx = 0;
+			else
+				spike_end_handling.buff_start_idx++;			
 		}
 		else
 		{
@@ -832,12 +835,16 @@ void template_matching(void)
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = chan;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
-			spike_end_handling.buff_write_idx++;
-			if (spike_end_handling.buff_write_idx == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
+
+			if ((spike_end_handling.buff_write_idx +1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 				spike_end_handling.buff_write_idx = 0;
-			spike_end_handling.buff_start_idx++;
-			if (spike_end_handling.buff_start_idx == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
-				spike_end_handling.buff_start_idx = 0;				
+			else
+				spike_end_handling.buff_write_idx++;			
+
+			if ((spike_end_handling.buff_start_idx + 1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
+				spike_end_handling.buff_start_idx = 0;
+			else	
+				spike_end_handling.buff_start_idx++;						
  		}
 		idx ++;
 		if (idx ==	SPIKE_END_HANDLING_DATA_BUFF_SIZE)
@@ -870,9 +877,10 @@ void template_matching(void)
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = chan;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
-			spike_end_handling.buff_write_idx++;
-			if (spike_end_handling.buff_write_idx == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
+			if ((spike_end_handling.buff_write_idx + 1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 				spike_end_handling.buff_write_idx = 0;
+			else
+				spike_end_handling.buff_write_idx++;
 		}
 		idx ++;
 		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
@@ -963,7 +971,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].channel = chan;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].unit = greatest_idx;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
-	if (spike_time_stamp->buff_idx_write +1 ==  SPIKE_TIMESTAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+	if ((spike_time_stamp->buff_idx_write +1) ==  SPIKE_TIMESTAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		spike_time_stamp->buff_idx_write = 0;
 	else
 		spike_time_stamp->buff_idx_write++;	
