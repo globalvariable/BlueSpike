@@ -89,6 +89,15 @@ void create_gui(void)
 		f_temp = g_new0 (float, NUM_OF_SAMP_PER_SPIKE);
 		g_ptr_array_add  (Y_non_sorted_all_spikes, f_temp);
 	}	
+	
+	double *dbl_temp;
+	dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;	
+	dbl_Y_non_sorted_all_spikes = g_ptr_array_new();
+	for (i=0; i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE; i++)
+	{		
+		dbl_temp = g_new0 (double, NUM_OF_SAMP_PER_SPIKE);
+		g_ptr_array_add  (dbl_Y_non_sorted_all_spikes, dbl_temp);
+	}		
 
 	for (i=0; i<MAX_NUM_OF_UNIT_PER_CHAN; i++)  // including non-sorted
 	{
@@ -497,6 +506,7 @@ void combo_unit_func (void)
 void clear_spike_selection_screen_button_func(void)
 {
 	float *Y_local;
+	double *dbl_Y_local;
 	int i,j;
 
 	for (i=0;i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE;i++)
@@ -507,6 +517,15 @@ void clear_spike_selection_screen_button_func(void)
 			Y_local[j] = 0;
 		}
 	}
+	
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE;i++)
+	{
+		dbl_Y_local = g_ptr_array_index(dbl_Y_non_sorted_all_spikes,i);
+		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
+		{
+			dbl_Y_local[j] = 0;
+		}
+	}	
 	gtk_databox_set_total_limits (GTK_DATABOX (box_nonsorted_all_spike), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
 }
 
@@ -994,8 +1013,17 @@ void save_template_file_button_func(void)
 void clear_spikes_screen(void)
 {
 	float *Y_local;
+	double *dbl_Y_local;
 	int i,j, k;
 
+	for (i=0;i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE;i++)
+	{
+		dbl_Y_local = g_ptr_array_index(dbl_Y_non_sorted_all_spikes,i);
+		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
+		{
+			dbl_Y_local[j] = 0;
+		}
+	}
 	for (i=0;i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE;i++)
 	{
 		Y_local = g_ptr_array_index(Y_non_sorted_all_spikes,i);
@@ -1052,6 +1080,7 @@ gboolean timeout_callback(gpointer user_data)
 	int spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_unit, spike_time_stamp_buff_recording_data_idx;	
 	int spike_idx;	
 	float *Y_temp;
+	double *dbl_Y_temp;
 	int i, j;
 	bool spike_in_range;
 	
@@ -1112,9 +1141,11 @@ gboolean timeout_callback(gpointer user_data)
 			//    Plot all non sorted spikes
 			spike_idx = spike_time_stamp_buff_recording_data_idx;			
 			Y_temp = g_ptr_array_index(Y_non_sorted_all_spikes,Y_non_sorted_all_spikes_last_g_ptr_array_idx);
+			dbl_Y_temp = g_ptr_array_index(dbl_Y_non_sorted_all_spikes,dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx);
 			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
 			{
 				Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
+				dbl_Y_temp[i] = (*filtered_recording_data_chan_buff)[spike_idx];
 				spike_idx--;
 				if (spike_idx < 0)
 					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
@@ -1138,7 +1169,10 @@ gboolean timeout_callback(gpointer user_data)
 						{
 							Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
 							if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
-								Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;	
+								Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;
+							dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
+							if (dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
+								dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;									
 							break;					
 						}				
 					}
@@ -1156,6 +1190,9 @@ gboolean timeout_callback(gpointer user_data)
 				Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
 				if (Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
 					Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;
+				dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx ++;
+				if (dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx == SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE)
+					dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx = 0;					
 			}			
 			
 		}
@@ -1256,7 +1293,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		y_upper = selectionValues->y2;
 	}
 	
-	float *Y_analyze, *Y_temp, Y_sum = 0;
+	double *Y_analyze, *Y_temp, Y_sum = 0;
 	double *Y_mean;
 	int i ,j, k, idx;
 	idx= 0;
@@ -1264,7 +1301,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	Y_spikes_in_range_array = g_ptr_array_new();
 	for (i=0;i<SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE;i++)
 	{
-		Y_analyze = g_ptr_array_index(Y_non_sorted_all_spikes,i);
+		Y_analyze = g_ptr_array_index(dbl_Y_non_sorted_all_spikes,i);
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
 			if ((Y_analyze[j] >=  y_lower) && (Y_analyze[j] <=  y_upper)) 
@@ -1312,7 +1349,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		for (j=0; j<MIN_SPIKE_NUM_FOR_TEMPLATE; j++)
 		{
 			Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));    // to select more distributed spikes in time.
-			Y_mean[i] = Y_mean[i]+(double)(Y_temp[i]);
+			Y_mean[i] = Y_mean[i]+Y_temp[i];
 		}
 	}
 	
@@ -1328,15 +1365,29 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	double temp_mtx_1[MIN_SPIKE_NUM_FOR_TEMPLATE][NUM_OF_SAMP_PER_SPIKE];
 	double temp_mtx_2[MIN_SPIKE_NUM_FOR_TEMPLATE][NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];
 
+	printf("SpikeSorter:\n");
+	printf("Selected spikes to form the template are: \n");
 	for (i=0; i<MIN_SPIKE_NUM_FOR_TEMPLATE; i++)
 	{
 		Y_temp = g_ptr_array_index(Y_spikes_in_range_array,(int)(i*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
 			temp_mtx_1[i][j] = (double)(Y_temp[j] - template_matching_unit_data->template[j]);
+		}
+		if (((int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE))) >= MIN_SPIKE_NUM_FOR_TEMPLATE)
+		{
+			printf("---------------------------------------------------------------------------\n");		
+			printf("-----------------------------BUG---------------------------------------\n");
+			printf("BUG: index reaches to a value larger than idx = %d\n", idx);
+			printf("-----------------------------BUG---------------------------------------\n");
+			printf("---------------------------------------------------------------------------\n");						
+		}
+		else
+		{
+			printf("%d\t", idx);
 		}		
 	}
-	
+	printf("\n");
 	for (i=0; i<MIN_SPIKE_NUM_FOR_TEMPLATE; i++)
 	{
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)

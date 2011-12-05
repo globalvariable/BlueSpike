@@ -44,6 +44,9 @@ float *X_axis;
 GPtrArray *Y_non_sorted_all_spikes;
 int Y_non_sorted_all_spikes_last_g_ptr_array_idx;
 
+GPtrArray *dbl_Y_non_sorted_all_spikes;
+int dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx;
+
 GPtrArray *Y_sorted_spikes_arr[MAX_NUM_OF_UNIT_PER_CHAN];
 int Y_sorted_spikes_last_g_ptr_array_idx[MAX_NUM_OF_UNIT_PER_CHAN];
 
