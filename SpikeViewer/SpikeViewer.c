@@ -317,7 +317,7 @@ gboolean timeout_callback(gpointer user_data)
 		if (print_spike_end_buff)
 			printf ("%d %d %llu %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_peak_time, spike_time_stamp_buff_recording_data_idx);	
 		idx++;	
-		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
+		if (idx == SPIKE_TIMESTAMP_BUFF_SIZE)
 			idx = 0;	
 	}
 	spike_time_stamp_buff_read_idx = spike_time_stamp_buff_end_idx;

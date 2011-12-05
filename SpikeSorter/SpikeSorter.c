@@ -1074,7 +1074,6 @@ void clear_spikes_screen(void)
 gboolean timeout_callback(gpointer user_data) 
 {
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
-	SpikeEnd *spike_end;
 	SpikeTimeStamp 		*spike_time_stamp;	
 	int idx, spike_time_stamp_buff_end_idx;
 	int spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_unit, spike_time_stamp_buff_recording_data_idx;	
@@ -1084,7 +1083,6 @@ gboolean timeout_callback(gpointer user_data)
 	int i, j;
 	bool spike_in_range;
 	
-	spike_end = &shared_memory->spike_end;	
 	spike_time_stamp = &shared_memory->spike_time_stamp;
 
 	if (disp_paused)
@@ -1374,7 +1372,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		{
 			temp_mtx_1[i][j] = (double)(Y_temp[j] - template_matching_unit_data->template[j]);
 		}
-		if (((int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE))) >= MIN_SPIKE_NUM_FOR_TEMPLATE)
+		if (((int)(j*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE))) >= idx)
 		{
 			printf("---------------------------------------------------------------------------\n");		
 			printf("-----------------------------BUG---------------------------------------\n");
@@ -1384,7 +1382,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		}
 		else
 		{
-			printf("%d\t", idx);
+			printf("%d\t", (int)(i*(((float)idx)/MIN_SPIKE_NUM_FOR_TEMPLATE)));
 		}		
 	}
 	printf("\n");
