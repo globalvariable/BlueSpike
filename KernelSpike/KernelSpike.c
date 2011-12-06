@@ -971,6 +971,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].channel = chan;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].unit = greatest_idx;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
+	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
 	if ((spike_time_stamp->buff_idx_write +1) ==  SPIKE_TIMESTAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		spike_time_stamp->buff_idx_write = 0;
 	else

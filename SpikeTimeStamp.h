@@ -9,10 +9,11 @@
 typedef struct __SpikeTimeStampItem
 {
 	TimeStamp 	peak_time;	// spike peak time
-	char 		mwa;      		// mwa from which spike sorted
-	char 		channel;		// channel from which spike sorted
-	char 		unit;			// channel from which spike sorted
+	int	 		mwa;      		// mwa from which spike sorted
+	int 			channel;		// channel from which spike sorted
+	int 			unit;			// channel from which spike sorted
 	int			recording_data_buff_idx;   // end of spike at filtered recording data
+	bool		include_unit;	// spike well-sorted 
 } SpikeTimeStampItem;
 
 typedef SpikeTimeStampItem	SpikeTimeStampBuff[SPIKE_TIMESTAMP_BUFF_SIZE];
