@@ -22,6 +22,7 @@
 #define TASK_PRIORITY 1
 #define STACK_SIZE 10000
 #define KERNELSPIKE_CPUID 2
+#define KERNELSPIKE_RUN_TIME_LIMIT 18446744000000000000ULL
 
 //	Variables
 
@@ -53,5 +54,5 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *filter
 void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_chan);
 void template_matching(void);
 void run_template_matching(RecordingData *filtered_recording_data, int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time);
-void print_buffer_warning_and_errors(void);
+void print_warning_and_errors(void);
 bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);

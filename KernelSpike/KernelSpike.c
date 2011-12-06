@@ -150,8 +150,8 @@ void rt_handler(int t)
 		*kern_prev_time = previous_time_ns;		
 		previous_time_ns = current_time_ns;
 		
-		print_buffer_warning_and_errors();
-
+		print_warning_and_errors();
+		
 		*kernel_task_idle = 1;				
 	}
 
@@ -982,8 +982,15 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 		
 }
 
-void print_buffer_warning_and_errors(void)
+void print_warning_and_errors(void)
 {
+	if (current_time_ns > KERNELSPIKE_RUN_TIME_LIMIT)	//  Maximum time stamp value is 18446744073709551615 //8 bytes makes 18 446 744 073 709 551 615 nanoseconds 5124095.57603043100417 hours
+	{
+		printk("CRITICAL ERROR: KernelSpike reaches maximum time capacity limit\n");
+		printk("CRITICAL ERROR: Current time is: %llu\n", ((long long unsigned int) current_time_ns));
+		rt_task_stay_alive = 0;
+		return;
+	}
 	if ((SPIKE_END_DATA_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
 	{
 		printk("------------------------------------------------------\n");
@@ -1003,7 +1010,8 @@ void print_buffer_warning_and_errors(void)
 		printk("--Latest # of detected spikes is %d ---\n", spike_end_buff_control_cntr);	
 		printk("-------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
 		printk("------------------------------------------------------\n");
-		rt_task_stay_alive = 0;	// kill task			
+		rt_task_stay_alive = 0;	// kill task	
+		return;		
 	}  
 	if ((SPIKE_TIMESTAMP_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
 	{
@@ -1024,7 +1032,8 @@ void print_buffer_warning_and_errors(void)
 		printk("--Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
 		printk("---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
 		printk("--------------------------------------------------------\n");
-		rt_task_stay_alive = 0;	// kill task			
+		rt_task_stay_alive = 0;	// kill task	
+		return;		
 	}	
 	spike_end_buff_control_cntr = 0;
 	spike_timestamp_buff_control_cntr = 0;
