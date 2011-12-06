@@ -28,7 +28,7 @@ void rt_handler(int t)
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
-	
+	TimeStamp *kern_curr_time, *kern_prev_time;
 	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
 	int curr_time ;		// local_time  unsigned int
 	 
@@ -44,7 +44,9 @@ void rt_handler(int t)
 	highpass_150Hz_on = &kernel_task_ctrl->highpass_150Hz_on; 
 	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
 	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;
-	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;	
+	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;
+	kern_curr_time = &kernel_task_ctrl->current_time_ns;
+	kern_prev_time = &kernel_task_ctrl->previous_time_ns;		
 	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -58,12 +60,10 @@ void rt_handler(int t)
 	while (rt_task_stay_alive) 
 	{
 		rt_task_wait_period();
-		
+		*kernel_task_idle = 0;		
 		curr_time = rt_get_cpu_time_ns();
 		current_time_ns += (curr_time - prev_time);
 		prev_time = curr_time;
-		
-		*kernel_task_idle = 0;
 		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 		{	
 			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
@@ -146,11 +146,13 @@ void rt_handler(int t)
 			} 	
 			// spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;	// redundant
 		} 
-		print_buffer_warning_and_errors();		
-
-		*kernel_task_idle = 1;
+		*kern_curr_time = current_time_ns;
+		*kern_prev_time = previous_time_ns;		
 		previous_time_ns = current_time_ns;
-				
+		
+		print_buffer_warning_and_errors();
+
+		*kernel_task_idle = 1;				
 	}
 
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)

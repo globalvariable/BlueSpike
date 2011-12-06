@@ -4,10 +4,12 @@
 
 typedef struct __KernelTaskCtrl
 {
-	bool 	highpass_150Hz_on;
-	bool 	highpass_400Hz_on;
-	bool 	lowpass_8KHz_on;
-	bool	kernel_task_idle;
+	TimeStamp	current_time_ns;
+	TimeStamp	previous_time_ns;	
+	bool 		highpass_150Hz_on;
+	bool 		highpass_400Hz_on;
+	bool 		lowpass_8KHz_on;
+	bool		kernel_task_idle;
 } KernelTaskCtrl;
 
 
