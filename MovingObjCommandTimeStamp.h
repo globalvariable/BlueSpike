@@ -4,7 +4,7 @@
 #include "TimeStamp.h"
 #endif
 
-#define MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE 10000
+#define MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE 10000   // Should adjust its size according to the writing frequency to and reading frequency from this buffer. for hihger writing and lower reading, you should increase buffer size to avoid over-writing.  
 
 #define MAX_NUM_OF_MOVING_OBJECTS 1    // i.e. number of animals or robot in experimental environment
 

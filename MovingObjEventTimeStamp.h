@@ -6,7 +6,7 @@
 #include "TimeStamp.h"
 #endif
 
-#define MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE 10000
+#define MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE 10000		// Should adjust its size according to the writing frequency to and reading frequency from this buffer. for hihger writing and lower reading, you should increase buffer size to avoid over-writing.  
 
 
 

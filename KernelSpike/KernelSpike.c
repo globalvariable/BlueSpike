@@ -68,8 +68,6 @@ void rt_handler(int t)
 		current_time_ns += (curr_time - prev_time);
 		previous_time_ns = current_time_ns;		
 		prev_time = curr_time;
-		*kern_curr_time = current_time_ns;
-		*kern_prev_time = previous_time_ns;		
 
 		if (handle_daq_cards())
 		{
@@ -159,8 +157,10 @@ void rt_handler(int t)
 			} 	
 			// spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;	// redundant
 		} 
-
 		
+		*kern_curr_time = current_time_ns;			// Recorder reaches current time after processing  all buffers. 
+		*kern_prev_time = previous_time_ns;
+			
 		print_warning_and_errors();
 		
 		*kernel_task_idle = 1;				
@@ -170,6 +170,7 @@ void rt_handler(int t)
 		close_daq_cards();
 		
 	stop_rt_timer();
+	rt_task_delete(&rt_task0);	
     	rtai_kfree(nam2num(SHARED_MEM_NAME));	
 }
 

@@ -29,8 +29,9 @@ typedef struct __SharedMemStruct
 	SpikeThresholding			spike_thresholding;
 	SpikeTimeStamp 			spike_time_stamp;
 	ExpEnviEventTimeStamp		exp_envi_event_time_stamp;
+	ExpEnviCommandTimeStamp 	exp_envi_command_time_stamp;		
 	MovingObjEventTimeStamp	mov_obj_event_time_stamp;
-	ExpEnviCommandTimeStamp 	exp_envi_command_time_stamp;	
+	MovingObjCommandTimeStamp	mov_obj_command_time_stamp;
 	TemplateMatchingData		template_matching_data;
 	KernelTaskCtrl				kernel_task_ctrl;
 	KernelTaskStat				kernel_task_stat;
