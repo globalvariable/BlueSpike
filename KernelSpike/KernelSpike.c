@@ -87,8 +87,8 @@ void rt_handler(int t)
 				front[i] = front[i] - comedi_buff_size[i];
 			if(num_byte[i] == 0)
 			{
-				printk("CRITICAL ERROR: Must be exceeding rt_task_wait_period, num_byte[%d] = 0\n", i);
-				printk("CRITICAL ERROR: Task lsted too long > TICK_PERIOD.\n");
+				printk("KernelSpike: CRITICAL ERROR: Must be exceeding rt_task_wait_period, num_byte[%d] = 0\n", i);
+				printk("KernelSpike: CRITICAL ERROR: Task lsted too long > TICK_PERIOD.\n");
 				continue;
 			}
 				
@@ -116,7 +116,10 @@ void rt_handler(int t)
 				}
 				else if (((mwa == MAX_NUM_OF_MWA) && (mwa_chan != MAX_NUM_OF_CHAN_PER_MWA)) || ((mwa != MAX_NUM_OF_MWA) && (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA)))
 				{
-					printk("BUG: mwa or mwa_chan is problematic\n");
+					printk("KernelSpike: BUG: mwa or mwa_chan is problematic\n");
+					printk("KernelSpike: BUG: recording data might be corrupted\n");
+					*kill_all_rt_tasks = 1;
+					break;
 				}
 				
 				(daq_chan_num[i])++;
@@ -127,7 +130,7 @@ void rt_handler(int t)
 			return_value = comedi_mark_buffer_read(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, num_byte[i]);
 			if(return_value < 0)
 			{
-				printk("ERROR: comedi_mark_buffer_read");
+				printk("KernelSpike: ERROR: comedi_mark_buffer_read");
 				*kill_all_rt_tasks = 1;
 			}
 			back[i] = front[i];
@@ -188,12 +191,14 @@ int __init xinit_module(void)
 {
 	int i, j;
 	RTIME tick_period;
-
+	
+	printk("KernelSpike: insmod KernelSpike\n");
 	shared_memory = (SharedMemStruct*)rtai_kmalloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
 	if (shared_memory == NULL)
 		return -ENOMEM;
 	memset(shared_memory, 0, SHARED_MEM_SIZE);
-        printk("sizeof(SharedMemStruct) : %d\n", SHARED_MEM_SIZE);
+        printk("KernelSpike: Shared Memory allocated.\n");
+        printk("KernelSpike: sizeof(SharedMemStruct) : %d.\n", SHARED_MEM_SIZE);
         
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -219,6 +224,7 @@ int __init xinit_module(void)
 	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, KERNELSPIKE_CPUID);
 	tick_period = start_rt_timer(nano2count(KERNELSPIKE_TICK_PERIOD));
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
+	printk("KernelSpike: rt task created with %d nanoseconds period.\n", KERNELSPIKE_TICK_PERIOD);
 	return 0;
 }
 
@@ -236,7 +242,7 @@ void __exit xcleanup_module(void)
 		}
 	}
     	rtai_kfree(nam2num(SHARED_MEM_NAME));
-    	printk("rmmod KernelSpike\n");
+    	printk("KernelSpike: rmmod KernelSpike\n");
 	return;
 }
 
@@ -280,9 +286,9 @@ int ni6070_comedi_configure(int card_number)
 	ni6070_comedi_cmd[card_number].data_len = 0;
 
 	print_cmd(card_number);
-	printk("test 1: %i\n", comedi_command_test(ni6070_comedi_dev[card_number], &ni6070_comedi_cmd[card_number]));
+	printk("KernelSpike: test 1: %i\n", comedi_command_test(ni6070_comedi_dev[card_number], &ni6070_comedi_cmd[card_number]));
 	print_cmd(card_number);
-	printk("test 2: %i\n", comedi_command_test(ni6070_comedi_dev[card_number],&ni6070_comedi_cmd[card_number]));
+	printk("KernelSpike: test 2: %i\n", comedi_command_test(ni6070_comedi_dev[card_number],&ni6070_comedi_cmd[card_number]));
 	print_cmd(card_number);
 
 	return comedi_command(ni6070_comedi_dev[card_number], &ni6070_comedi_cmd[card_number]);
@@ -290,25 +296,25 @@ int ni6070_comedi_configure(int card_number)
 
 void print_cmd(int card_number)
 {
-	printk("comedi_cmd[%d].subdev = %i\n", card_number, ni6070_comedi_cmd[card_number].subdev);
-	printk("comedi_cmd[%d].flags = %i\n", card_number, ni6070_comedi_cmd[card_number].flags);
+	printk("KernelSpike: comedi_cmd[%d].subdev = %i\n", card_number, ni6070_comedi_cmd[card_number].subdev);
+	printk("KernelSpike: comedi_cmd[%d].flags = %i\n", card_number, ni6070_comedi_cmd[card_number].flags);
 
-	printk("comedi_cmd[%d].start_src = %i\n", card_number, ni6070_comedi_cmd[card_number].start_src);
-	printk("comedi_cmd[%d].start_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].start_arg);
+	printk("KernelSpike: comedi_cmd[%d].start_src = %i\n", card_number, ni6070_comedi_cmd[card_number].start_src);
+	printk("KernelSpike: comedi_cmd[%d].start_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].start_arg);
 
-	printk("comedi_cmd[%d].scan_begin_src = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_begin_src);
-	printk("comedi_cmd[%d].scan_begin_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_begin_arg);
+	printk("KernelSpike: comedi_cmd[%d].scan_begin_src = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_begin_src);
+	printk("KernelSpike: comedi_cmd[%d].scan_begin_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_begin_arg);
 	
-	printk("comedi_cmd[%d].convert_src = %i\n", card_number, ni6070_comedi_cmd[card_number].convert_src);
-	printk("comedi_cmd[%d].convert_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].convert_arg);
+	printk("KernelSpike: comedi_cmd[%d].convert_src = %i\n", card_number, ni6070_comedi_cmd[card_number].convert_src);
+	printk("KernelSpike: comedi_cmd[%d].convert_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].convert_arg);
 
-	printk("comedi_cmd[%d].scan_end_src = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_end_src);
-	printk("comedi_cmd[%d].scan_end_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_end_arg);
+	printk("KernelSpike: comedi_cmd[%d].scan_end_src = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_end_src);
+	printk("KernelSpike: comedi_cmd[%d].scan_end_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].scan_end_arg);
 
-	printk("comedi_cmd[%d].stop_src = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_src);
-	printk("comedi_cmd[%d].stop_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_arg);
+	printk("KernelSpike: comedi_cmd[%d].stop_src = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_src);
+	printk("KernelSpike: comedi_cmd[%d].stop_arg = %i\n", card_number, ni6070_comedi_cmd[card_number].stop_arg);
 
-	printk("comedi_cmd[%d].chanlist_len = %i\n", card_number, ni6070_comedi_cmd[card_number].chanlist_len);
+	printk("KernelSpike: comedi_cmd[%d].chanlist_len = %i\n", card_number, ni6070_comedi_cmd[card_number].chanlist_len);
 }
 
 
@@ -988,52 +994,52 @@ void print_warning_and_errors(void)
 {
 	if (current_time_ns > KERNELSPIKE_RUN_TIME_LIMIT)	//  Maximum time stamp value is 18446744073709551615 //8 bytes makes 18 446 744 073 709 551 615 nanoseconds 5124095.57603043100417 hours
 	{
-		printk("CRITICAL ERROR: KernelSpike reaches maximum time capacity limit\n");
-		printk("CRITICAL ERROR: Current time is: %llu\n", ((long long unsigned int) current_time_ns));
+		printk("KernelSpike: CRITICAL ERROR: KernelSpike reaches maximum time capacity limit\n");
+		printk("KernelSpike: CRITICAL ERROR: Current time is: %llu\n", ((long long unsigned int) current_time_ns));
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;
 	}
 	if ((SPIKE_END_DATA_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
 	{
-		printk("------------------------------------------------------\n");
-		printk("------------   WARNING  !!!  -----------------\n");
-		printk("---- Spike End Buffer is getting full ----\n");
-		printk("---- Spike End Buffer is getting full ----\n");				
-		printk("--Latest # of detected spikes is %d---\n", spike_end_buff_control_cntr);	
-		printk("-------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
-		printk("------------------------------------------------------\n");					
+		printk("KernelSpike: ------------------------------------------------------\n");
+		printk("KernelSpike: ------------   WARNING  !!!  -----------------\n");
+		printk("KernelSpike: ---- Spike End Buffer is getting full ----\n");
+		printk("KernelSpike: ---- Spike End Buffer is getting full ----\n");				
+		printk("KernelSpike: --Latest # of detected spikes is %d---\n", spike_end_buff_control_cntr);	
+		printk("KernelSpike: -------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
+		printk("KernelSpike: ------------------------------------------------------\n");					
 	}  
 	else if (SPIKE_END_DATA_BUFF_SIZE <= spike_end_buff_control_cntr)
 	{
-		printk("------------------------------------------------------\n");
-		printk("----------------   ERROR !!!  -----------------\n");
-		printk("---- Spike End Buffer is full ---------------\n");
-		printk("---- Spike End Buffer is full ---------------\n");				
-		printk("--Latest # of detected spikes is %d ---\n", spike_end_buff_control_cntr);	
-		printk("-------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
-		printk("------------------------------------------------------\n");
+		printk("KernelSpike: ------------------------------------------------------\n");
+		printk("KernelSpike: ----------------   ERROR !!!  -----------------\n");
+		printk("KernelSpike: ---- Spike End Buffer is full ---------------\n");
+		printk("KernelSpike: ---- Spike End Buffer is full ---------------\n");				
+		printk("KernelSpike: --Latest # of detected spikes is %d ---\n", spike_end_buff_control_cntr);	
+		printk("KernelSpike: -------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
+		printk("KernelSpike: ------------------------------------------------------\n");
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}  
 	if ((SPIKE_TIMESTAMP_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
 	{
-		printk("--------------------------------------------------------\n");
-		printk("------------   WARNING  !!!  -------------------\n");
-		printk("---- Spike Timestamp Buffer is getting full ------\n");
-		printk("---- Spike Timestamp Buffer is getting full ------\n");				
-		printk("--Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
-		printk("---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
-		printk("--------------------------------------------------------\n");					
+		printk("KernelSpike: --------------------------------------------------------\n");
+		printk("KernelSpike: ------------   WARNING  !!!  -------------------\n");
+		printk("KernelSpike: ---- Spike Timestamp Buffer is getting full ------\n");
+		printk("KernelSpike: ---- Spike Timestamp Buffer is getting full ------\n");				
+		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
+		printk("KernelSpike: --------------------------------------------------------\n");					
 	}  
 	else if (SPIKE_TIMESTAMP_BUFF_SIZE <= spike_timestamp_buff_control_cntr)
 	{
-		printk("---------------------------------------------------------\n");
-		printk("----------------   ERROR  !!!  --------------------\n");
-		printk("---- Spike Timestamp Buffer is full -------\n");
-		printk("---- Spike Timestamp Buffer is full -------\n");				
-		printk("--Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
-		printk("---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
-		printk("--------------------------------------------------------\n");
+		printk("KernelSpike: ---------------------------------------------------------\n");
+		printk("KernelSpike: ----------------   ERROR  !!!  --------------------\n");
+		printk("KernelSpike: ---- Spike Timestamp Buffer is full -------\n");
+		printk("KernelSpike: ---- Spike Timestamp Buffer is full -------\n");				
+		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
+		printk("KernelSpike: --------------------------------------------------------\n");
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}	
@@ -1077,7 +1083,7 @@ int open_daq_cards(void)
 		ni6070_comedi_dev[i] = comedi_open(path_comedi);
 		if (ni6070_comedi_dev[i] == NULL)
 		{
-			printk("ERROR: Couldn' t comedi_open %dth device at %s\n", i, path_comedi);
+			printk("KernelSpike: ERROR: Couldn' t comedi_open %dth device at %s\n", i, path_comedi);
 			break;
 		}
 	}
@@ -1095,13 +1101,13 @@ int open_daq_cards(void)
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{	
 		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &(comedi_map_ptr[i]));
-		printk("%d th device comedi_map return: %d, ptr: %d\n", i, ret, (int)(comedi_map_ptr[i]));
+		printk("KernelSpike: %d th device comedi_map return: %d, ptr: %d\n", i, ret, (int)(comedi_map_ptr[i]));
 		if (ret != 0)
 		{
 			break;
 		}
 		comedi_buff_size[i] = comedi_get_buffer_size(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
-		printk("buffer size of %dth device is %d\n", i, comedi_buff_size[i]);
+		printk("KernelSpike: Buffer size of %dth device is %d\n", i, comedi_buff_size[i]);
 		ni6070_comedi_configure(i);
 	}
 	
