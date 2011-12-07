@@ -22,8 +22,10 @@ GtkWidget *entry_mwa_num;
 GtkWidget *entry_mwa_chan_range_lower;
 GtkWidget *entry_mwa_chan_range_upper;
 
+GtkWidget *btn_turn_daq_on_off;
 GtkWidget *btn_map_channels;
 GtkWidget *btn_interrogate_mapping;
+GtkWidget *btn_cancel_all_mapping;
 
 GtkWidget *btn_select_config_file_to_load;
 GtkWidget *btn_load_config_file; 
@@ -33,8 +35,10 @@ GtkWidget *entry_config_file_name;
 GtkWidget *btn_save_config_file;
 
 void create_gui(void);
+void turn_daq_on_off_button_func(void); 
 void map_channels_button_func(void); 
 void interrogate_mapping_button_func(void); 
+void cancel_all_mapping_button_func(void); 
 void load_config_file_button_func(void); 
 void save_config_file_button_func(void); 
 bool interrogate_mapping(void);

@@ -139,12 +139,27 @@ void create_gui(void)
 	btn_map_channels = gtk_button_new_with_label("Map Channels");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_map_channels, TRUE, FALSE, 0);
 	
+	btn_interrogate_mapping = gtk_button_new_with_label("Interrogate Mapping");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_interrogate_mapping, TRUE, FALSE, 0);	
+	
+	btn_cancel_all_mapping = gtk_button_new_with_label("Cancel All Mapping");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_cancel_all_mapping, TRUE, FALSE, 0);		
+	
     	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,10);		
 	
-	btn_interrogate_mapping = gtk_button_new_with_label("Interrogate Mapping");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_interrogate_mapping, TRUE, FALSE, 0);		
-	
+	btn_turn_daq_on_off = gtk_button_new_with_label("DAQ Card : ON");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_turn_daq_on_off, TRUE, FALSE, 0);
+	if (shared_memory->kernel_task_ctrl.turn_daq_card_on)
+	{	
+		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
+		gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
+	}
+	else
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : OFF");		
+		gtk_widget_set_sensitive(btn_turn_daq_on_off, FALSE);
+	}
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,20);	
 	
@@ -172,12 +187,34 @@ void create_gui(void)
   	gtk_widget_show_all(window);
 
         g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
+         g_signal_connect(G_OBJECT(btn_turn_daq_on_off), "clicked", G_CALLBACK(turn_daq_on_off_button_func), NULL);       
         g_signal_connect(G_OBJECT(btn_map_channels), "clicked", G_CALLBACK(map_channels_button_func), NULL);
         g_signal_connect(G_OBJECT(btn_interrogate_mapping), "clicked", G_CALLBACK(interrogate_mapping_button_func), NULL);      
+        g_signal_connect(G_OBJECT(btn_cancel_all_mapping), "clicked", G_CALLBACK(cancel_all_mapping_button_func), NULL);              
         g_signal_connect(G_OBJECT(btn_load_config_file), "clicked", G_CALLBACK(load_config_file_button_func), NULL);
         g_signal_connect(G_OBJECT(btn_save_config_file), "clicked", G_CALLBACK(save_config_file_button_func), NULL);
         
 	return;
+}
+
+void turn_daq_on_off_button_func(void)
+{
+	if (shared_memory->kernel_task_ctrl.turn_daq_card_on)
+	{		
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
+		shared_memory->kernel_task_ctrl.turn_daq_card_on = 0;
+		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : OFF");
+		gtk_widget_set_sensitive(btn_map_channels, TRUE);
+		gtk_widget_set_sensitive(btn_load_config_file, TRUE);	
+	}
+	else
+	{
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
+		shared_memory->kernel_task_ctrl.turn_daq_card_on = 1;
+		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
+		gtk_widget_set_sensitive(btn_map_channels, FALSE);
+		gtk_widget_set_sensitive(btn_load_config_file, FALSE);			
+	}		
 }
 
 void map_channels_button_func(void)
@@ -294,6 +331,7 @@ void map_channels_button_func(void)
 	printf ("DAQ Card -> Microwire Array mapping completed\n");
 	printf ("Microwire Array -> DAQ Card mapping completed\n");
 	interrogate_mapping();
+	gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
 	return;
 }
 
@@ -303,6 +341,31 @@ void interrogate_mapping_button_func(void)
 	interrogate_mapping();
 	printf("Interrogating config file...complete\n");	
 	return;
+}
+
+void cancel_all_mapping_button_func(void)
+{
+	int i, j;
+	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+		{
+			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts			
+			shared_memory->daq_mwa_map[i][j].mwa = MAX_NUM_OF_MWA;
+			shared_memory->daq_mwa_map[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;
+		}
+	}
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts		
+			shared_memory->mwa_daq_map[i][j].daq_card = MAX_NUM_OF_DAQ_CARD;
+			shared_memory->mwa_daq_map[i][j].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+		}
+	}
+	gtk_widget_set_sensitive(btn_turn_daq_on_off, FALSE);
 }
 
 void load_config_file_button_func(void)
@@ -447,7 +510,9 @@ void load_config_file_button_func(void)
 	fclose(fp);
 
 	interrogate_mapping();
-
+	
+	gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
+	
 	return;
 }
 void save_config_file_button_func(void)
@@ -575,4 +640,5 @@ bool interrogate_mapping(void)
 		return FALSE;
 	}	
 }
+
 

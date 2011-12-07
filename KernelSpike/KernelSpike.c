@@ -24,7 +24,7 @@ void rt_handler(int t)
 	RecordingData			*recording_data;
 	RecordingData			*filtered_recording_data;
 	KernelTaskCtrl			*kernel_task_ctrl;
-	
+
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
@@ -36,6 +36,8 @@ void rt_handler(int t)
 	previous_time_ns = 0;
 	spike_end_buff_control_cntr = 0; 
 	spike_timestamp_buff_control_cntr = 0;	
+	daq_cards_on = 0;
+	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
 	recording_data = &shared_memory->recording_data;
 	filtered_recording_data = &shared_memory->filtered_recording_data;
@@ -60,10 +62,21 @@ void rt_handler(int t)
 	while (rt_task_stay_alive) 
 	{
 		rt_task_wait_period();
-		*kernel_task_idle = 0;		
+		
+		*kernel_task_idle = 0;	
 		curr_time = rt_get_cpu_time_ns();
 		current_time_ns += (curr_time - prev_time);
+		previous_time_ns = current_time_ns;		
 		prev_time = curr_time;
+		*kern_curr_time = current_time_ns;
+		*kern_prev_time = previous_time_ns;		
+
+		if (handle_daq_cards())
+		{
+			*kernel_task_idle = 1;			
+			continue;
+		}	
+			
 		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 		{	
 			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
@@ -146,20 +159,16 @@ void rt_handler(int t)
 			} 	
 			// spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;	// redundant
 		} 
-		*kern_curr_time = current_time_ns;
-		*kern_prev_time = previous_time_ns;		
-		previous_time_ns = current_time_ns;
+
 		
 		print_warning_and_errors();
 		
 		*kernel_task_idle = 1;				
 	}
-
-	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
-	{
-		comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
-		comedi_close(ni6070_comedi_dev[i]);
-	}
+	
+	if (daq_cards_on)
+		close_daq_cards();
+		
 	stop_rt_timer();
     	rtai_kfree(nam2num(SHARED_MEM_NAME));	
 }
@@ -168,9 +177,7 @@ void rt_handler(int t)
 
 int __init xinit_module(void)
 {
-	int ret;
 	int i, j;
-	char path_comedi[100], temp[10];
 	RTIME tick_period;
 
 	shared_memory = (SharedMemStruct*)rtai_kmalloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
@@ -198,23 +205,6 @@ int __init xinit_module(void)
 	}
 
 	shared_memory->kernel_task_ctrl.kernel_task_idle = 1;
-	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
-	{
-		strcpy(path_comedi, "/dev/comedi");	
-		sprintf(temp, "%d" , i);
-		strcat(path_comedi, temp);
-		ni6070_comedi_dev[i] = comedi_open(path_comedi);
-		if (ni6070_comedi_dev[i] == NULL)
-		{
-			printk("ERROR: Couldn' t comedi_open %dth device at %s\n", i, path_comedi);
-			return 0;
-		}
-		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &(comedi_map_ptr[i]));
-		printk("%d th device comedi_map return: %d, ptr: %d\n", i, ret, (int)(comedi_map_ptr[i]));
-		comedi_buff_size[i] = comedi_get_buffer_size(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
-		printk("buffer size of %dth device is %d\n", i, comedi_buff_size[i]);
-		ni6070_comedi_configure(i);
-	}
 
 	rt_set_periodic_mode();
 	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, KERNELSPIKE_CPUID);
@@ -228,10 +218,13 @@ void __exit xcleanup_module(void)
 	int i;
 	stop_rt_timer();
 	rt_task_delete(&rt_task0);	
-	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	if (daq_cards_on)
 	{
-		comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
-		comedi_close(ni6070_comedi_dev[i]);
+		for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+		{
+			comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+			comedi_close(ni6070_comedi_dev[i]);
+		}
 	}
     	rtai_kfree(nam2num(SHARED_MEM_NAME));
     	printk("rmmod KernelSpike\n");
@@ -1062,3 +1055,92 @@ bool is_index_between_indexes(int start_idx, int end_idx, int this_idx)
 		return 0;
 	}
 }
+
+int open_daq_cards(void)
+{
+	char path_comedi[100], temp[10];	
+	int i, j, ret;
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{
+		strcpy(path_comedi, "/dev/comedi");	
+		sprintf(temp, "%d" , i);
+		strcat(path_comedi, temp);
+		ni6070_comedi_dev[i] = comedi_open(path_comedi);
+		if (ni6070_comedi_dev[i] == NULL)
+		{
+			printk("ERROR: Couldn' t comedi_open %dth device at %s\n", i, path_comedi);
+			break;
+		}
+	}
+	if (i != MAX_NUM_OF_DAQ_CARD)   // Couldn' t open all daq cards. Close the open ones & cancel out openning process. 
+	{
+		for (j = 0; j < i ; j++)
+		{
+			comedi_cancel(ni6070_comedi_dev[j], COMEDI_SUBDEVICE_AI);
+			comedi_close(ni6070_comedi_dev[j]);			
+		}
+		rt_task_stay_alive = 0; // kill rt task
+		return 0;
+	} 
+	
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{	
+		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &(comedi_map_ptr[i]));
+		printk("%d th device comedi_map return: %d, ptr: %d\n", i, ret, (int)(comedi_map_ptr[i]));
+		if (ret != 0)
+		{
+			break;
+		}
+		comedi_buff_size[i] = comedi_get_buffer_size(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+		printk("buffer size of %dth device is %d\n", i, comedi_buff_size[i]);
+		ni6070_comedi_configure(i);
+	}
+	
+	if (i != MAX_NUM_OF_DAQ_CARD)   // Couldn' t comedi_map all daq cards. Close all daq cards & cancel out process. 
+	{
+		for (j = 0; j < MAX_NUM_OF_DAQ_CARD ; j++)
+		{
+			comedi_cancel(ni6070_comedi_dev[j], COMEDI_SUBDEVICE_AI);
+			comedi_close(ni6070_comedi_dev[j]);			
+		}
+		return 0;
+		rt_task_stay_alive = 0; // kill rt task
+	}
+	return 1; 		
+}
+
+void close_daq_cards(void)
+{
+	int i;
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{
+		comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+		comedi_close(ni6070_comedi_dev[i]);
+	}
+}
+
+int handle_daq_cards(void)
+{
+	if ((shared_memory->kernel_task_ctrl.turn_daq_card_on) && (daq_cards_on))
+	{
+		return 0;
+	}
+	else if ((!(shared_memory->kernel_task_ctrl.turn_daq_card_on)) && (!daq_cards_on))
+	{
+		return 1;
+	}
+	else if ((shared_memory->kernel_task_ctrl.turn_daq_card_on) && (!daq_cards_on))
+	{
+		if (open_daq_cards()) 
+			daq_cards_on = 1;
+		return 1;
+	}
+	else if ((!(shared_memory->kernel_task_ctrl.turn_daq_card_on)) && (daq_cards_on))
+	{
+		close_daq_cards();
+		daq_cards_on = 0;
+		return 1;
+	}
+	return 1;		// to get rid of warning, unnecessary	
+}
+

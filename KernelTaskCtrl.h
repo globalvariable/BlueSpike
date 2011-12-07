@@ -10,6 +10,7 @@ typedef struct __KernelTaskCtrl
 	bool 		highpass_400Hz_on;
 	bool 		lowpass_8KHz_on;
 	bool		kernel_task_idle;
+	bool		turn_daq_card_on;
 } KernelTaskCtrl;
 
 

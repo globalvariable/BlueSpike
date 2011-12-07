@@ -32,6 +32,8 @@ int spike_timestamp_buff_control_cntr;    // to check if the buffer gets full in
 
 int rt_task_stay_alive;
 
+int daq_cards_on;
+
 comedi_t* ni6070_comedi_dev[MAX_NUM_OF_DAQ_CARD];
 comedi_cmd ni6070_comedi_cmd[MAX_NUM_OF_DAQ_CARD];
 unsigned ni6070_comedi_chanlist[MAX_NUM_OF_DAQ_CARD][MAX_NUM_OF_CHANNEL_PER_DAQ_CARD];
@@ -52,3 +54,6 @@ void template_matching(void);
 void run_template_matching(RecordingData *filtered_recording_data, int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time);
 void print_warning_and_errors(void);
 bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
+int open_daq_cards(void);
+void close_daq_cards(void);
+int handle_daq_cards(void);
