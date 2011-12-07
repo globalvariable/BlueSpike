@@ -18,10 +18,6 @@
 #include "SpikeEnd.h"
 #include "SpikeEndHandling.h"
 
-#define TICK_PERIOD 1000000
-#define TASK_PRIORITY 1
-#define STACK_SIZE 10000
-#define KERNELSPIKE_CPUID 2
 #define KERNELSPIKE_RUN_TIME_LIMIT 18446744000000000000ULL
 
 //	Variables

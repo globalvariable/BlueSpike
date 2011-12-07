@@ -1,10 +1,12 @@
 #define SPIKEENDDATA_H
 
-#define SPIKE_END_DATA_BUFF_SIZE 10000
-
 #ifndef TIMESTAMP_H
 #include "TimeStamp.h"
 #endif
+
+#include "../MicroWireArray.h"
+
+#define SPIKE_END_DATA_BUFF_SIZE 	MAX_NUM_OF_MWA*MAX_NUM_OF_CHAN_PER_MWA*1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
 
 typedef struct __SpikeEndItem
 {

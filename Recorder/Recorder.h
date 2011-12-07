@@ -26,5 +26,8 @@ GtkWidget *txv_exp_envi_command_additional;
 GtkWidget *txv_mov_obj_event_additional;
 GtkWidget *txv_mov_obj_command_additional;
 
+bool recording_enabled;
+
 // Functions
 void create_gui(void);
+void start_stop_recording_button_func (GtkDatabox * box);

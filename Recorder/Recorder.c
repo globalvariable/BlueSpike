@@ -200,6 +200,26 @@ void create_gui(void)
  	gtk_widget_show_all(window);
  	
    	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);		
-   	
+	g_signal_connect(G_OBJECT(btn_start_stop_recording), "clicked", G_CALLBACK(start_stop_recording_button_func), NULL);   	
 	return;
 }	
+
+void start_stop_recording_button_func (GtkDatabox * box)
+{
+	if (!recording_enabled)
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
+		
+
+
+	}
+	else
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Start");	
+		
+		
+		
+		
+	}
+
+}

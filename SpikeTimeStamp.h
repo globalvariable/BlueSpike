@@ -4,7 +4,9 @@
 #include "TimeStamp.h"
 #endif
 
-#define SPIKE_TIMESTAMP_BUFF_SIZE 10000
+#include "MicroWireArray.h"
+
+#define SPIKE_TIMESTAMP_BUFF_SIZE MAX_NUM_OF_MWA*MAX_NUM_OF_CHAN_PER_MWA*1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
 
 typedef struct __SpikeTimeStampItem
 {

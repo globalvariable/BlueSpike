@@ -10,6 +10,7 @@
 #include "TemplateMatchingData.h"
 #include "KernelTaskCtrl.h"
 #include "KernelTaskStat.h"
+#include "RtData.h"
 
 #define SHARED_MEM_NAME  "SHMEM"
 #ifdef KERNELSPIKE_H

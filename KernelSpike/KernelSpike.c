@@ -217,8 +217,8 @@ int __init xinit_module(void)
 	}
 
 	rt_set_periodic_mode();
-	rt_task_init_cpuid(&rt_task0, rt_handler, 1, STACK_SIZE, TASK_PRIORITY, 1, 0, KERNELSPIKE_CPUID);
-	tick_period = start_rt_timer(nano2count(TICK_PERIOD));
+	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, KERNELSPIKE_CPUID);
+	tick_period = start_rt_timer(nano2count(KERNELSPIKE_TICK_PERIOD));
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
 	return 0;
 }
