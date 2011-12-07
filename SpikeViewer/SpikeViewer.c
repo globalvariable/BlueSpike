@@ -292,33 +292,36 @@ gboolean timeout_callback(gpointer user_data)
 	
 	idx = spike_time_stamp_buff_read_idx;
 	spike_time_stamp_buff_end_idx = shared_memory->spike_time_stamp.buff_idx_write;
-	while (idx != spike_time_stamp_buff_end_idx)
+	if (!disp_paused)
 	{
-		spike_time_stamp_buff_recording_data_idx = spike_time_stamp->spike_timestamp_buff[idx].recording_data_buff_idx;
-		spike_time_stamp_buff_mwa = spike_time_stamp->spike_timestamp_buff[idx].mwa;
-		spike_time_stamp_buff_chan = spike_time_stamp->spike_timestamp_buff[idx].channel;
-		spike_time_stamp_buff_peak_time = spike_time_stamp->spike_timestamp_buff[idx].peak_time;			
-		spike_idx = spike_time_stamp_buff_recording_data_idx;
-		if ((spike_time_stamp_buff_mwa == display_mwa) && (spike_time_stamp_buff_chan == display_mwa_chan))
+		while (idx != spike_time_stamp_buff_end_idx)
 		{
-			Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
-			Y_spikes_idx ++;
-			if (Y_spikes_idx == SPIKE_MEM_TO_DISPLAY)
-				Y_spikes_idx = 0;
-			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+			spike_time_stamp_buff_recording_data_idx = spike_time_stamp->spike_timestamp_buff[idx].recording_data_buff_idx;
+			spike_time_stamp_buff_mwa = spike_time_stamp->spike_timestamp_buff[idx].mwa;
+			spike_time_stamp_buff_chan = spike_time_stamp->spike_timestamp_buff[idx].channel;
+			spike_time_stamp_buff_peak_time = spike_time_stamp->spike_timestamp_buff[idx].peak_time;			
+			spike_idx = spike_time_stamp_buff_recording_data_idx;
+			if ((spike_time_stamp_buff_mwa == display_mwa) && (spike_time_stamp_buff_chan == display_mwa_chan))
 			{
-				Y_temp_spike[i] = (*handling_data_chan_buff)[spike_idx];
-				spike_idx--;
-				if (spike_idx < 0)
-					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
+				Y_spikes_idx ++;
+				if (Y_spikes_idx == SPIKE_MEM_TO_DISPLAY)
+					Y_spikes_idx = 0;
+				for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
+				{
+					Y_temp_spike[i] = (*handling_data_chan_buff)[spike_idx];
+					spike_idx--;
+					if (spike_idx < 0)
+						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				}
+				gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 			}
-			gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+			if (print_spike_end_buff)
+				printf ("%d %d %llu %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_peak_time, spike_time_stamp_buff_recording_data_idx);	
+			idx++;	
+			if (idx == SPIKE_TIMESTAMP_BUFF_SIZE)
+				idx = 0;	
 		}
-		if (print_spike_end_buff)
-			printf ("%d %d %llu %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_peak_time, spike_time_stamp_buff_recording_data_idx);	
-		idx++;	
-		if (idx == SPIKE_TIMESTAMP_BUFF_SIZE)
-			idx = 0;	
 	}
 	spike_time_stamp_buff_read_idx = spike_time_stamp_buff_end_idx;
 	return TRUE;  
