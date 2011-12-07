@@ -27,10 +27,14 @@ void rt_handler(int t)
 
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
-	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle; 
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks; 
 	TimeStamp *kern_curr_time, *kern_prev_time;
 	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
 	int curr_time ;		// local_time  unsigned int
+
+	int rt_task_kill_timer_cntr;
+	
+	rt_task_kill_timer_cntr = 0;
 	 
 	current_time_ns = 0;		// global time  long long unsigned int  // TimeStamp	
 	previous_time_ns = 0;
@@ -49,6 +53,7 @@ void rt_handler(int t)
 	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;
 	kern_curr_time = &kernel_task_ctrl->current_time_ns;
 	kern_prev_time = &kernel_task_ctrl->previous_time_ns;		
+	kill_all_rt_tasks = &kernel_task_ctrl->kill_all_rt_tasks;
 	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -57,9 +62,7 @@ void rt_handler(int t)
 		daq_chan_num[i] = 0;
 	}
 	
-	rt_task_stay_alive = 1;
-	     
-	while (rt_task_stay_alive) 
+	while (!(*kill_all_rt_tasks)) 
 	{
 		rt_task_wait_period();
 		
@@ -125,7 +128,7 @@ void rt_handler(int t)
 			if(return_value < 0)
 			{
 				printk("ERROR: comedi_mark_buffer_read");
-				rt_task_stay_alive = 0;
+				*kill_all_rt_tasks = 1;
 			}
 			back[i] = front[i];
 		}
@@ -169,6 +172,11 @@ void rt_handler(int t)
 	if (daq_cards_on)
 		close_daq_cards();
 		
+	while (rt_task_kill_timer_cntr < 1000)   // wait 1000 msec before stopping rt_timer. wait for other rt_tasks to close. 
+	{	
+		rt_task_wait_period();
+		rt_task_kill_timer_cntr++;
+	}	
 	stop_rt_timer();
 	rt_task_delete(&rt_task0);	
     	rtai_kfree(nam2num(SHARED_MEM_NAME));	
@@ -982,7 +990,7 @@ void print_warning_and_errors(void)
 	{
 		printk("CRITICAL ERROR: KernelSpike reaches maximum time capacity limit\n");
 		printk("CRITICAL ERROR: Current time is: %llu\n", ((long long unsigned int) current_time_ns));
-		rt_task_stay_alive = 0;
+		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;
 	}
 	if ((SPIKE_END_DATA_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
@@ -1004,7 +1012,7 @@ void print_warning_and_errors(void)
 		printk("--Latest # of detected spikes is %d ---\n", spike_end_buff_control_cntr);	
 		printk("-------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
 		printk("------------------------------------------------------\n");
-		rt_task_stay_alive = 0;	// kill task	
+		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}  
 	if ((SPIKE_TIMESTAMP_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
@@ -1026,7 +1034,7 @@ void print_warning_and_errors(void)
 		printk("--Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
 		printk("---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
 		printk("--------------------------------------------------------\n");
-		rt_task_stay_alive = 0;	// kill task	
+		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}	
 	spike_end_buff_control_cntr = 0;
@@ -1080,7 +1088,7 @@ int open_daq_cards(void)
 			comedi_cancel(ni6070_comedi_dev[j], COMEDI_SUBDEVICE_AI);
 			comedi_close(ni6070_comedi_dev[j]);			
 		}
-		rt_task_stay_alive = 0; // kill rt task
+		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return 0;
 	} 
 	
@@ -1105,7 +1113,7 @@ int open_daq_cards(void)
 			comedi_close(ni6070_comedi_dev[j]);			
 		}
 		return 0;
-		rt_task_stay_alive = 0; // kill rt task
+		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 	}
 	return 1; 		
 }
