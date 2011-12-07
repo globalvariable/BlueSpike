@@ -154,6 +154,9 @@ void create_gui(void)
 	{	
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
 		gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
+		gtk_widget_set_sensitive(btn_map_channels, FALSE);
+		gtk_widget_set_sensitive(btn_load_config_file, FALSE);		
+		gtk_widget_set_sensitive(btn_cancel_all_mapping, FALSE);			
 	}
 	else
 	{
@@ -213,7 +216,8 @@ void turn_daq_on_off_button_func(void)
 		shared_memory->kernel_task_ctrl.turn_daq_card_on = 1;
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
 		gtk_widget_set_sensitive(btn_map_channels, FALSE);
-		gtk_widget_set_sensitive(btn_load_config_file, FALSE);			
+		gtk_widget_set_sensitive(btn_load_config_file, FALSE);		
+		gtk_widget_set_sensitive(btn_cancel_all_mapping, FALSE);						
 	}		
 }
 
