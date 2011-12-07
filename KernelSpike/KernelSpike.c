@@ -158,7 +158,7 @@ void rt_handler(int t)
 			// spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;	// redundant
 		} 
 		
-		*kern_curr_time = current_time_ns;			// Recorder reaches current time after processing  all buffers. 
+		*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
 		*kern_prev_time = previous_time_ns;
 			
 		print_warning_and_errors();
