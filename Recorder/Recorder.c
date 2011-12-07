@@ -61,6 +61,10 @@ void create_gui(void)
         btn_start_stop_recording = gtk_button_new_with_label("Start");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_start_stop_recording, FALSE, FALSE, 0);
 	gtk_widget_set_size_request(btn_start_stop_recording, 200, 40);
+	
+        btn_delete_last_recording = gtk_button_new_with_label("Delete");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_delete_last_recording, FALSE, FALSE, 0);
+	gtk_widget_set_size_request(btn_delete_last_recording, 60, 25);	
  
    	vbox = gtk_vbox_new(FALSE, 10);      
      	gtk_table_attach_defaults(GTK_TABLE(main_table), vbox, 0,1, 1, 2);     	
@@ -200,13 +204,17 @@ void create_gui(void)
  	gtk_widget_show_all(window);
  	
    	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);		
-	g_signal_connect(G_OBJECT(btn_start_stop_recording), "clicked", G_CALLBACK(start_stop_recording_button_func), NULL);   	
+	g_signal_connect(G_OBJECT(btn_start_stop_recording), "clicked", G_CALLBACK(start_stop_recording_button_func), NULL);   
+	g_signal_connect(G_OBJECT(btn_delete_last_recording), "clicked", G_CALLBACK(delete_last_recording_button_func), NULL);   
+	
+	g_timeout_add(100, timeout_callback, NULL);	
+
 	return;
 }	
 
-void start_stop_recording_button_func (GtkDatabox * box)
+void start_stop_recording_button_func (void)
 {
-	if (!recording_enabled)
+	if (!recording_started)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
 		
@@ -223,3 +231,15 @@ void start_stop_recording_button_func (GtkDatabox * box)
 	}
 
 }
+
+void delete_last_recording_button_func (void)
+{
+}
+
+gboolean timeout_callback(gpointer user_data) 
+{
+
+	return TRUE;
+}
+
+
