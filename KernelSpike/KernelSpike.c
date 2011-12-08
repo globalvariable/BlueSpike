@@ -74,6 +74,8 @@ void rt_handler(int t)
 
 		if (handle_daq_cards())
 		{
+			*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
+			*kern_prev_time = previous_time_ns;		
 			*kernel_task_idle = 1;			
 			continue;
 		}	

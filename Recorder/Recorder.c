@@ -211,55 +211,299 @@ void create_gui(void)
 	mov_obj_command_time_stamp  = &shared_memory->mov_obj_command_time_stamp;	
 	template_matching_data = &shared_memory->template_matching_data;
 	
+	start_recording_request = 0;	
+	stop_recording_request = 0;
 	recording_ongoing = 0;
-	recording_last_call = 0;
-	
+		
  	gtk_widget_show_all(window);
  	
    	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);		
 	g_signal_connect(G_OBJECT(btn_start_stop_recording), "clicked", G_CALLBACK(start_stop_recording_button_func), NULL);   
 	g_signal_connect(G_OBJECT(btn_delete_last_recording), "clicked", G_CALLBACK(delete_last_recording_button_func), NULL);   
 	
-	g_timeout_add(100, timeout_callback, NULL);	
 
 	return;
 }	
 
 void start_stop_recording_button_func (void)
 {
-
-	if (!recording_ongoing)
+	int ret_val;
+	if ((recording_ongoing) && (!stop_recording_request))
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until KernelSpike is done with all buffers		
-		initialize_buffer_reading_start_indexes();
-		recording_ongoing = 1;	
+		stop_recording_request = 1;
+		pthread_join (recording_thread, NULL);
+		recording_ongoing = 0;
 	}
-	else
+	else if ((!recording_ongoing) & (!start_recording_request))
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Start");	
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until KernelSpike is done with all buffers	
-		recording_last_call =1;
-		recording_ongoing = 0;			
-		initialize_buffer_reading_final_indexes();
-
+		start_recording_request = 1;
+		recording_ongoing = 1;
+		if( (ret_val = pthread_create( &recording_thread, NULL, &recording_handler, NULL)) )
+		{
+			start_recording_request = 0;
+			recording_ongoing = 0;		
+			printf("Thread creation failed: %d\n", ret_val);
+		}
 	}
+	return;
+	
 }
+
+
+void *recording_handler(void *ptr)
+{
+	ptr = NULL;
+	while (1)
+	{
+		if (start_recording_request)
+		{
+			start_recording_request = 0;
+			initialize_buffer_reading_start_indexes_and_time_for_recording();
+			printf ("current time: %u\t %llu\n", (unsigned int)rt_get_cpu_time_ns(), (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);										
+			printf ("recording start time: %llu\n", (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);		
+			usleep(100000);
+		}
+		else if ((recording_ongoing) && (!stop_recording_request))
+		{
+			get_buffer_reading_range_indexes_for_recording();
+			printf ("current time: %u\t %llu\n", (unsigned int)rt_get_cpu_time_ns(), (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);
+			printf("in_recording|n");				
+//			fprint_range
+			usleep(100000);
+		}
+		else if (stop_recording_request)
+		{
+			stop_recording_request = 0;		
+			get_buffer_reading_end_indexes_and_time_for_recording();
+			printf ("current time: %u\t %llu\n", (unsigned int)rt_get_cpu_time_ns(), (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);				
+			printf ("recording end time: %llu\n", (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);		
+			printf ("\n\n\n");					
+//			fprint_buffer_range
+			break;														
+		}
+		else
+		{
+			printf("Recorder: BUG: Inconvenient recording request and status condition\n");
+			printf("Recorder: BUG: Inconvenient recording request and status condition\n");		
+			printf("Recorder: BUG: Inconvenient recording request and status condition\n");
+			break;
+		}
+	}
+	return ptr;
+}
+
 
 void delete_last_recording_button_func (void)
 {
 }
 
-gboolean timeout_callback(gpointer user_data) 
+
+void initialize_buffer_reading_start_indexes_and_time_for_recording(void)
 {
-	if (recording_ongoing)
+	int i, j;
+	
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
 	{
-	}
-	else if (recording_last_call)
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_start_idx[i][j] = recording_data->buff_idx_write[i][j];
+		}
+	}		
+	spike_timestamp_buff_start_idx = spike_time_stamp->buff_idx_write;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		recording_last_call = 0;
-	}
-	return TRUE;
+		exp_envi_event_buff_start_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_start_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_start_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_start_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
+	}	
+
+	recording_start_time_ns = shared_memory->kernel_task_ctrl.current_time_ns;
+
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_prev_idx[i][j] = recording_data_buff_start_idx[i][j];
+		}
+	}		
+	spike_timestamp_buff_prev_idx = spike_timestamp_buff_start_idx;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_start_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_start_idx[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_start_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_start_idx[i];
+	}	
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_end_idx[i][j] = recording_data_buff_start_idx[i][j];
+		}
+	}		
+	spike_timestamp_buff_end_idx = spike_timestamp_buff_start_idx;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_event_buff_end_idx[i] = exp_envi_event_buff_start_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_end_idx[i] = exp_envi_command_buff_start_idx[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_end_idx[i] = mov_obj_event_buff_start_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_end_idx[i] = mov_obj_command_buff_start_idx[i];
+	}	
+	return;	
+}
+
+void get_buffer_reading_range_indexes_for_recording(void)
+{
+	int i, j;
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_prev_idx[i][j] = recording_data_buff_end_idx[i][j];
+		}
+	}		
+	spike_timestamp_buff_prev_idx = spike_timestamp_buff_end_idx;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_end_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_end_idx[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_end_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_end_idx[i];
+	}		
+	
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }	
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
+		}
+	}		
+	spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_end_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_end_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_end_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
+	}	
+
+	return;
+}
+
+
+void get_buffer_reading_end_indexes_and_time_for_recording(void)
+{
+	int i, j;
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_prev_idx[i][j] = recording_data_buff_end_idx[i][j];
+		}
+	}		
+	spike_timestamp_buff_prev_idx = spike_timestamp_buff_end_idx;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_end_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_end_idx[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_end_idx[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_end_idx[i];
+	}		
+	
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }	
+	
+	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
+		}
+	}		
+	spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
+	{
+		exp_envi_command_buff_end_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
+	}			
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_event_buff_end_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
+	}		
+	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
+	{
+		mov_obj_command_buff_end_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
+	}	
+
+	recording_end_time_ns = shared_memory->kernel_task_ctrl.current_time_ns;
+
+	return;	
+	
+
 }
 
 void initialize_buffer_reading_start_indexes(void)
@@ -292,32 +536,6 @@ void initialize_buffer_reading_start_indexes(void)
 	return;
 }
 
-void initialize_buffer_reading_final_indexes(void)
-{
-	int i, j;
-	for (i=0; i < MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			recording_data_buff_final_idx[i][j] = recording_data->buff_idx_write[i][j];
-		}
-	}		
-	spike_timestamp_buff_final_idx = spike_time_stamp->buff_idx_write;
-	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
-	{
-		exp_envi_event_buff_final_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
-	}		
-	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
-	{
-		exp_envi_command_buff_final_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
-	}			
-	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
-	{
-		mov_obj_event_buff_final_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
-	}		
-	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
-	{
-		mov_obj_command_buff_final_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
-	}	
-	return;
-}
+
+
+
