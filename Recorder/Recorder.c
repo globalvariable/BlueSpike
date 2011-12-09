@@ -252,6 +252,9 @@ void start_stop_recording_button_func (void)
 
 void *recording_handler(void *ptr)
 {
+	int time_prev = rt_get_cpu_time_ns();
+	int part_num = 0;
+	int time_curr;
 	ptr = NULL;
 	while (1)
 	{
@@ -288,6 +291,18 @@ void *recording_handler(void *ptr)
 			printf("Recorder: BUG: Inconvenient recording request and status condition\n");
 			break;
 		}
+		time_curr = rt_get_cpu_time_ns();
+		
+		if ((time_curr - time_prev) > 50000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
+		{
+			printf ("Recorder: ERROR: Recording data files (Part: %d) wirting process lasted longer than 50 msec\n", part_num);
+			printf ("Recorder: ERROR: It lasted %d nanoseconds\n", time_curr - time_prev);
+			printf("Recorder: Recording interrupted.\n\n");
+			break;
+		}
+		
+		time_prev = time_curr;
+		part_num++;
 	}
 	return ptr;
 }
