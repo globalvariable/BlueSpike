@@ -117,7 +117,8 @@ void create_gui(void)
 	 	gtk_combo_box_append_text(GTK_COMBO_BOX(combo_mwa), temp);
 	} 		
  	gtk_box_pack_start (GTK_BOX (hbox), combo_mwa, TRUE, TRUE, 0);
- 
+ 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo_mwa), 0);
+ 	
  	combo_chan = gtk_combo_box_new_text();
 	for (i=0; i<MAX_NUM_OF_CHAN_PER_MWA; i++)
 	{
@@ -125,7 +126,8 @@ void create_gui(void)
 	 	gtk_combo_box_append_text(GTK_COMBO_BOX(combo_chan), temp);
 	} 
 	gtk_box_pack_start (GTK_BOX (hbox), combo_chan, TRUE, TRUE, 0);
- 	
+ 	gtk_combo_box_set_active(GTK_COMBO_BOX(combo_chan), 0);
+ 	 	
         lbl = gtk_label_new(": Channel");
         gtk_box_pack_start(GTK_BOX(hbox),lbl, TRUE,TRUE, 0);
  
