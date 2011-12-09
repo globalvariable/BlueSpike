@@ -8,6 +8,7 @@
 
 #include "pthread.h"
 
+#include "./DataFormat/DataFormat.h"
 
 GtkWidget *main_table;
 

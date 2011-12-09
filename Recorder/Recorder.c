@@ -27,7 +27,8 @@ void create_gui(void)
   	gtk_window_set_title(GTK_WINDOW(window), "Recorder");
   	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
-
+	initialize_data_read_write_handlers();	
+	
 	main_table= gtk_table_new(8, 4, TRUE);   // 9 rows   4 columns
 	gtk_container_add(GTK_CONTAINER(window), main_table);
 	
@@ -294,12 +295,13 @@ void *recording_handler(void *ptr)
 		time_curr = rt_get_cpu_time_ns();
 		
 		if ((time_curr - time_prev) > 50000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
-		{
+		{								
 			printf ("Recorder: ERROR: Recording data files (Part: %d) wirting process lasted longer than 50 msec\n", part_num);
 			printf ("Recorder: ERROR: It lasted %d nanoseconds\n", time_curr - time_prev);
 			printf("Recorder: Recording interrupted.\n\n");
-			break;
-		}
+			// delete_last_recorded_file();
+			break;						// Interrupt recording
+		}					
 		
 		time_prev = time_curr;
 		part_num++;
