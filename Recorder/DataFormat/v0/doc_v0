@@ -1,0 +1,19 @@
+
+
+EXP_date ----> BlueSpikeData ------>	meta
+EXP_date						notes		
+EXP_date						map
+....							spike_thres
+..							template
+.							data00001
+							data00002
+							.....
+							..
+							dataxxxxx	----------->	Recording			
+											SpikeTimeStamp
+											ExpEnviEvent 
+											ExpEnviCommand
+											MovObjEvent	
+											MovObjCommand			
+
+										

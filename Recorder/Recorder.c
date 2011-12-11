@@ -217,6 +217,8 @@ void create_gui(void)
 	recording_ongoing = 0;
 	created_bluespikedata_folder = 0;
 	
+	data_directory_cntr = 0;
+ 	
  	gtk_widget_show_all(window);
  	
    	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);	
@@ -227,6 +229,31 @@ void create_gui(void)
 
 	return;
 }	
+
+void create_bluespikedata_folder_button_func (void)
+{
+	char *path_temp = NULL, *path = NULL;
+	if (created_bluespikedata_folder)
+	{
+		created_bluespikedata_folder = 0;
+		gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Create BlueSpikeData Folder");
+		gtk_widget_set_sensitive(btn_select_directory_to_save, TRUE);
+		gtk_widget_set_sensitive(btn_start_stop_recording, FALSE);					
+	}
+	else
+	{
+		path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_directory_to_save));
+		path = &path_temp[7];   // since     uri returns file:///home/....	
+		if ((*create_main_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(1, path))		// record in last format version
+		{
+			gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Disable Recording");	
+			gtk_widget_set_sensitive(btn_select_directory_to_save, FALSE);
+			gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);	
+			created_bluespikedata_folder = 1;
+		}
+	}
+
+}
 
 void start_stop_recording_button_func (void)
 {
@@ -265,7 +292,7 @@ void *recording_handler(void *ptr)
 		if (start_recording_request)
 		{
 			start_recording_request = 0;
-			(*create_data_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(2, &main_directory_path, &ptr_arr_to_data_files);		// record in last format version
+			(*create_data_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(0);		// record in last format version
 			initialize_buffer_reading_start_indexes_and_time_for_recording();
 
 			gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);			
@@ -274,7 +301,7 @@ void *recording_handler(void *ptr)
 		else if ((recording_ongoing) && (!stop_recording_request))
 		{
 			get_buffer_reading_range_indexes_for_recording();
-			(*write_data_in_buffer[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(1, ptr_arr_to_data_files);		// record in last format version
+			(*write_data_in_buffer[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(0);		// record in last format version
 			usleep(100000);
 //			fprint_range
 			break;
@@ -318,40 +345,6 @@ void delete_last_recording_button_func (void)
 
 	gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);
 						
-}
-
-void create_bluespikedata_folder_button_func (void)
-{
-	char *path_temp = NULL, *path = NULL;
-	DIR             *dir_main_folder;
-	if (created_bluespikedata_folder)
-	{
-		created_bluespikedata_folder = 0;
-		gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Create BlueSpikeData Folder");
-		gtk_widget_set_sensitive(btn_select_directory_to_save, TRUE);
-		gtk_widget_set_sensitive(btn_start_stop_recording, FALSE);					
-	}
-	else
-	{
-		path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_directory_to_save));
-		path = &path_temp[7];   // since     uri returns file:///home/....	
-		strcpy(main_directory_path, path);	
-		strcat(main_directory_path, "/BlueSpikeData");
-		if ((dir_main_folder = opendir(main_directory_path)) != NULL)
-        	{
-        		printf ("Recorder: ERROR: path: %s already has BlueSpikeData folder.\n", path);		
-        		printf ("Recorder: ERROR: Select another folder.\n\n");		        		
-                	return;
-        	}
-		mkdir(main_directory_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH | S_IWOTH);
-		gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Disable Recording");	
-        	printf ("Recorder: Created BlueSpikeData folder in: %s.\n", path);
-        	printf ("Recorder: BlueSpikeData path is: %s.\n\n", main_directory_path);        					
-		gtk_widget_set_sensitive(btn_select_directory_to_save, FALSE);
-		gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);	
-		created_bluespikedata_folder = 1;	
-	}
-
 }
 
 void initialize_buffer_reading_start_indexes_and_time_for_recording(void)

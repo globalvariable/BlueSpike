@@ -31,9 +31,6 @@ TimeStamp recording_end_time_ns;
 
 pthread_t recording_thread;
 
-char main_directory_path[500];
-GPtrArray *ptr_arr_to_data_files;
-
 typedef struct __BuffRangesHandlingStruct
 {
 	int recording_data_buff_prev_idx[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
