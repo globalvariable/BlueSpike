@@ -45,14 +45,12 @@ void create_gui(void)
   	btn_select_directory_to_save = gtk_file_chooser_button_new ("Select Directory", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
         gtk_box_pack_start(GTK_BOX(hbox), btn_select_directory_to_save, FALSE,FALSE,0);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_directory_to_save),"/home");		
+	gtk_widget_set_size_request(btn_select_directory_to_save, 150, 30);	
 
-        entry_data_name = gtk_entry_new();
-        gtk_box_pack_start(GTK_BOX(hbox), entry_data_name, FALSE,FALSE,0);
-	gtk_widget_set_size_request(entry_data_name, 270, 25);
-	 	
-  	lbl = gtk_label_new("  : Data Name");
-        gtk_box_pack_start(GTK_BOX(hbox),lbl, FALSE,FALSE, 0);
-
+	btn_create_bluespikedata_folder = gtk_button_new_with_label("Create BlueSpikeData Folder");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_create_bluespikedata_folder, FALSE, FALSE, 0);
+	gtk_widget_set_size_request(btn_create_bluespikedata_folder, 200, 30);
+	
    	hbox = gtk_hbox_new(TRUE, 0);
         gtk_box_pack_start(GTK_BOX(vbox),hbox, FALSE,FALSE, 5);  
 
@@ -62,10 +60,12 @@ void create_gui(void)
         btn_start_stop_recording = gtk_button_new_with_label("Start");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_start_stop_recording, FALSE, FALSE, 0);
 	gtk_widget_set_size_request(btn_start_stop_recording, 200, 40);
+	gtk_widget_set_sensitive(btn_start_stop_recording, FALSE);		
 	
-        btn_delete_last_recording = gtk_button_new_with_label("Delete");
+        btn_delete_last_recording = gtk_button_new_with_label("Delete Last");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_delete_last_recording, FALSE, FALSE, 0);
-	gtk_widget_set_size_request(btn_delete_last_recording, 60, 25);	
+	gtk_widget_set_size_request(btn_delete_last_recording, 90, 25);	
+	gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);			
  
    	vbox = gtk_vbox_new(FALSE, 10);      
      	gtk_table_attach_defaults(GTK_TABLE(main_table), vbox, 0,1, 1, 2);     	
@@ -215,10 +215,12 @@ void create_gui(void)
 	start_recording_request = 0;	
 	stop_recording_request = 0;
 	recording_ongoing = 0;
-		
+	created_bluespikedata_folder = 0;
+	
  	gtk_widget_show_all(window);
  	
-   	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);		
+   	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);	
+	g_signal_connect(G_OBJECT(btn_create_bluespikedata_folder), "clicked", G_CALLBACK(create_bluespikedata_folder_button_func), NULL);      		
 	g_signal_connect(G_OBJECT(btn_start_stop_recording), "clicked", G_CALLBACK(start_stop_recording_button_func), NULL);   
 	g_signal_connect(G_OBJECT(btn_delete_last_recording), "clicked", G_CALLBACK(delete_last_recording_button_func), NULL);   
 	
@@ -254,35 +256,36 @@ void start_stop_recording_button_func (void)
 void *recording_handler(void *ptr)
 {
 	int time_prev = rt_get_cpu_time_ns();
-	int part_num = 0;
 	int time_curr;
+	int part_num = 0;
+	
 	ptr = NULL;
 	while (1)
 	{
 		if (start_recording_request)
 		{
 			start_recording_request = 0;
+			(*create_data_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(2, &main_directory_path, &ptr_arr_to_data_files);		// record in last format version
 			initialize_buffer_reading_start_indexes_and_time_for_recording();
-			printf ("current time: %u\t %llu\n", (unsigned int)rt_get_cpu_time_ns(), (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);										
-			printf ("recording start time: %llu\n", (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);		
-			usleep(100000);
+
+			gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);			
+
 		}
 		else if ((recording_ongoing) && (!stop_recording_request))
 		{
 			get_buffer_reading_range_indexes_for_recording();
-			printf ("current time: %u\t %llu\n", (unsigned int)rt_get_cpu_time_ns(), (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);
-			printf("in_recording|n");				
-//			fprint_range
+			(*write_data_in_buffer[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(1, ptr_arr_to_data_files);		// record in last format version
 			usleep(100000);
+//			fprint_range
+			break;
 		}
 		else if (stop_recording_request)
 		{
 			stop_recording_request = 0;		
 			get_buffer_reading_end_indexes_and_time_for_recording();
-			printf ("current time: %u\t %llu\n", (unsigned int)rt_get_cpu_time_ns(), (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);				
-			printf ("recording end time: %llu\n", (long long unsigned int)shared_memory->kernel_task_ctrl.current_time_ns);		
-			printf ("\n\n\n");					
+
 //			fprint_buffer_range
+			gtk_widget_set_sensitive( btn_delete_last_recording, TRUE);			
 			break;														
 		}
 		else
@@ -294,9 +297,9 @@ void *recording_handler(void *ptr)
 		}
 		time_curr = rt_get_cpu_time_ns();
 		
-		if ((time_curr - time_prev) > 50000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
+		if ((time_curr - time_prev) > 50000000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
 		{								
-			printf ("Recorder: ERROR: Recording data files (Part: %d) wirting process lasted longer than 50 msec\n", part_num);
+			printf ("Recorder: ERROR: Recording data files (Part: %d) writing process lasted longer than 50 msec\n", part_num);
 			printf ("Recorder: ERROR: It lasted %d nanoseconds\n", time_curr - time_prev);
 			printf("Recorder: Recording interrupted.\n\n");
 			// delete_last_recorded_file();
@@ -312,8 +315,44 @@ void *recording_handler(void *ptr)
 
 void delete_last_recording_button_func (void)
 {
+
+	gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);
+						
 }
 
+void create_bluespikedata_folder_button_func (void)
+{
+	char *path_temp = NULL, *path = NULL;
+	DIR             *dir_main_folder;
+	if (created_bluespikedata_folder)
+	{
+		created_bluespikedata_folder = 0;
+		gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Create BlueSpikeData Folder");
+		gtk_widget_set_sensitive(btn_select_directory_to_save, TRUE);
+		gtk_widget_set_sensitive(btn_start_stop_recording, FALSE);					
+	}
+	else
+	{
+		path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_directory_to_save));
+		path = &path_temp[7];   // since     uri returns file:///home/....	
+		strcpy(main_directory_path, path);	
+		strcat(main_directory_path, "/BlueSpikeData");
+		if ((dir_main_folder = opendir(main_directory_path)) != NULL)
+        	{
+        		printf ("Recorder: ERROR: path: %s already has BlueSpikeData folder.\n", path);		
+        		printf ("Recorder: ERROR: Select another folder.\n\n");		        		
+                	return;
+        	}
+		mkdir(main_directory_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH | S_IWOTH);
+		gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Disable Recording");	
+        	printf ("Recorder: Created BlueSpikeData folder in: %s.\n", path);
+        	printf ("Recorder: BlueSpikeData path is: %s.\n\n", main_directory_path);        					
+		gtk_widget_set_sensitive(btn_select_directory_to_save, FALSE);
+		gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);	
+		created_bluespikedata_folder = 1;	
+	}
+
+}
 
 void initialize_buffer_reading_start_indexes_and_time_for_recording(void)
 {
@@ -352,50 +391,50 @@ void initialize_buffer_reading_start_indexes_and_time_for_recording(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_buff_prev_idx[i][j] = recording_data_buff_start_idx[i][j];
+			buff_handling_range.recording_data_buff_prev_idx[i][j] = recording_data_buff_start_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_prev_idx = spike_timestamp_buff_start_idx;
+	buff_handling_range.spike_timestamp_buff_prev_idx = spike_timestamp_buff_start_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_start_idx[i];
+		buff_handling_range.exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_start_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_start_idx[i];
+		buff_handling_range.exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_start_idx[i];
 	}			
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_start_idx[i];
+		buff_handling_range.mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_start_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_start_idx[i];
+		buff_handling_range.mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_start_idx[i];
 	}	
 	
 	for (i=0; i < MAX_NUM_OF_MWA; i++)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_buff_end_idx[i][j] = recording_data_buff_start_idx[i][j];
+			buff_handling_range.recording_data_buff_end_idx[i][j] = recording_data_buff_start_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_end_idx = spike_timestamp_buff_start_idx;
+	buff_handling_range.spike_timestamp_buff_end_idx = spike_timestamp_buff_start_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_event_buff_end_idx[i] = exp_envi_event_buff_start_idx[i];
+		buff_handling_range.exp_envi_event_buff_end_idx[i] = exp_envi_event_buff_start_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_command_buff_end_idx[i] = exp_envi_command_buff_start_idx[i];
+		buff_handling_range.exp_envi_command_buff_end_idx[i] = exp_envi_command_buff_start_idx[i];
 	}			
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_event_buff_end_idx[i] = mov_obj_event_buff_start_idx[i];
+		buff_handling_range.mov_obj_event_buff_end_idx[i] = mov_obj_event_buff_start_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_command_buff_end_idx[i] = mov_obj_command_buff_start_idx[i];
+		buff_handling_range.mov_obj_command_buff_end_idx[i] = mov_obj_command_buff_start_idx[i];
 	}	
 	return;	
 }
@@ -408,25 +447,25 @@ void get_buffer_reading_range_indexes_for_recording(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_buff_prev_idx[i][j] = recording_data_buff_end_idx[i][j];
+			buff_handling_range.recording_data_buff_prev_idx[i][j] = buff_handling_range.recording_data_buff_end_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_prev_idx = spike_timestamp_buff_end_idx;
+	buff_handling_range.spike_timestamp_buff_prev_idx = buff_handling_range.spike_timestamp_buff_end_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_end_idx[i];
+		buff_handling_range.exp_envi_event_buff_prev_idx[i] = buff_handling_range.exp_envi_event_buff_end_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_end_idx[i];
+		buff_handling_range.exp_envi_command_buff_prev_idx[i] = buff_handling_range.exp_envi_command_buff_end_idx[i];
 	}			
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_end_idx[i];
+		buff_handling_range.mov_obj_event_buff_prev_idx[i] = buff_handling_range.mov_obj_event_buff_end_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_end_idx[i];
+		buff_handling_range.mov_obj_command_buff_prev_idx[i] = buff_handling_range.mov_obj_command_buff_end_idx[i];
 	}		
 	
 	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }	
@@ -435,25 +474,25 @@ void get_buffer_reading_range_indexes_for_recording(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
+			buff_handling_range.recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
 		}
 	}		
-	spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	buff_handling_range.spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
+		buff_handling_range.exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_command_buff_end_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
+		buff_handling_range.exp_envi_command_buff_end_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
 	}			
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_event_buff_end_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
+		buff_handling_range.mov_obj_event_buff_end_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_command_buff_end_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
+		buff_handling_range.mov_obj_command_buff_end_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
 	}	
 
 	return;
@@ -468,25 +507,25 @@ void get_buffer_reading_end_indexes_and_time_for_recording(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_buff_prev_idx[i][j] = recording_data_buff_end_idx[i][j];
+			buff_handling_range.recording_data_buff_prev_idx[i][j] = buff_handling_range.recording_data_buff_end_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_prev_idx = spike_timestamp_buff_end_idx;
+	buff_handling_range.spike_timestamp_buff_prev_idx = buff_handling_range.spike_timestamp_buff_end_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_end_idx[i];
+		buff_handling_range.exp_envi_event_buff_prev_idx[i] = buff_handling_range.exp_envi_event_buff_end_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_command_buff_prev_idx[i] = exp_envi_command_buff_end_idx[i];
+		buff_handling_range.exp_envi_command_buff_prev_idx[i] = buff_handling_range.exp_envi_command_buff_end_idx[i];
 	}			
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_event_buff_prev_idx[i] = mov_obj_event_buff_end_idx[i];
+		buff_handling_range.mov_obj_event_buff_prev_idx[i] = buff_handling_range.mov_obj_event_buff_end_idx[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_end_idx[i];
+		buff_handling_range.mov_obj_command_buff_prev_idx[i] = buff_handling_range.mov_obj_command_buff_end_idx[i];
 	}		
 	
 	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }	
@@ -495,25 +534,25 @@ void get_buffer_reading_end_indexes_and_time_for_recording(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
+			buff_handling_range.recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
 		}
 	}		
-	spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	buff_handling_range.spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
+		buff_handling_range.exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
-		exp_envi_command_buff_end_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
+		buff_handling_range.exp_envi_command_buff_end_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
 	}			
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_event_buff_end_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
+		buff_handling_range.mov_obj_event_buff_end_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
 	}		
 	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
 	{
-		mov_obj_command_buff_end_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
+		buff_handling_range.mov_obj_command_buff_end_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
 	}	
 
 	recording_end_time_ns = shared_memory->kernel_task_ctrl.current_time_ns;
@@ -522,37 +561,5 @@ void get_buffer_reading_end_indexes_and_time_for_recording(void)
 	
 
 }
-
-void initialize_buffer_reading_start_indexes(void)
-{
-	int i, j;
-	for (i=0; i < MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			recording_data_buff_prev_idx[i][j] = recording_data->buff_idx_write[i][j];
-		}
-	}		
-	spike_timestamp_buff_prev_idx = spike_time_stamp->buff_idx_write;
-	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
-	{
-		exp_envi_event_buff_prev_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
-	}		
-	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
-	{
-		exp_envi_command_buff_prev_idx[i] = exp_envi_command_time_stamp->buff_idx_write[i];
-	}			
-	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
-	{
-		mov_obj_event_buff_prev_idx[i] = mov_obj_event_time_stamp->buff_idx_write[i];
-	}		
-	for (i=0; i <MAX_NUM_OF_MOVING_OBJECTS; i++)
-	{
-		mov_obj_command_buff_prev_idx[i] = mov_obj_command_time_stamp->buff_idx_write[i];
-	}	
-	return;
-}
-
-
 
 
