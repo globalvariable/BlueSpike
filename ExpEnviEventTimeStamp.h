@@ -8,7 +8,7 @@
 
 #define EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE 10000   // Should adjust its size according to the writing frequency to and reading frequency from this buffer. for hihger writing and lower reading, you should increase buffer size to avoid over-writing.  
 
-typedef short unsigned int ExpEnviEventType;
+typedef unsigned int ExpEnviEventType;
 
 typedef double ExpEnviEventValue;
 

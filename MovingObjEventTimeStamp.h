@@ -12,10 +12,10 @@
 
 typedef struct __MovingObjEventTimeStampItem
 {
-	TimeStamp 			time;
-	MovingObjSpeed		Speed[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];             // Location data for each component of moving object 
+	TimeStamp 			time;				// BE CAREFUL WHILE WRITING INTO THIS BUFFER: DO NOT FORGET TO CLEAR EACH COMPONENT OF MOVING OBJECT IF NOT USED.
+	MovingObjSpeed		Speed[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];             // Speed data for each component of moving object 
 	MovingObjDirection		Direction[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];	     // Current direction of each component of moving object 
-	MovingObjLocation		Location[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];  
+	MovingObjLocation		Location[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];  	    // Location data of each component of moving object 
 } MovingObjEventTimeStampItem;
 
 typedef MovingObjEventTimeStampItem	MovingObjEventTimeStampBuff[MAX_NUM_OF_MOVING_OBJECTS][MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE];

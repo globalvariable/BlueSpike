@@ -12,17 +12,19 @@ GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
 all: Recorder
 
-Recorder: Recorder.c DataFormat/DataFormat.o DataFormat/v0/DataFormat_v0.o
-	$(CC) $(LXRT_CFLAGS) -o $@ $< DataFormat/DataFormat.o DataFormat/v0/DataFormat_v0.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
+Recorder: Recorder.c DataHandling/DataHandling.o DataHandling/DataFormat_v0/DataFormat_v0.o DataHandling/Buffer/Buffer.o 
+	$(CC) $(LXRT_CFLAGS) -o $@ $< DataHandling/DataHandling.o DataHandling/DataFormat_v0/DataFormat_v0.o DataHandling/Buffer/Buffer.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
 
-
-DataFormat/DataFormat.o: DataFormat/DataFormat.c 
+DataHandling/DataHandling.o: DataHandling/DataHandling.c 
 	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 
+	
+DataHandling/Buffer/Buffer.o: DataHandling/Buffer/Buffer.c 
+	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 	
 
-DataFormat/v0/DataFormat_v0.o: DataFormat/v0/DataFormat_v0.c
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $< $(GTK_FLAGS) 
+DataHandling/DataFormat_v0/DataFormat_v0.o: DataHandling/DataFormat_v0/DataFormat_v0.c
+	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
 
 clean:
-	rm -f *.o Recorder DataFormat/DataFormat.o DataFormat/v0/DataFormat_v0.o
+	rm -f *.o Recorder DataHandling/DataHandling.o DataHandling/Buffer/Buffer.o/Buffer.o DataHandling/DataFormat_v0/DataFormat_v0.o
 
 .PHONY: clean

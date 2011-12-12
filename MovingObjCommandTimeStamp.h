@@ -18,7 +18,7 @@ typedef enum __MovingObjDirection{NO_DIRECTION_DATA, BACKWARD, STATIONARY, FORWA
  
 typedef struct __MovingObjCommandTimeStampItem
 {
-	TimeStamp 			time;
+	TimeStamp 			time;				// BE CAREFUL WHILE WRITING INTO THIS BUFFER: DO NOT FORGET TO CLEAR EACH COMPONENT OF MOVING OBJECT IF NOT USED.
 	MovingObjSpeed		Speed[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];             // Location data for each component of moving object 
 	MovingObjDirection		Direction[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];	     // Current direction of each component of moving object 
 	MovingObjLocation		Location[MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT];  

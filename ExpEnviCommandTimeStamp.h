@@ -8,7 +8,7 @@
 
 #define MAX_NUM_OF_EXP_ENVI_ITEMS 1  // Number of event producers and command receiver (ie all skinner box elements belongs to 1 item. Another item added to experimental environment (i.e stimulator) is the second item )
 
-typedef short unsigned int ExpEnviCommandType;
+typedef unsigned int ExpEnviCommandType;
 
 typedef double ExpEnviCommandValue;
 
