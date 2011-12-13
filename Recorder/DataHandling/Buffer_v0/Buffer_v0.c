@@ -1,6 +1,6 @@
-#include "Buffer.h"
+#include "Buffer_v0.h"
 
-TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording(void)
+TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording_v0 (int num, ...)
 {
 	int i, j;
 	TimeStamp start_time;
@@ -86,7 +86,7 @@ TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording(void)
 	return start_time;	
 }
 
-void get_buffer_reading_range_indexes_for_recording(void)
+void get_buffer_reading_range_indexes_for_recording_v0 (int num, ...)
 {
 	int i, j;
 	
@@ -146,7 +146,7 @@ void get_buffer_reading_range_indexes_for_recording(void)
 }
 
 
-TimeStamp get_buffer_reading_end_indexes_and_time_for_recording(void)
+TimeStamp get_buffer_reading_end_indexes_and_time_for_recording_v0 (int num, ...)
 {
 	int i, j;
 	TimeStamp end_time;	

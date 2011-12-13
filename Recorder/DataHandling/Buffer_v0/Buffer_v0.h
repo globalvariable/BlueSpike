@@ -34,6 +34,6 @@ TemplateMatchingData		*template_matching_data;
 
 
 //Functions
-TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording(void);
-void get_buffer_reading_range_indexes_for_recording(void);
-TimeStamp get_buffer_reading_end_indexes_and_time_for_recording(void);
+TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording_v0 (int num, ...);
+void get_buffer_reading_range_indexes_for_recording_v0 (int num, ...);
+TimeStamp get_buffer_reading_end_indexes_and_time_for_recording_v0 (int num, ...);
