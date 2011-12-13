@@ -4,6 +4,7 @@
 
 #define MAX_NUMBER_OF_DATA_FORMAT_VER	1	// increment this for every new data format handling to be implemented. 
 
+#define DATA_FORMAT_VERSION	0	// Change this according to the intended data format/   Upper limit is MAX_NUMBER_OF_DATA_FORMAT_VER-1
 
 int (*create_main_directory[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );
 int (*create_data_directory[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );

@@ -3,6 +3,7 @@
 #define MAX_NUM_OF_DAQ_CARD 1 					// Increase if there is an additional card
 #define MAX_NUM_OF_CHANNEL_PER_DAQ_CARD 16 		
 
+#define DAQ_0_MODEL 				"NI6070E"
 #define COMEDI_SUBDEVICE_AI 		0
 #define SAMPLING_INTERVAL 			25000     /// DO NOT CHANGE!!!
 // #define VOLTAGE_RANGE_6070E 		0	//	+10V,-10V

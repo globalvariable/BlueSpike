@@ -28,6 +28,7 @@ int create_main_directory_v0(int num, ...)
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/meta");
 	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
+	write_meta_file(temp_fp);
 
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/notes");
@@ -58,6 +59,14 @@ int create_data_directory_v0(int num, ...)
 	char data_directory_name[10];
 	char data_directory_num[10];
 	DIR	*dir_data_directory;	
+	
+	TimeStamp rec_start;
+	
+  	va_list arguments;
+	va_start ( arguments, num );   
+    	rec_start = va_arg ( arguments, TimeStamp);   	
+	va_end ( arguments );	
+	
 	if (data_directory_cntr <10)
 	{
 		strcpy(data_directory_name, "dat0000");
@@ -105,13 +114,13 @@ int create_data_directory_v0(int num, ...)
         }
 	mkdir(data_directory_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH | S_IWOTH);	
 
-	if (create_data_files())
+	if (create_data_files(rec_start))
 		data_directory_cntr++;
 		
 	return 1;
 }
 
-int create_data_files(void)
+int create_data_files(TimeStamp rec_start)
 {
 	file_ptr_arr = g_new0(FILE*, NUM_OF_DATA_FILE_PER_RECORDING);    
 	
@@ -130,7 +139,8 @@ int create_data_files(void)
 		return 0;		
 	if (!create_mov_obj_command_data())
 		return 0;
-		
+	if (!create_meta_data(rec_start))
+		return 0;		
 	time_curr = rt_get_cpu_time_ns();
 	if ((time_curr - time_prev) > 100000000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
 	{								
@@ -302,7 +312,22 @@ int create_mov_obj_event_data(void)
 		file_ptr_arr[MOV_OBJ_EVENT_DATA_FILE_IDX + i] =  temp_fp;
 	}
 	return 1;
-}		
+}	
+
+int create_meta_data(TimeStamp rec_start)
+{
+	char temp[600];
+	FILE *temp_fp;
+	
+	strcpy(temp, data_directory_path);
+	strcat(temp, "/meta");
+	if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+	file_ptr_arr[META_DATA_FILE_IDX] =  temp_fp;
+	fprintf(temp_fp,"%llu\n", rec_start);		
+	
+	return 1;	
+}
+	
 int create_mov_obj_command_data(void)
 {
 	char temp[600];
@@ -336,19 +361,23 @@ int write_data_in_buffer_v0(int num, ...)
 	int time_prev = rt_get_cpu_time_ns();
 	int time_curr;
 	int part_num;
-
+	
   	va_list arguments;
 	va_start ( arguments, num );   
     	part_num = va_arg ( arguments, int);   	
+	if (num == 2)	// it is last part to write. write end of recording time into meta
+	{
+		end_meta_data(va_arg ( arguments, TimeStamp));		
+	}
 	va_end ( arguments );
-
+	
 	write_recording_data();
 	write_spike_timestamp_data();
 	write_exp_envi_event_data();
 	write_exp_envi_command_data();
 	write_mov_obj_event_data();
 	write_mov_obj_command_data();
-	
+
 	time_curr = rt_get_cpu_time_ns();
 	if ((time_curr - time_prev) > 100000000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
 	{								
@@ -514,6 +543,13 @@ int write_mov_obj_command_data(void)
 	return 1;
 }
 
+int end_meta_data(TimeStamp rec_end)
+{
+	fprintf(file_ptr_arr[META_DATA_FILE_IDX],"%llu\n", rec_end);
+	return 1;		
+}
+
+
 int fclose_all_data_files_v0(int num, ...)
 {
 	int i , num_of_data_files = NUM_OF_DATA_FILE_PER_RECORDING;
@@ -528,3 +564,30 @@ int fclose_all_data_files_v0(int num, ...)
 	return 1;
 }
 
+int write_meta_file(FILE *fp)
+{
+	fprintf(fp,"----------BlueSpikeData----------\n");
+	fprintf(fp,"DATA_FORMAT_VERSION\t%d\n", 0);	
+	fprintf(fp,"MAX_NUM_OF_MWA\t%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp,"MAX_NUM_OF_CHAN_PER_MWA\t%d\n",MAX_NUM_OF_CHAN_PER_MWA);
+	fprintf(fp,"MAX_NUM_OF_DAQ_CARD\t%d\n",MAX_NUM_OF_DAQ_CARD);
+	fprintf(fp,"MAX_NUM_OF_CHANNEL_PER_DAQ_CARD\t%d\n",MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);	
+	fprintf(fp,"SAMPLING_INTERVAL\t%d\tNANOSECONDS\n", SAMPLING_INTERVAL);
+	fprintf(fp,"LOWEST_VOLTAGE_MV\t%f\tMILLIVOLTS\n",LOWEST_VOLTAGE_MV);
+	fprintf(fp,"HIGHEST_VOLTAGE_MV\t%f\tMILLIVOLTS\n",HIGHEST_VOLTAGE_MV);	
+	fprintf(fp,"DAQ_0_MODEL\t%s\n",DAQ_0_MODEL);	
+	fprintf(fp,"KERNELSPIKE_TICK_PERIOD\t%d\n", KERNELSPIKE_TICK_PERIOD);
+	fprintf(fp,"KERNELSPIKE_CPUID\t%d\n", KERNELSPIKE_CPUID);
+	fprintf(fp,"KERNELSPIKE_TASK_PRIORITY\t%d\n", KERNELSPIKE_TASK_PRIORITY);
+	fprintf(fp,"MAX_NUM_OF_EXP_ENVI_ITEMS\t%d\n",MAX_NUM_OF_EXP_ENVI_ITEMS);
+	fprintf(fp,"MAX_NUM_OF_MOVING_OBJECTS\t%d\n",MAX_NUM_OF_MOVING_OBJECTS);
+	fprintf(fp,"MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT\t%d\n",MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT); 		
+	fprintf(fp,"RECORDING_DATA_BUFF_SIZE\t%d\n",RECORDING_DATA_BUFF_SIZE);
+	fprintf(fp,"SPIKE_TIMESTAMP_BUFF_SIZE\t%d\n",SPIKE_TIMESTAMP_BUFF_SIZE);
+	fprintf(fp,"EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE\t%d\n",EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE);
+	fprintf(fp,"EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE\t%d\n",EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE);
+	fprintf(fp,"MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE\t%d\n",MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE);		
+	fprintf(fp,"MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE\t%d\n",MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE);			
+	fclose(fp);
+	return 1;
+}

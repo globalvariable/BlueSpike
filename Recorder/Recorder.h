@@ -27,9 +27,6 @@ bool recording_ongoing;
 
 bool created_bluespikedata_folder;
 
-TimeStamp recording_start_time_ns;
-TimeStamp recording_end_time_ns;
-
 pthread_t recording_thread;
 
 // Functions
