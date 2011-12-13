@@ -318,12 +318,18 @@ int create_meta_data(TimeStamp rec_start)
 {
 	char temp[600];
 	FILE *temp_fp;
-	
+	time_t rawtime;
+	struct tm * timeinfo;
+		
 	strcpy(temp, data_directory_path);
 	strcat(temp, "/meta");
 	if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
 	file_ptr_arr[META_DATA_FILE_IDX] =  temp_fp;
-	fprintf(temp_fp,"%llu\n", rec_start);		
+
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(temp_fp,"DATE\t%s\n", asctime (timeinfo)); 	
+	fprintf(temp_fp,"START\t%llu\n", rec_start);		
 	
 	return 1;	
 }
@@ -545,7 +551,7 @@ int write_mov_obj_command_data(void)
 
 int end_meta_data(TimeStamp rec_end)
 {
-	fprintf(file_ptr_arr[META_DATA_FILE_IDX],"%llu\n", rec_end);
+	fprintf(file_ptr_arr[META_DATA_FILE_IDX],"END\t%llu\n", rec_end);
 	return 1;		
 }
 
@@ -566,10 +572,18 @@ int fclose_all_data_files_v0(int num, ...)
 
 int write_meta_file(FILE *fp)
 {
+	time_t rawtime;
+	struct tm * timeinfo;
+	
 	fprintf(fp,"----------BlueSpikeData----------\n");
 	fprintf(fp,"DATA_FORMAT_VERSION\t%d\n", 0);	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"CREATION_DATE\t%s\n", asctime (timeinfo)); 	
 	fprintf(fp,"MAX_NUM_OF_MWA\t%d\n", MAX_NUM_OF_MWA);
 	fprintf(fp,"MAX_NUM_OF_CHAN_PER_MWA\t%d\n",MAX_NUM_OF_CHAN_PER_MWA);
+	fprintf(fp,"MAX_NUM_OF_UNIT_PER_CHAN\t%d\n",MAX_NUM_OF_UNIT_PER_CHAN);
+	fprintf(fp,"NUM_OF_SAMP_PER_SPIKE\t%d\n",NUM_OF_SAMP_PER_SPIKE);
 	fprintf(fp,"MAX_NUM_OF_DAQ_CARD\t%d\n",MAX_NUM_OF_DAQ_CARD);
 	fprintf(fp,"MAX_NUM_OF_CHANNEL_PER_DAQ_CARD\t%d\n",MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);	
 	fprintf(fp,"SAMPLING_INTERVAL\t%d\tNANOSECONDS\n", SAMPLING_INTERVAL);
