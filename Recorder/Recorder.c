@@ -289,9 +289,12 @@ void *recording_handler(void *ptr)
 		if (start_recording_request)
 		{
 			start_recording_request = 0;
-			initialize_buffer_reading_start_indexes_and_time_for_recording();
+			recording_start_time_ns = initialize_buffer_reading_start_indexes_and_time_for_recording();
 			if (!((*create_data_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(0)))		// record in last format version
+			{
 				(*fclose_all_data_files[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(0);
+				break;
+			}
 			gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);						
 		}
 		else if ((recording_ongoing) && (!stop_recording_request))
@@ -306,7 +309,8 @@ void *recording_handler(void *ptr)
 		}
 		else if (stop_recording_request)
 		{
-			stop_recording_request = 0;		
+			stop_recording_request = 0;
+			recording_end_time_ns = get_buffer_reading_end_indexes_and_time_for_recording();				
 			if ((*write_data_in_buffer[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(1, part_num))		// record in last format version
 				gtk_widget_set_sensitive( btn_delete_last_recording, TRUE);
 			(*fclose_all_data_files[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(0);

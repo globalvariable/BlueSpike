@@ -161,13 +161,13 @@ int create_recording_data(void)
 			strcpy(temp, data_directory_path);	
 			if (i<10)
 			{
-				strcat(temp, "/Rec_mwa0");
+				strcat(temp, "/Rec_mwa_0");
 				sprintf(char_mwa_num, "%d" , i);
 				strcat(temp, char_mwa_num);
 			}
 			else if (i<100)
 			{
-				strcat(temp, "/Rec_mwa");
+				strcat(temp, "/Rec_mwa_");
 				sprintf(char_mwa_num, "%d" , i);
 				strcat(temp, char_mwa_num);				
 			}
@@ -180,19 +180,19 @@ int create_recording_data(void)
 			strcat(temp, "_");
 			if (j<10)
 			{
-				strcat(temp, "chan00");
+				strcat(temp, "chan_00");
 				sprintf(char_chan_num, "%d" , j);
 				strcat(temp, char_chan_num);
 			}
 			else if (j<100)
 			{
-				strcat(temp, "chan0");
+				strcat(temp, "chan_0");
 				sprintf(char_chan_num, "%d" , j);
 				strcat(temp, char_chan_num);				
 			}
 			else if (j<1000)
 			{
-				strcat(temp, "chan0");
+				strcat(temp, "chan_");
 				sprintf(char_chan_num, "%d" , j);
 				strcat(temp, char_chan_num);			
 			}
@@ -228,12 +228,12 @@ int create_exp_envi_event_data(void)
 	char char_exp_envi_item[10];
 	int i;	
 		
-	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	for (i=0; i < MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		strcpy(temp, data_directory_path);	
 		if (i<10)
 		{
-			strcat(temp, "/ExpEnviEvent");
+			strcat(temp, "/ExpEnvi_Event_item_");
 			sprintf(char_exp_envi_item, "%d" , i);
 			strcat(temp, char_exp_envi_item);
 		}
@@ -255,12 +255,12 @@ int create_exp_envi_command_data(void)
 	char char_exp_envi_item[10];
 	int i;
 	
-	for (i=0; i < MAX_NUM_OF_MWA; i++)
+	for (i=0; i < MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		strcpy(temp, data_directory_path);	
 		if (i<10)
 		{
-			strcat(temp, "/ExpEnviComnd");
+			strcat(temp, "/ExpEnvi_Comnd_item_");
 			sprintf(char_exp_envi_item, "%d" , i);
 			strcat(temp, char_exp_envi_item);
 		}
@@ -288,7 +288,7 @@ int create_mov_obj_event_data(void)
 		strcpy(temp, data_directory_path);	
 		if (i<10)
 		{
-			strcat(temp, "/MovObjEvent_obj");
+			strcat(temp, "/MovObj_Event_obj_");
 			sprintf(char_mov_obj_num, "%d" , i);
 			strcat(temp, char_mov_obj_num);
 		}
@@ -315,7 +315,7 @@ int create_mov_obj_command_data(void)
 		strcpy(temp, data_directory_path);	
 		if (i<10)
 		{
-			strcat(temp, "/MovObjComnd_obj");
+			strcat(temp, "/MovObj_Comnd_obj_");
 			sprintf(char_mov_obj_num, "%d" , i);
 			strcat(temp, char_mov_obj_num);
 		}
@@ -516,12 +516,15 @@ int write_mov_obj_command_data(void)
 
 int fclose_all_data_files_v0(int num, ...)
 {
-	int i;
-	for (i = 0; i<NUM_OF_DATA_FILE_PER_RECORDING; i++)
+	int i , num_of_data_files = NUM_OF_DATA_FILE_PER_RECORDING;
+		
+	for (i = 0; i<num_of_data_files; i++)
 	{
 		if (file_ptr_arr[i] != NULL)
 			fclose(file_ptr_arr[i]);
 	}
+	g_free(file_ptr_arr);
+
 	return 1;
 }
 
