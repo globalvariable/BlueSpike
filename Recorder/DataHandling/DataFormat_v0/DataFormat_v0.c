@@ -3,8 +3,7 @@
 
 int create_main_directory_v0(int num, ...)
 {
-	char *path_chooser, temp_path[600];
-	FILE *temp_fp;
+	char *path_chooser;
 	DIR	*dir_main_folder;
 	
   	va_list arguments;
@@ -25,31 +24,12 @@ int create_main_directory_v0(int num, ...)
         printf ("Recorder: Created BlueSpikeData folder in: %s.\n", path_chooser);
         printf ("Recorder: BlueSpikeData path is: %s.\n\n", main_directory_path); 
         
- 	strcpy(temp_path, main_directory_path);
- 	strcat(temp_path, "/meta");
-	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
-	write_meta_file(temp_fp);
+	if (!create_main_meta_file())
+		return 0;
 
- 	strcpy(temp_path, main_directory_path);
- 	strcat(temp_path, "/notes");
-	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
-
- 	strcpy(temp_path, main_directory_path);
- 	strcat(temp_path, "/map");
-	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
-
- 	strcpy(temp_path, main_directory_path);
- 	strcat(temp_path, "/spike_thres");
-	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
-	
- 	strcpy(temp_path, main_directory_path);
- 	strcat(temp_path, "/templates");
-	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
-	
- 	strcpy(temp_path, main_directory_path);
- 	strcat(temp_path, "/logs");
-	if ((temp_fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }		
-	
+	if (!create_main_logs_file())
+		return 0;
+		
 	return 1;
 }
 
@@ -116,7 +96,19 @@ int create_data_directory_v0(int num, ...)
 
 	if (create_data_files(rec_start))
 		data_directory_cntr++;
-		
+
+	FILE *fp;	
+	char  temp_path[600];
+	time_t rawtime;
+	struct tm * timeinfo;
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/logs");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"%s\t\tStarted recording & Created data folder.\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");
+	fclose(fp);	
 	return 1;
 }
 
@@ -317,20 +309,18 @@ int create_mov_obj_event_data(void)
 int create_meta_data(TimeStamp rec_start)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	time_t rawtime;
 	struct tm * timeinfo;
 		
 	strcpy(temp, data_directory_path);
 	strcat(temp, "/meta");
-	if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-	file_ptr_arr[META_DATA_FILE_IDX] =  temp_fp;
-
+	if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);
-	fprintf(temp_fp,"DATE\t%s\n", asctime (timeinfo)); 	
-	fprintf(temp_fp,"START\t%llu\n", rec_start);		
-	
+	fprintf(fp,"DATE\t%s\n", asctime (timeinfo)); 	
+	fprintf(fp,"START\t%llu\n", rec_start);		
+	fclose(fp);	
 	return 1;	
 }
 	
@@ -396,6 +386,8 @@ int write_data_in_buffer_v0(int num, ...)
 	}					
 		
 	time_prev = time_curr;	
+	
+	
 	return 1;
 }
 
@@ -551,7 +543,25 @@ int write_mov_obj_command_data(void)
 
 int end_meta_data(TimeStamp rec_end)
 {
-	fprintf(file_ptr_arr[META_DATA_FILE_IDX],"END\t%llu\n", rec_end);
+	char temp_path[600];
+	FILE *fp;
+	time_t rawtime;
+	struct tm * timeinfo;
+		
+	strcpy(temp_path, data_directory_path);
+	strcat(temp_path, "/meta");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
+	fprintf(fp,"END\t%llu\n", rec_end);
+	fclose(fp);	
+		
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/logs");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"%s\t\tFinished recording.\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");
+	fclose(fp);
 	return 1;		
 }
 
@@ -570,11 +580,17 @@ int fclose_all_data_files_v0(int num, ...)
 	return 1;
 }
 
-int write_meta_file(FILE *fp)
+int create_main_meta_file(void)
 {
+	char  temp_path[600];
 	time_t rawtime;
 	struct tm * timeinfo;
-	
+	FILE *fp;
+
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/meta");
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
+		
 	fprintf(fp,"----------BlueSpikeData----------\n");
 	fprintf(fp,"DATA_FORMAT_VERSION\t%d\n", 0);	
 	time ( &rawtime );
@@ -605,3 +621,181 @@ int write_meta_file(FILE *fp)
 	fclose(fp);
 	return 1;
 }
+
+int write_notes_to_files_v0(int num, ...)
+{
+	char *text_buffer;
+	GtkTextIter start, end;
+	int char_count;
+	char  temp_path[600];
+	int i;
+	FILE *fp;
+	GtkWidget *text_view; 
+	time_t rawtime;
+	struct tm * timeinfo;		
+	
+  	va_list arguments;
+	va_start ( arguments, num );   
+    	text_view = va_arg ( arguments, GtkWidget *);   	
+	va_end ( arguments );
+	
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));	
+       	gtk_text_buffer_get_start_iter ( buffer, &start);
+        gtk_text_buffer_get_end_iter ( buffer, &end);
+        text_buffer = gtk_text_buffer_get_text (buffer, &start, &end, TRUE);
+	char_count = gtk_text_buffer_get_char_count(buffer);
+
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/notes");
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	for (i = 0; i < char_count; i++)
+	{
+		fprintf(fp, "%c", text_buffer[i]);		
+	}
+	fclose(fp);
+	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);	
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/logs");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	fprintf(fp,"%s\t\tCreated /notes file and submitted notes.\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");	 
+	fclose(fp);
+		
+	return 1;
+}
+
+int write_additional_notes_to_files_v0(int num, ...)
+{
+	char *text_buffer;
+	GtkTextIter start, end;
+	int char_count;
+	int i;
+	GtkWidget *text_view; 
+	FILE *fp;
+	char  temp_path[600];
+	time_t rawtime;
+	struct tm * timeinfo;	
+	
+  	va_list arguments;
+	va_start ( arguments, num );   
+    	text_view = va_arg ( arguments, GtkWidget *);   	
+	va_end ( arguments );
+	
+	GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));	
+       	gtk_text_buffer_get_start_iter ( buffer, &start);
+        gtk_text_buffer_get_end_iter ( buffer, &end);
+        text_buffer = gtk_text_buffer_get_text (buffer, &start, &end, TRUE);
+	char_count = gtk_text_buffer_get_char_count(buffer);
+
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/notes");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't append text to file: %s\n\n", temp_path); return 0; }		
+
+	fprintf(fp,"---------------------------------------------------------------------------------\n");	
+	fprintf(fp,"%s\t\tAdditional Note:\n", asctime (timeinfo)); 		
+	
+	for (i = 0; i < char_count; i++)
+	{
+		fprintf(fp, "%c", text_buffer[i]);		
+	}	
+	fclose(fp);
+		
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/logs");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	fprintf(fp,"%s\t\tSubmitted additonal note to /notes.\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");	 
+	fclose(fp);
+				
+	return 1;
+}
+
+int create_main_logs_file(void)
+{
+	char  temp_path[600];
+	time_t rawtime;
+	struct tm * timeinfo;
+	FILE *fp;
+	
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/logs");
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"%s\t\tCreated BlueSpikeData folder.\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");
+	fprintf(fp,"%s\t\tCreated /logs file (this file).\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");	
+	fclose(fp);
+	return 1; 		
+}
+
+int write_maps_templates_to_files_v0(int num, ...)
+{
+	char  temp_path[600];
+	time_t rawtime;
+	struct tm * timeinfo;
+	FILE *fp;
+
+	if (!write_maps_to_files())
+		return 0;
+	if (!write_spike_thresholds_to_files())
+		return 0;
+	if (!write_templates_to_files())
+		return 0;
+		
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/logs");
+	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't append to file: %s\n\n", temp_path); return 0; }	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"%s\t\tSaved daq card mwa mappings and templates.\n", asctime (timeinfo)); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");	
+	fclose(fp);	
+	return 1;		
+}
+
+int write_maps_to_files(void)
+{
+	FILE *fp;	
+	char  temp_path[600];
+	
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/maps");
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
+	
+	fclose(fp);
+	return 1;
+}
+
+int write_spike_thresholds_to_files(void)
+{
+	FILE *fp;	
+	char  temp_path[600];
+	
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/spike_thres");
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	
+	fclose(fp);
+	return 1;
+}
+
+int write_templates_to_files(void)
+{
+	FILE *fp;	
+	char  temp_path[600];
+	
+ 	strcpy(temp_path, main_directory_path);
+ 	strcat(temp_path, "/templates");
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
+	
+	fclose(fp);
+	return 1;		
+}
+
+

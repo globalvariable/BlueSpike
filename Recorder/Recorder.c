@@ -54,10 +54,6 @@ void create_gui(void)
 	gtk_box_pack_start (GTK_BOX (hbox), btn_create_bluespikedata_folder, FALSE, FALSE, 0);
 	gtk_widget_set_size_request(btn_create_bluespikedata_folder, 150, 30);
 
-   	btn_delete_bluespikedata_folder = gtk_button_new_with_label("Delete Main Folder");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_delete_bluespikedata_folder, FALSE, FALSE, 0);
-	gtk_widget_set_size_request(btn_delete_bluespikedata_folder, 150, 30);
-	     
 	btn_save_maps_templates = gtk_button_new_with_label("Save Maps & Templates");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_save_maps_templates, FALSE, FALSE, 20);
 	gtk_widget_set_size_request(btn_save_maps_templates, 165, 30);
@@ -153,11 +149,12 @@ void create_gui(void)
  	gtk_widget_show_all(window);
  	
    	g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);	
-	g_signal_connect(G_OBJECT(btn_create_bluespikedata_folder), "clicked", G_CALLBACK(create_bluespikedata_folder_button_func), NULL);      		
+	g_signal_connect(G_OBJECT(btn_create_bluespikedata_folder), "clicked", G_CALLBACK(create_bluespikedata_folder_button_func), NULL);      
 	g_signal_connect(G_OBJECT(btn_start_stop_recording), "clicked", G_CALLBACK(start_stop_recording_button_func), NULL);   
 	g_signal_connect(G_OBJECT(btn_delete_last_recording), "clicked", G_CALLBACK(delete_last_recording_button_func), NULL);   
-	
-
+	g_signal_connect(G_OBJECT(btn_save_maps_templates), "clicked", G_CALLBACK(save_maps_templates_button_func), NULL);   
+	g_signal_connect(G_OBJECT(btn_submit_notes), "clicked", G_CALLBACK(submit_notes_button_func), NULL);   
+	g_signal_connect(G_OBJECT(btn_submit_additional_notes), "clicked", G_CALLBACK(submit_additional_notes_button_func), NULL);   	
 	return;
 }	
 
@@ -337,3 +334,15 @@ void fill_notes_text_view(void)
        	}	
 }
 
+void save_maps_templates_button_func (void)
+{
+	(*write_maps_templates_to_files[DATA_FORMAT_VERSION])(0);		
+}   
+void submit_notes_button_func (void)
+{
+	(*write_notes_to_files[DATA_FORMAT_VERSION])(1, txv_notes);	
+}   
+void submit_additional_notes_button_func (void)
+{
+	(*write_additional_notes_to_files[DATA_FORMAT_VERSION])(1, txv_additional_notes);		
+}

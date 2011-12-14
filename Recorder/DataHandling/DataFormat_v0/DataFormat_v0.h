@@ -17,9 +17,10 @@
 #define EXP_ENVI_COMMAND_DATA_FILE_IDX 	(EXP_ENVI_EVENT_DATA_FILE_IDX + MAX_NUM_OF_EXP_ENVI_ITEMS)
 #define MOV_OBJ_EVENT_DATA_FILE_IDX 		(EXP_ENVI_COMMAND_DATA_FILE_IDX + MAX_NUM_OF_EXP_ENVI_ITEMS)
 #define MOV_OBJ_COMMAND_DATA_FILE_IDX	(MOV_OBJ_EVENT_DATA_FILE_IDX + MAX_NUM_OF_MOVING_OBJECTS)
-#define META_DATA_FILE_IDX					(MOV_OBJ_COMMAND_DATA_FILE_IDX + MAX_NUM_OF_MOVING_OBJECTS)
 
-#define NUM_OF_DATA_FILE_PER_RECORDING 	(META_DATA_FILE_IDX + 1)
+#define NUM_OF_DATA_FILE_PER_RECORDING	(MOV_OBJ_COMMAND_DATA_FILE_IDX + MAX_NUM_OF_MOVING_OBJECTS)
+
+
 
 FILE **file_ptr_arr;	
 
@@ -29,12 +30,16 @@ char data_directory_path[500];
 int data_directory_cntr;
 
 int create_main_directory_v0(int num, ...);
+int delete_main_directory_v0(int num, ...);
 int create_data_directory_v0(int num, ...);
+int write_data_in_buffer_v0(int num, ...);
 int fclose_all_data_files_v0(int num, ...);
 
-int create_data_files(TimeStamp rec_start);
+int write_notes_to_files_v0(int num, ...);
+int write_additional_notes_to_files_v0(int num, ...);
+int write_maps_templates_to_files_v0(int num, ...);
 
-int write_data_in_buffer_v0(int num, ...);
+int create_data_files(TimeStamp rec_start);
 
 int create_recording_data(void);
 int create_spike_timestamp_data(void);
@@ -52,5 +57,9 @@ int write_mov_obj_event_data(void);
 int write_mov_obj_command_data(void);
 int end_meta_data(TimeStamp rec_end);
 
-int write_meta_file(FILE *fp);
+int create_main_meta_file(void);
+int create_main_logs_file(void);
 
+int write_maps_to_files(void);
+int write_spike_thresholds_to_files(void);
+int write_templates_to_files(void);
