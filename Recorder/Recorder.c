@@ -265,7 +265,7 @@ void *recording_handler(void *ptr)
 
 void delete_last_recording_button_func (void)
 {
-
+	(*delete_last_recording[DATA_FORMAT_VERSION])(0);			
 	gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);
 						
 }

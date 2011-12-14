@@ -39,6 +39,8 @@ int write_notes_to_files_v0(int num, ...);
 int write_additional_notes_to_files_v0(int num, ...);
 int write_maps_templates_to_files_v0(int num, ...);
 
+int delete_last_recording_v0(int num, ...);
+
 int create_data_files(TimeStamp rec_start);
 
 int create_recording_data(void);

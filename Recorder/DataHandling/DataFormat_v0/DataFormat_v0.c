@@ -798,4 +798,52 @@ int write_templates_to_files(void)
 	return 1;		
 }
 
+int delete_last_recording_v0(int num, ...)
+{
+ 	char path_item[600];
+	FILE *fp;
+	time_t rawtime;
+	struct tm * timeinfo;
+	DIR	*dir_data_directory;
+        struct dirent   *dirent_item;
+     	int status;
+    	struct stat item_stat;
+    	     	       	
+	if ((dir_data_directory = opendir(data_directory_path)) == NULL)
+        {
+        	printf ("Recorder: ERROR: Couldn't opendir: %s\n\n", data_directory_path);		
+                return 0;
+        }
 
+	while ((dirent_item = readdir(dir_data_directory)) !=NULL)
+	{	
+		if ((strcmp( dirent_item->d_name, "." ) == 0) || (strcmp(dirent_item->d_name, ".." ) == 0)) 	
+			continue;
+		strcpy(path_item, data_directory_path);
+		strcat(path_item, "/");
+		strcat(path_item, dirent_item->d_name);	
+		if ((status = stat(path_item, &item_stat)) != 0)
+		{
+        		printf ("ERROR: Couldn' t retrieve item status (file or folder?): %s\n", path_item);
+			return -1;
+		} 
+		if (S_ISREG (item_stat.st_mode))
+		{
+			remove(path_item);
+		}			
+	}
+	closedir(dir_data_directory);		
+	rmdir(data_directory_path);					
+	data_directory_cntr--;	
+
+ 	strcpy(path_item, main_directory_path);
+ 	strcat(path_item, "/logs");
+	if ((fp = fopen(path_item, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't append to file: %s\n\n", path_item); return 0; }	
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"%s\t\tDeleted last recording. Folder %s\n", asctime (timeinfo), data_directory_path); 	
+	fprintf(fp,"---------------------------------------------------------------------------------\n");	
+	fclose(fp);	
+	
+	return 1;
+}
