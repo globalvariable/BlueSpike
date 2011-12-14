@@ -12,14 +12,13 @@ GtkWidget *btn_select_directory_to_save;
 GtkWidget *btn_start_stop_recording;
 GtkWidget *btn_delete_last_recording;
 GtkWidget *btn_create_bluespikedata_folder;
+GtkWidget *btn_delete_bluespikedata_folder;
+GtkWidget *btn_save_maps_templates;
+GtkWidget *btn_submit_notes;
+GtkWidget *btn_submit_additional_notes;
 
-GtkWidget *txv_mwa_daq_map_additional;
-GtkWidget *txv_recording_additional;
-GtkWidget *txv_spike_time_stamp_additional;
-GtkWidget *txv_exp_envi_event_additional;
-GtkWidget *txv_exp_envi_command_additional;
-GtkWidget *txv_mov_obj_event_additional;
-GtkWidget *txv_mov_obj_command_additional;
+GtkWidget *txv_notes;
+GtkWidget *txv_additional_notes;
 
 bool start_recording_request;
 bool stop_recording_request;
@@ -35,4 +34,6 @@ void start_stop_recording_button_func (void);
 void delete_last_recording_button_func (void);
 void create_bluespikedata_folder_button_func (void);
 void *recording_handler(void *ptr);
+void set_directory_btn_select_directory_to_save(void);
+void fill_notes_text_view(void);
 
