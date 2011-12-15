@@ -797,25 +797,6 @@ void load_template_file_button_func(void)
 					{				
 						line_cntr++;
 						if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-						shared_memory->template_matching_data[i][j][k].S[m][n] = atof(line);						
-					}
-				}	
-			}
-		}
-	}
-
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
-					{				
-						line_cntr++;
-						if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
 						shared_memory->template_matching_data[i][j][k].inv_S[m][n] = atof(line);	
 					}
 				}	
@@ -875,7 +856,6 @@ void save_template_file_button_func(void)
 	time_t rawtime;
 	struct tm * timeinfo;
 	char * time_str;
-	double check_S[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA][MAX_NUM_OF_UNIT_PER_CHAN];
 	
 	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_directory_to_save));
 	path = &path_temp[7];   // since     uri returns file:///home/....
@@ -918,64 +898,6 @@ void save_template_file_button_func(void)
 		{
 			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
 			{
-				check_S[i][j][k] = 0;
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
-					{				
-						check_S[i][j][k] = check_S[i][j][k] + fabs(shared_memory->template_matching_data[i][j][k].S[m][n]);
-					}
-				}	
-			}
-		}
-	}
-
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					if ((check_S[i][j][k] == 0) && (shared_memory->template_matching_data[i][j][k].template[m] != 0))
-					{
-						printf("SpikeSorter:\n");
-						printf("BUG: All template samples cannot be zero when covariance matrix for unit is non-zero\n");
-						printf("BUG: MWA: %d Channel:%d Unit: %d\n", i , j, k);
-					}
-					else 	
-					{
-						fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].template[m]);
-					}	
-				}	
-			}
-		}
-	}
-
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
-					{				
-						fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].S[m][n]);
-					}
-				}	
-			}
-		}
-	}
-
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
 				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
 				{
 					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
@@ -996,11 +918,6 @@ void save_template_file_button_func(void)
 				fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].sqrt_det_S);
 				fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].log_det_S);	
 				fprintf(fp, "%E\n", shared_memory->template_matching_data[i][j][k].probability_thres);
-				if (check_S[i][j][k] == 0)
-				{
-					shared_memory->template_matching_data[i][j][k].sorting_on = 0;
-					shared_memory->template_matching_data[i][j][k].include_unit = 0;
-				}
 				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].sorting_on);		
 				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].include_unit);																
 			}
@@ -1399,7 +1316,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{
 			S->me[i][j] = S->me[i][j] / (MIN_SPIKE_NUM_FOR_TEMPLATE-1);
-			S->me[i][j] = floor((S->me[i][j] * (1.0E+20)) + 0.5) /  (1.0E+20);					// to round at 10^(-20) th to get a more symmetrical inverted matrix (S_inv)
+			S->me[i][j] = floor ( ( S->me[i][j] * (1.0E+10) ) + 0.5) /  (1.0E+10);					// to round at 10^(-10) th to get a more symmetrical inverted matrix (S_inv)
 		}
 	}	
 		
@@ -1436,7 +1353,6 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{	
 			template_matching_unit_data->inv_S[i][j] = S_inv->me[i][j];
-			template_matching_unit_data->S[i][j] = S->me[i][j];
 		}
 	}
 	

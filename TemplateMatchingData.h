@@ -12,8 +12,7 @@
 typedef struct __TemplateMatchingData
 {
 	double 	template[NUM_OF_SAMP_PER_SPIKE];   //mean
-	double 	S[NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE]; //covariance
-	double 	inv_S[NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];
+	double 	inv_S[NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];  // inverted covariance
 	double 	sqrt_det_S;
 	double 	log_det_S;	
 	double 	probability_thres;
