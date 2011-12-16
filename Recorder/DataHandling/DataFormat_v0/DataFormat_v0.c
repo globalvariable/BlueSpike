@@ -152,7 +152,7 @@ int create_data_files(TimeStamp rec_start)
 int create_recording_data(void)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	char char_mwa_num[10], char_chan_num[10];
 	int i,j;
 	
@@ -204,8 +204,9 @@ int create_recording_data(void)
 				printf ("ERROR: Recorder: Couldn't create all recording files requested\n\n");
 				return 0; 
 			}			
-			if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-			file_ptr_arr[RECORDING_DATA_FILE_IDX + (i*MAX_NUM_OF_CHAN_PER_MWA)+j] =  temp_fp;
+			if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+			file_ptr_arr[RECORDING_DATA_FILE_IDX + (i*MAX_NUM_OF_CHAN_PER_MWA)+j] =  fp;
+			fprintf(fp,"----------BlueSpike - Recording Data File ( MWA #%s\tChannel #%s )----------\n", char_mwa_num, char_chan_num);						
 		}
 	}
 
@@ -214,19 +215,19 @@ int create_recording_data(void)
 int create_spike_timestamp_data(void)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	
 	strcpy(temp, data_directory_path);	
 	strcat(temp, "/SpikeTimeStamp");
-	if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-	file_ptr_arr[SPIKE_TIMESTAMP_DATA_FILE_IDX] =  temp_fp;		
-
+	if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+	file_ptr_arr[SPIKE_TIMESTAMP_DATA_FILE_IDX] =  fp;		
+	fprintf(fp,"----------BlueSpike - Spike TimeStamps File----------\n");						
 	return 1;
 }
 int create_exp_envi_event_data(void)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	char char_exp_envi_item[10];
 	int i;	
 		
@@ -245,15 +246,16 @@ int create_exp_envi_event_data(void)
 			printf ("ERROR: Recorder: Couldn't create all recording files requested\n\n");
 			return 0; 
 		}
-		if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-		file_ptr_arr[EXP_ENVI_EVENT_DATA_FILE_IDX+i] =  temp_fp;		
+		if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+		file_ptr_arr[EXP_ENVI_EVENT_DATA_FILE_IDX+i] =  fp;		
+		fprintf(fp,"----------BlueSpike - Experimental Environment Item #%s Event TimeStamps File----------\n", char_exp_envi_item);						
 	}
 	return 1;
 }	
 int create_exp_envi_command_data(void)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	char char_exp_envi_item[10];
 	int i;
 	
@@ -272,8 +274,9 @@ int create_exp_envi_command_data(void)
 			printf ("ERROR: Recorder: Couldn't create all recording files requested\n\n");
 			return 0; 
 		}
-		if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-		file_ptr_arr[EXP_ENVI_COMMAND_DATA_FILE_IDX+i] =  temp_fp;		
+		if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+		file_ptr_arr[EXP_ENVI_COMMAND_DATA_FILE_IDX+i] = fp;
+		fprintf(fp,"----------BlueSpike - Experimental Environment Item #%s Command TimeStamps File----------\n", char_exp_envi_item);				
 	}	
 	
 	return 1;
@@ -281,7 +284,7 @@ int create_exp_envi_command_data(void)
 int create_mov_obj_event_data(void)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	char char_mov_obj_num[10];	
 	int i;
 	
@@ -300,34 +303,17 @@ int create_mov_obj_event_data(void)
 			printf ("ERROR: Recorder: Couldn't create all recording files requested\n\n");
 			return 0; 
 		}
-		if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-		file_ptr_arr[MOV_OBJ_EVENT_DATA_FILE_IDX + i] =  temp_fp;
+		if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+		file_ptr_arr[MOV_OBJ_EVENT_DATA_FILE_IDX + i] =  fp;
+		fprintf(fp,"----------BlueSpike - Moving Object #%s Event TimeStamps File----------\n", char_mov_obj_num);
 	}
 	return 1;
 }	
 
-int create_meta_data(TimeStamp rec_start)
-{
-	char temp[600];
-	FILE *fp;
-	time_t rawtime;
-	struct tm * timeinfo;
-		
-	strcpy(temp, data_directory_path);
-	strcat(temp, "/meta");
-	if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-	time ( &rawtime );
-	timeinfo = localtime (&rawtime);
-	fprintf(fp,"DATE\t%s\n", asctime (timeinfo)); 	
-	fprintf(fp,"START\t%llu\n", rec_start);		
-	fclose(fp);	
-	return 1;	
-}
-	
 int create_mov_obj_command_data(void)
 {
 	char temp[600];
-	FILE *temp_fp;
+	FILE *fp;
 	char char_mov_obj_num[10];	
 	int i;
 	
@@ -346,8 +332,9 @@ int create_mov_obj_command_data(void)
 			printf ("ERROR: Recorder: Couldn't create all recording files requested\n\n");
 			return 0; 
 		}
-		if ((temp_fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
-		file_ptr_arr[MOV_OBJ_COMMAND_DATA_FILE_IDX + i] =  temp_fp;
+		if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+		file_ptr_arr[MOV_OBJ_COMMAND_DATA_FILE_IDX + i] =  fp;
+		fprintf(fp,"----------BlueSpike - Moving Object #%s Command TimeStamps File----------\n", char_mov_obj_num);		
 	}
 	return 1;
 }
@@ -541,6 +528,25 @@ int write_mov_obj_command_data(void)
 	return 1;
 }
 
+int create_meta_data(TimeStamp rec_start)
+{
+	char temp[600];
+	FILE *fp;
+	time_t rawtime;
+	struct tm * timeinfo;
+		
+	strcpy(temp, data_directory_path);
+	strcat(temp, "/meta");
+	if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+	fprintf(fp,"----------BlueSpike - Meta File----------\n");
+	time ( &rawtime );
+	timeinfo = localtime (&rawtime);
+	fprintf(fp,"DATE\t%s\n", asctime (timeinfo)); 	
+	fprintf(fp,"START\t%llu\n", rec_start);		
+	fclose(fp);	
+	return 1;	
+}
+
 int end_meta_data(TimeStamp rec_end)
 {
 	char temp_path[600];
@@ -552,6 +558,7 @@ int end_meta_data(TimeStamp rec_end)
 	strcat(temp_path, "/meta");
 	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
 	fprintf(fp,"END\t%llu\n", rec_end);
+	fprintf(fp,"----------BlueSpike - End of Meta File----------\n");	
 	fclose(fp);	
 		
  	strcpy(temp_path, main_directory_path);
@@ -591,7 +598,7 @@ int create_main_meta_file(void)
  	strcat(temp_path, "/meta");
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
 		
-	fprintf(fp,"----------BlueSpikeData----------\n");
+	fprintf(fp,"----------BlueSpike - Main Meta File----------\n");
 	fprintf(fp,"DATA_FORMAT_VERSION\t%d\n", 0);	
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);
@@ -617,7 +624,8 @@ int create_main_meta_file(void)
 	fprintf(fp,"EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE\t%d\n",EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE);
 	fprintf(fp,"EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE\t%d\n",EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE);
 	fprintf(fp,"MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE\t%d\n",MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE);		
-	fprintf(fp,"MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE\t%d\n",MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE);			
+	fprintf(fp,"MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE\t%d\n",MOVING_OBJ_COMMAND_TIMESTAMP_BUFF_SIZE);	
+	fprintf(fp,"----------BlueSpike - End of Main Meta File----------\n");
 	fclose(fp);
 	return 1;
 }
@@ -647,7 +655,8 @@ int write_notes_to_files_v0(int num, ...)
 
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/notes");
-	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
+	fprintf(fp,"---------BlueSpike - Notes File---------------\n"); 				
 	for (i = 0; i < char_count; i++)
 	{
 		fprintf(fp, "%c", text_buffer[i]);		
@@ -726,6 +735,7 @@ int create_main_logs_file(void)
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);
+	fprintf(fp,"---------BlueSpike - Logs File---------------\n"); 		
 	fprintf(fp,"%s\t\tCreated BlueSpikeData folder.\n", asctime (timeinfo)); 	
 	fprintf(fp,"---------------------------------------------------------------------------------\n");
 	fprintf(fp,"%s\t\tCreated /logs file (this file).\n", asctime (timeinfo)); 	
@@ -763,11 +773,52 @@ int write_maps_to_files(void)
 {
 	FILE *fp;	
 	char  temp_path[600];
-	
+	int i, j;
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/maps");
+ 	
+	if (!interrogate_mapping())
+		return 0;
+	 	
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
 	
+	fprintf(fp, "BlueSpike - Data Acquisiton Cards vs Microwire Arrays Mapping File\n");	
+	fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
+	fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
+	fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);		
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{	
+		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+		{	
+			fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].mwa);
+			fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].channel);				
+		}
+	}
+	fprintf(fp, "BlueSpike - End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n");	
+	fprintf(fp, "---------------------------------------------------------------------------------------------\n");			
+	fprintf(fp, "---------------------------------------------------------------------------------------------\n");					
+	fprintf(fp, "MAX_NUM_OF_DAQ_CARD: %d\n", MAX_NUM_OF_DAQ_CARD);
+	fprintf(fp, "MAX_NUM_OF_CHANNEL_PER_DAQ_CARD: %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
+	fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_MWA);
+	fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+	fprintf(fp, "DAQ Card Channels vs MWA Channels Mapping:\n");		
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{	
+		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+		{	
+			fprintf(fp, "DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);	
+		}
+	}
+	fprintf(fp, "---------------------------------------------------------------------------------------------\n");							
+	fprintf(fp, "MWA Channels vs DAQ Card Channels Mapping:\n");		
+	for (i = 0; i<MAX_NUM_OF_MWA; i++)
+	{	
+		for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{	
+			fprintf(fp, "MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
+		}
+	}		
 	fclose(fp);
 	return 1;
 }
@@ -776,10 +827,22 @@ int write_spike_thresholds_to_files(void)
 {
 	FILE *fp;	
 	char  temp_path[600];
+	int i,j;
 	
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/spike_thres");
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
+
+	fprintf(fp, "----------------BlueSpike - Spike Thresholds File---------------\n");	
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			fprintf(fp, "%f\t", shared_memory->spike_thresholding.amplitude_thres[i][j]);																			
+		}
+		fprintf(fp, "\n");																					
+	}
+	fprintf(fp, "----------------BlueSpike - End of Spike Thresholds File----------------\n");
 	
 	fclose(fp);
 	return 1;
@@ -789,11 +852,55 @@ int write_templates_to_files(void)
 {
 	FILE *fp;	
 	char  temp_path[600];
-	
+	int i,j,k,m,n;
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/templates");
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
-	
+
+	fprintf(fp, "----------------BlueSpike - Template Matching File---------------\n");	
+	fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
+	fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
+	fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);
+	fprintf(fp, "%d\n", MAX_NUM_OF_UNIT_PER_CHAN);
+	fprintf(fp, "--------- Inverted Covariance Matrix ------\n");																					
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			fprintf(fp, "--------- MWA: %d\tChannel: %d ------\n", i,j);																					
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+				{
+					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+					{				
+						fprintf(fp, "%.20f\t", shared_memory->template_matching_data[i][j][k].inv_S[m][n]);
+					}
+					fprintf(fp, "\n");																										
+				}
+				fprintf(fp, "\n");																															
+			}
+		}
+	}
+	fprintf(fp, "--------- sqrt(det(S)) / log(det(S)) / probability_threshold / sorting_on_off / include_unit ------\n");																					
+	for (i=0; i<MAX_NUM_OF_MWA; i++)
+	{
+		fprintf(fp, "--------- MWA: %d\n", i);																							
+		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+			{
+				fprintf(fp, "%.20f\t", shared_memory->template_matching_data[i][j][k].sqrt_det_S);
+				fprintf(fp, "%.20f\t", shared_memory->template_matching_data[i][j][k].log_det_S);	
+				fprintf(fp, "%E\t", shared_memory->template_matching_data[i][j][k].probability_thres);
+				fprintf(fp, "%d\t", shared_memory->template_matching_data[i][j][k].sorting_on);		
+				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].include_unit);																
+			}
+		}
+	}
+
+	fprintf(fp, "----------------BlueSpike - End of Template Matching File---------------\n");		
 	fclose(fp);
 	return 1;		
 }
@@ -846,4 +953,62 @@ int delete_last_recording_v0(int num, ...)
 	fclose(fp);	
 	
 	return 1;
+}
+
+bool interrogate_mapping(void)
+{
+	int i, j, check = 0;
+	
+	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
+	{	
+		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+		{	
+			if ((shared_memory->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
+			{
+				printf ("DAQ: %d   Channel: %d  ----> MWA: Idle  Channel: Idle\n", i, j);
+			}
+			else if ((shared_memory->daq_mwa_map[i][j].mwa != MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
+			{
+				printf ("DAQ: %d   Channel: %d  ----> MWA: %d  Channel: Idle\n", i, j, shared_memory->daq_mwa_map[i][j].mwa);			
+				printf ("****************************************************************\n");			
+				printf ("*************************BUG*********************************\n");
+				printf ("BUG: MWA was not mapped but its channel was mapped\n");
+				printf ("*************************BUG*********************************\n");
+				printf ("****************************************************************\n");	
+				return FALSE;					
+			}
+			else if ((shared_memory->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel != MAX_NUM_OF_CHAN_PER_MWA))
+			{
+				printf ("DAQ: %d   Channel: %d  ----> MWA: Idle Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].channel);			
+				printf ("*******************************************************************\n");			
+				printf ("*************************BUG************************************\n");
+				printf ("BUG: MWA was mapped but its channel was not mapped\n");
+				printf ("*************************BUG************************************\n");
+				printf ("******************************************************************\n");	
+				return FALSE;					
+			}			
+			else
+			{
+				printf ("DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);
+				check =1;
+			}
+		}
+	}
+	if (check == 1)
+	{
+		printf("---------------------------------------------------------------------------------------------\n");						
+		for (i = 0; i<MAX_NUM_OF_MWA; i++)
+		{	
+			for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+			{	
+				printf("MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
+			}
+		}
+		return TRUE;
+	}
+	else
+	{
+		printf("ERROR: None of the channels of any DAQ Card was mapped\n");
+		return FALSE;
+	}	
 }

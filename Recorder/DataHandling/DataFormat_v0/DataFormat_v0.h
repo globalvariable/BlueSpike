@@ -9,7 +9,6 @@
 #include <gtk/gtk.h>
 #include <string.h>
 
-
 #include "../Buffer_v0/Buffer_v0.h"
 
 //Index table of FILE **file_ptr_arr
@@ -67,5 +66,7 @@ int create_main_logs_file(void);
 int write_maps_to_files(void);
 int write_spike_thresholds_to_files(void);
 int write_templates_to_files(void);
+
+bool interrogate_mapping(void);
 
 #endif
