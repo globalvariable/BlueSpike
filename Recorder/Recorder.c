@@ -45,18 +45,22 @@ void create_gui(void)
   	btn_select_directory_to_save = gtk_file_chooser_button_new ("Select Directory", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
         gtk_box_pack_start(GTK_BOX(hbox), btn_select_directory_to_save, FALSE,FALSE,0);
 	set_directory_btn_select_directory_to_save();
-	gtk_widget_set_size_request(btn_select_directory_to_save, 150, 30);	
-
-    	hbox = gtk_hbox_new(FALSE, 0);
-        gtk_box_pack_start(GTK_BOX(vbox),hbox, TRUE,FALSE, 0);  	   
+	gtk_widget_set_size_request(btn_select_directory_to_save, 200, 30);	
 
 	btn_create_bluespikedata_folder = gtk_button_new_with_label("Create Main Folder");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_create_bluespikedata_folder, FALSE, FALSE, 0);
 	gtk_widget_set_size_request(btn_create_bluespikedata_folder, 150, 30);
 
+	hbox = gtk_hbox_new(FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(vbox),hbox, TRUE,FALSE, 10);  
+        	
+	hbox = gtk_hbox_new(FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(vbox),hbox, TRUE,FALSE, 0);  	 
+
 	btn_save_maps_templates = gtk_button_new_with_label("Save Maps & Templates");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_save_maps_templates, FALSE, FALSE, 20);
+	gtk_box_pack_start (GTK_BOX (hbox), btn_save_maps_templates, TRUE, FALSE, 0);
 	gtk_widget_set_size_request(btn_save_maps_templates, 165, 30);
+	gtk_widget_set_sensitive(btn_save_maps_templates, FALSE);				
 	
   	vbox = gtk_vbox_new(FALSE, 0);
     	gtk_table_attach_defaults(GTK_TABLE(main_table), vbox, 0,4, 1, 2);       
@@ -97,7 +101,8 @@ void create_gui(void)
 	
         btn_submit_notes = gtk_button_new_with_label("   Submit Notes   ");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_submit_notes, TRUE, FALSE, 0);	
-	
+	gtk_widget_set_sensitive(btn_submit_notes, FALSE);		
+		
    	vbox = gtk_vbox_new(FALSE, 10);      
      	gtk_table_attach_defaults(GTK_TABLE(main_table), vbox, 0,4, 6, 8);   
      	
@@ -119,15 +124,8 @@ void create_gui(void)
 	
 	btn_submit_additional_notes = gtk_button_new_with_label("Submit Addional Notes");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_submit_additional_notes, TRUE, FALSE, 0);	
-
-//  	gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(txv_mwa_daq_map_additional)), "Hello Text View!", -1);
- /* 	
-  gtk_text_buffer_get_start_iter (buffer, &start);
-  gtk_text_buffer_get_end_iter (buffer, &end);
-*/
-  /* Get the entire buffer text. */
-//  text = gtk_text_buffer_get_text (buffer, &start, &end, FALSE);
-
+	gtk_widget_set_sensitive(btn_submit_additional_notes, FALSE);		
+	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
 	mwa_daq_map = &shared_memory->mwa_daq_map;
 	recording_data = &shared_memory->recording_data;
@@ -142,7 +140,6 @@ void create_gui(void)
 	start_recording_request = 0;	
 	stop_recording_request = 0;
 	recording_ongoing = 0;
-	created_bluespikedata_folder = 0;
 	
 	data_directory_cntr = 0;
  	
@@ -162,28 +159,35 @@ void create_bluespikedata_folder_button_func (void)
 {
 	char *path_temp = NULL, *path = NULL;
 	FILE *fp;
-	if (created_bluespikedata_folder)
-	{
-		created_bluespikedata_folder = 0;
-		gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Create BlueSpikeData Folder");
-		gtk_widget_set_sensitive(btn_select_directory_to_save, TRUE);
-		gtk_widget_set_sensitive(btn_start_stop_recording, FALSE);					
-	}
-	else
-	{
-		path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_directory_to_save));
-		path = &path_temp[7];   // since     uri returns file:///home/....	
-		if ((*create_main_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(1, path))		// record in last format version
-		{
-			gtk_button_set_label (GTK_BUTTON(btn_create_bluespikedata_folder),"Disable Recording");	
-			gtk_widget_set_sensitive(btn_select_directory_to_save, FALSE);
-			gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);	
-			if ((fp = fopen("./path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return; }
-			fprintf(fp, "%s", path); fclose (fp);
-			created_bluespikedata_folder = 1;
-		}
-	}
 
+	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_directory_to_save));
+	path = &path_temp[7];   // since     uri returns file:///home/....	
+	if ((*create_main_directory[MAX_NUMBER_OF_DATA_FORMAT_VER-1])(1, path))		// record in last format version
+	{
+		gtk_widget_set_sensitive(btn_save_maps_templates, TRUE);
+		gtk_widget_set_sensitive(btn_submit_notes, TRUE);
+		gtk_widget_set_sensitive(btn_submit_additional_notes, FALSE);
+		gtk_widget_set_sensitive(btn_start_stop_recording, FALSE);
+		gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);		
+		if ((fp = fopen("./path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return; }
+		fprintf(fp, "%s", path); fclose (fp);
+	}
+}
+
+void save_maps_templates_button_func (void)
+{
+	(*write_maps_templates_to_files[DATA_FORMAT_VERSION])(0);		
+}   
+
+void submit_notes_button_func (void)
+{
+	(*write_notes_to_files[DATA_FORMAT_VERSION])(1, txv_notes);	
+	gtk_widget_set_sensitive(btn_submit_additional_notes, TRUE);			// Reset of notes is available until starting of first recording
+}   
+
+void submit_additional_notes_button_func (void)
+{
+	(*write_additional_notes_to_files[DATA_FORMAT_VERSION])(1, txv_additional_notes);	
 }
 
 void start_stop_recording_button_func (void)
@@ -194,6 +198,11 @@ void start_stop_recording_button_func (void)
 		stop_recording_request = 1;
 		pthread_join (recording_thread, NULL);
 		recording_ongoing = 0;
+		gtk_widget_set_sensitive(btn_save_maps_templates, FALSE);
+		gtk_widget_set_sensitive(btn_submit_notes, FALSE);
+		gtk_widget_set_sensitive(btn_submit_additional_notes, TRUE);
+		gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);
+		gtk_widget_set_sensitive(btn_delete_last_recording, TRUE);				
 	}
 	else if ((!recording_ongoing) & (!start_recording_request))
 	{
@@ -204,12 +213,24 @@ void start_stop_recording_button_func (void)
 			start_recording_request = 0;
 			recording_ongoing = 0;		
 			printf("Thread creation failed: %d\n", ret_val);
+			return;
 		}
+		gtk_widget_set_sensitive(btn_save_maps_templates, FALSE);	// After first recording do not let any change in notes and maps/templates files
+		gtk_widget_set_sensitive(btn_submit_notes, FALSE);
+		gtk_widget_set_sensitive(btn_submit_additional_notes, TRUE);
+		gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);
+		gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);	// do not let any deletion during recording			
 	}
 	return;
 	
 }
 
+void delete_last_recording_button_func (void)
+{
+	(*delete_last_recording[DATA_FORMAT_VERSION])(0);			
+	gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);
+						
+}
 
 void *recording_handler(void *ptr)
 {
@@ -260,14 +281,6 @@ void *recording_handler(void *ptr)
 		part_num++;
 	}
 	return ptr;
-}
-
-
-void delete_last_recording_button_func (void)
-{
-	(*delete_last_recording[DATA_FORMAT_VERSION])(0);			
-	gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);
-						
 }
 
 
@@ -334,15 +347,4 @@ void fill_notes_text_view(void)
        	}	
 }
 
-void save_maps_templates_button_func (void)
-{
-	(*write_maps_templates_to_files[DATA_FORMAT_VERSION])(0);		
-}   
-void submit_notes_button_func (void)
-{
-	(*write_notes_to_files[DATA_FORMAT_VERSION])(1, txv_notes);	
-}   
-void submit_additional_notes_button_func (void)
-{
-	(*write_additional_notes_to_files[DATA_FORMAT_VERSION])(1, txv_additional_notes);		
-}
+

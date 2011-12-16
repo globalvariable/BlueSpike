@@ -25,8 +25,6 @@ bool start_recording_request;
 bool stop_recording_request;
 bool recording_ongoing;
 
-bool created_bluespikedata_folder;
-
 pthread_t recording_thread;
 
 // Functions
