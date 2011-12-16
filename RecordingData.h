@@ -1,8 +1,7 @@
+#ifndef RECORDINGDATA_H
 #define RECORDINGDATA_H
 
-#ifndef MICROWIREARRAY_H
 #include "MicroWireArray.h"
-#endif
 
 #define RECORDING_DATA_BUFF_SIZE 40000
 #define RECORDING_DATA_BUFF_SIZE_1 39999
@@ -20,3 +19,5 @@ typedef struct __RecordingData
 	int				buff_idx_write[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];      // Do not read data pointed by buff_idx_write. Read up to buff_idx_write by excluding buff_idx_write 
 } RecordingData;
 
+
+#endif

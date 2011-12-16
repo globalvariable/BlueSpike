@@ -1,3 +1,4 @@
+#ifndef SHAREDMEMORY_H
 #define SHAREDMEMORY_H
 
 #include "MwaDaqMap.h"
@@ -19,7 +20,6 @@
 #define SHARED_MEM_SIZE 0
 #endif
 
-
 typedef struct __SharedMemStruct
 {
 	DaqMwaMap				daq_mwa_map;
@@ -39,3 +39,5 @@ typedef struct __SharedMemStruct
 
 SharedMemStruct *shared_memory;
 
+
+#endif

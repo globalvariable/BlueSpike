@@ -1,4 +1,5 @@
-#define DAQMWAMAP_H
+#ifndef MWADAQMAP_H
+#define MWADAQMAP_H
 
 #include "DaqCard.h"
 #include "MicroWireArray.h"
@@ -10,3 +11,7 @@ typedef struct   __MwaDaqMapItem
 } MwaDaqMapItem;
 
 typedef MwaDaqMapItem   MwaDaqMap[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+
+
+
+#endif

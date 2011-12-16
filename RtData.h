@@ -1,3 +1,4 @@
+#ifndef RTDATA_H
 #define RTDATA_H
 
 
@@ -10,4 +11,4 @@
 #define KERNELSPIKE_SIGNAL 0
 #define KERNELSPIKE_USES_FLOATING_POINT 1
 
-//Recorder
+#endif

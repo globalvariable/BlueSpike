@@ -1,14 +1,11 @@
+#ifndef MOVINGOBJEVENTTIMESTAMP_H
 #define MOVINGOBJEVENTTIMESTAMP_H
 
 
 #include "MovingObjCommandTimeStamp.h"
-#ifndef TIMESTAMP_H
 #include "TimeStamp.h"
-#endif
 
 #define MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE 10000		// Should adjust its size according to the writing frequency to and reading frequency from this buffer. for hihger writing and lower reading, you should increase buffer size to avoid over-writing.  
-
-
 
 typedef struct __MovingObjEventTimeStampItem
 {
@@ -27,3 +24,5 @@ typedef struct __MovingObjEventTimeStamp
 } MovingObjEventTimeStamp;
 
 
+
+#endif

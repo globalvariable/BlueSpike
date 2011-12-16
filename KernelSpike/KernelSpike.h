@@ -1,3 +1,4 @@
+#ifndef KERNELSPIKE_H
 #define KERNELSPIKE_H
 
 #include <linux/init.h>
@@ -14,7 +15,7 @@
 #include <linux/comedi.h>
 #include <linux/comedilib.h>
 
-#include "../SharedMemory.h"
+#include "./../SharedMemory.h"
 #include "SpikeEnd.h"
 #include "SpikeEndHandling.h"
 
@@ -57,3 +58,5 @@ bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
 int open_daq_cards(void);
 void close_daq_cards(void);
 int handle_daq_cards(void);
+
+#endif

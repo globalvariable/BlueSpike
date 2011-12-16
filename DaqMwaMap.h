@@ -1,3 +1,4 @@
+#ifndef DAQMWAMAP_H
 #define DAQMWAMAP_H
 
 #include "DaqCard.h"
@@ -11,4 +12,4 @@ typedef struct   __DaqMwaMapItem
 
 typedef DaqMwaMapItem   DaqMwaMap[MAX_NUM_OF_DAQ_CARD][MAX_NUM_OF_CHANNEL_PER_DAQ_CARD];
 
-
+#endif

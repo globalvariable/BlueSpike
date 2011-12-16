@@ -1,9 +1,7 @@
+#ifndef SPIKEENDHANDLINGDATA_H
 #define SPIKEENDHANDLINGDATA_H
 
-#ifndef TIMESTAMP_H
-#include "TimeStamp.h"
-#endif
-
+#include "../TimeStamp.h"
 #include "../MicroWireArray.h"
 
 #define SPIKE_END_HANDLING_DATA_BUFF_SIZE MAX_NUM_OF_MWA*MAX_NUM_OF_CHAN_PER_MWA*1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
@@ -27,3 +25,5 @@ typedef struct __SpikeEndHandling
 	int 						filtered_recording_data_prev_idx[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];	
 } SpikeEndHandling;
 
+
+#endif

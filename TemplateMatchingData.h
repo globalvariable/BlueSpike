@@ -1,9 +1,7 @@
+#ifndef TEMPLATEMATCHINGDATA_H
 #define TEMPLATEMATCHINGDATA_H
 
-#ifndef RECORDINGDATA_H
 #include "RecordingData.h"
-#endif
-
 #include <stdbool.h>
 
 #define MAX_NUM_OF_UNIT_PER_CHAN 6
@@ -24,4 +22,4 @@ typedef struct __TemplateMatchingData
 typedef TemplateMatchingUnitData TemplateMatchingData[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA][MAX_NUM_OF_UNIT_PER_CHAN];
 
 
-
+#endif

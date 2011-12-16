@@ -1,3 +1,4 @@
+#ifndef DAQCARD_H
 #define DAQCARD_H
 
 #define MAX_NUM_OF_DAQ_CARD 1 					// Increase if there is an additional card
@@ -20,3 +21,6 @@
 #define HIGHEST_VOLTAGE_MV 		500.0
 #define VOLTAGE_MULTIPLIER_MV_6070E 	4.096     //   4096/1000.0    (0.5V - (- 0.5V) = 1000 mV)
 
+
+
+#endif

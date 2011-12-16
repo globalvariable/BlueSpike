@@ -1,3 +1,4 @@
+#ifndef KERNELTASKCTRL_H
 #define KERNELTASKCTRL_H
 
 #include <stdbool.h>
@@ -15,4 +16,4 @@ typedef struct __KernelTaskCtrl
 } KernelTaskCtrl;
 
 
-
+#endif

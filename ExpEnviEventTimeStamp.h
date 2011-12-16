@@ -1,9 +1,7 @@
+#ifndef EXPENVIEVENTTIMESTAMP_H
 #define EXPENVIEVENTTIMESTAMP_H    // Experimental Environment Event Timestamps
 
-#ifndef TIMESTAMP_H
 #include "TimeStamp.h"
-#endif
-
 #include "ExpEnviCommandTimeStamp.h"
 
 #define EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE 10000   // Should adjust its size according to the writing frequency to and reading frequency from this buffer. for hihger writing and lower reading, you should increase buffer size to avoid over-writing.  
@@ -28,3 +26,5 @@ typedef struct __ExpEnviEventTimeStamp
 } ExpEnviEventTimeStamp;
 
 
+
+#endif
