@@ -13,6 +13,9 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
+#ifndef SPIKESORTER_H
+#define SPIKESORTER_H
+ 
 #include "../SharedMemory.h"
 
 #include <rtai_shm.h>
@@ -132,4 +135,4 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 gboolean timeout_callback(gpointer user_data);
 
 
-
+#endif

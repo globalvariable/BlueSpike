@@ -1,3 +1,5 @@
+#ifndef DATAFORMAT_V0_H
+#define DATAFORMAT_V0_H
 #include <rtai_shm.h>
 
 #include <stdarg.h>
@@ -65,3 +67,5 @@ int create_main_logs_file(void);
 int write_maps_to_files(void);
 int write_spike_thresholds_to_files(void);
 int write_templates_to_files(void);
+
+#endif

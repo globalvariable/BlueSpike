@@ -1,3 +1,5 @@
+#ifndef RECORDER_H
+#define RECORDER_H
 
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
@@ -41,3 +43,5 @@ void *recording_handler(void *ptr);
 void set_directory_btn_select_directory_to_save(void);
 void fill_notes_text_view(void);
 
+
+#endif

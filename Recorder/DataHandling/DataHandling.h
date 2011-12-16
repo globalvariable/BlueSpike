@@ -1,3 +1,6 @@
+#ifndef DATAHANDLING_H
+#define DATAHANDLING_H
+
 #include "./DataFormat_v0/DataFormat_v0.h"
 
 // Includes handling of BlueSpike Data Format versions starting from v0. The following versions shoudl be v1, v2, v3 and so on. 
@@ -22,3 +25,5 @@ void (*get_buffer_reading_range_indexes_for_recording[MAX_NUMBER_OF_DATA_FORMAT_
 TimeStamp (*get_buffer_reading_end_indexes_and_time_for_recording[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );
 
 int initialize_data_read_write_handlers(void);
+
+#endif

@@ -13,6 +13,9 @@
  *   (at your option) any later version.                                   *
  *                                                                         *
  ***************************************************************************/
+#ifndef SPIKEVIEWER_H
+#define  SPIKEVIEWER_H
+ 
 #include "../SharedMemory.h"
 
 #include <rtai_shm.h>
@@ -90,3 +93,5 @@ gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
 void clear_spike_screen(void);
 void clear_raw_data_screen(void);
+
+#endif
