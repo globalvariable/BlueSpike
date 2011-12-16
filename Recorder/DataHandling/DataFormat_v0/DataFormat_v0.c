@@ -3,22 +3,24 @@
 
 int create_main_directory_v0(int num, ...)
 {
+	FILE *fp;
 	char *path_chooser;
 	DIR	*dir_main_folder;
-	
+	char temp_dir_path[600];
   	va_list arguments;
 	va_start ( arguments, num );   
     	path_chooser = va_arg ( arguments, char *);   	
 	va_end ( arguments );
 	
-	strcpy(main_directory_path, path_chooser);	
-	strcat(main_directory_path, "/BlueSpikeData");
-	if ((dir_main_folder = opendir(main_directory_path)) != NULL)
+	strcpy(temp_dir_path, path_chooser);	
+	strcat(temp_dir_path, "/BlueSpikeData");
+	if ((dir_main_folder = opendir(temp_dir_path)) != NULL)
         {
         	printf ("Recorder: ERROR: path: %s already has BlueSpikeData folder.\n", path_chooser);		
-        	printf ("Recorder: ERROR: Select another folder.\n\n");		        		
+        	printf ("Recorder: ERROR: Select another folder or delete BlueSpikeData directory.\n\n");		        		
                 return 0;
         }
+ 	strcpy(main_directory_path, temp_dir_path);	
 	mkdir(main_directory_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH | S_IWOTH);
 
         printf ("Recorder: Created BlueSpikeData folder in: %s.\n", path_chooser);
@@ -30,6 +32,10 @@ int create_main_directory_v0(int num, ...)
 	if (!create_main_logs_file())
 		return 0;
 		
+	if ((fp = fopen("./path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
+	fprintf(fp, "%s", main_directory_path);
+	fclose (fp);		
+
 	return 1;
 }
 
@@ -656,12 +662,14 @@ int write_notes_to_files_v0(int num, ...)
  	strcpy(temp_path, main_directory_path);
  	strcat(temp_path, "/notes");
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
-	fprintf(fp,"---------BlueSpike - Notes File---------------\n"); 				
 	for (i = 0; i < char_count; i++)
 	{
 		fprintf(fp, "%c", text_buffer[i]);		
 	}
 	fclose(fp);
+
+	if ((fp = fopen("./path_initial_note", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
+	fprintf(fp, "%s", temp_path); fclose (fp);	
 	
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);	
@@ -671,7 +679,7 @@ int write_notes_to_files_v0(int num, ...)
 	fprintf(fp,"%s\t\tCreated /notes file and submitted notes.\n", asctime (timeinfo)); 	
 	fprintf(fp,"---------------------------------------------------------------------------------\n");	 
 	fclose(fp);
-		
+	
 	return 1;
 }
 
@@ -766,6 +774,7 @@ int write_maps_templates_to_files_v0(int num, ...)
 	fprintf(fp,"%s\t\tSaved daq card mwa mappings and templates.\n", asctime (timeinfo)); 	
 	fprintf(fp,"---------------------------------------------------------------------------------\n");	
 	fclose(fp);	
+	
 	return 1;		
 }
 
@@ -820,6 +829,10 @@ int write_maps_to_files(void)
 		}
 	}		
 	fclose(fp);
+
+	if ((fp = fopen("../ConfigDaq/path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
+	fprintf(fp, "%s", temp_path); fclose (fp);		
+	
 	return 1;
 }
 
@@ -843,8 +856,11 @@ int write_spike_thresholds_to_files(void)
 		fprintf(fp, "\n");																					
 	}
 	fprintf(fp, "----------------BlueSpike - End of Spike Thresholds File----------------\n");
-	
 	fclose(fp);
+
+	if ((fp = fopen("../SpikeViewer/path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
+	fprintf(fp, "%s", temp_path); fclose (fp);
+	
 	return 1;
 }
 
@@ -902,6 +918,10 @@ int write_templates_to_files(void)
 
 	fprintf(fp, "----------------BlueSpike - End of Template Matching File---------------\n");		
 	fclose(fp);
+	
+	if ((fp = fopen("../SpikeSorter/path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
+	fprintf(fp, "%s", temp_path); fclose (fp);
+		
 	return 1;		
 }
 
