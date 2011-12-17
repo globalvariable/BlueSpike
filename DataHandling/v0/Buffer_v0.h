@@ -1,7 +1,7 @@
 #ifndef BUFFER_V0_H
 #define BUFFER_V0_H
 
-#include "./../../../SharedMemory.h"
+#include "./../../SharedMemory.h"
 #include <unistd.h>
 
 int recording_data_buff_prev_idx[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];

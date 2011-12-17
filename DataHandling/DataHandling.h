@@ -1,7 +1,7 @@
 #ifndef DATAHANDLING_H
 #define DATAHANDLING_H
 
-#include "./DataFormat_v0/DataFormat_v0.h"
+#include "./v0/DataFormat_v0.h"
 
 // Includes handling of BlueSpike Data Format versions starting from v0. The following versions shoudl be v1, v2, v3 and so on. 
 
