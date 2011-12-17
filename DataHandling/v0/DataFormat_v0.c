@@ -792,42 +792,18 @@ int write_maps_to_files(void)
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
 	
 	fprintf(fp, "BlueSpike - Data Acquisiton Cards vs Microwire Arrays Mapping File\n");	
-	fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
-	fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-	fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
-	fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);		
+	fprintf(fp,"MAX_NUM_OF_DAQ_CARD\t%d\n",MAX_NUM_OF_DAQ_CARD);
+	fprintf(fp,"MAX_NUM_OF_CHANNEL_PER_DAQ_CARD\t%d\n",MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
+	fprintf(fp,"MAX_NUM_OF_MWA\t%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp,"MAX_NUM_OF_CHAN_PER_MWA\t%d\n",MAX_NUM_OF_CHAN_PER_MWA);
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{	
 		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
 		{	
-			fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].mwa);
-			fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].channel);				
+			fprintf(fp, "DAQ:\t%d\tChannel:\t%d\t---->\tMWA:\t%d\tChannel:\t%d\t\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);	
 		}
 	}
-	fprintf(fp, "BlueSpike - End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n");	
-	fprintf(fp, "---------------------------------------------------------------------------------------------\n");			
-	fprintf(fp, "---------------------------------------------------------------------------------------------\n");					
-	fprintf(fp, "MAX_NUM_OF_DAQ_CARD: %d\n", MAX_NUM_OF_DAQ_CARD);
-	fprintf(fp, "MAX_NUM_OF_CHANNEL_PER_DAQ_CARD: %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-	fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_MWA);
-	fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
-	fprintf(fp, "DAQ Card Channels vs MWA Channels Mapping:\n");		
-	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
-	{	
-		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
-		{	
-			fprintf(fp, "DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);	
-		}
-	}
-	fprintf(fp, "---------------------------------------------------------------------------------------------\n");							
-	fprintf(fp, "MWA Channels vs DAQ Card Channels Mapping:\n");		
-	for (i = 0; i<MAX_NUM_OF_MWA; i++)
-	{	
-		for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{	
-			fprintf(fp, "MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
-		}
-	}		
+	fprintf(fp, "BlueSpike - End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n");				
 	fclose(fp);
 
 	if ((fp = fopen("../ConfigDaq/path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
@@ -847,11 +823,13 @@ int write_spike_thresholds_to_files(void)
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }	
 
 	fprintf(fp, "----------------BlueSpike - Spike Thresholds File---------------\n");	
+	fprintf(fp,"MAX_NUM_OF_MWA\t%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp,"MAX_NUM_OF_CHAN_PER_MWA\t%d\n",MAX_NUM_OF_CHAN_PER_MWA);	
 	for (i=0; i<MAX_NUM_OF_MWA; i++)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			fprintf(fp, "%f\t", shared_memory->spike_thresholding.amplitude_thres[i][j]);																			
+			fprintf(fp, "%.2f\t", shared_memory->spike_thresholding.amplitude_thres[i][j]);																			
 		}
 		fprintf(fp, "\n");																					
 	}
@@ -873,12 +851,11 @@ int write_templates_to_files(void)
  	strcat(temp_path, "/templates");
 	if ((fp = fopen(temp_path, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp_path); return 0; }
 
-	fprintf(fp, "----------------BlueSpike - Template Matching File---------------\n");	
-	fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
-	fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-	fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
-	fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);
-	fprintf(fp, "%d\n", MAX_NUM_OF_UNIT_PER_CHAN);
+	fprintf(fp, "----------------BlueSpike - Template Matching File---------------\n");
+	fprintf(fp,"MAX_NUM_OF_MWA\t%d\n", MAX_NUM_OF_MWA);
+	fprintf(fp,"MAX_NUM_OF_CHAN_PER_MWA\t%d\n",MAX_NUM_OF_CHAN_PER_MWA);
+	fprintf(fp,"MAX_NUM_OF_UNIT_PER_CHAN\t%d\n",MAX_NUM_OF_UNIT_PER_CHAN);
+	fprintf(fp,"NUM_OF_SAMP_PER_SPIKE\t%d\n",NUM_OF_SAMP_PER_SPIKE);		
 	fprintf(fp, "--------- Inverted Covariance Matrix ------\n");																					
 	for (i=0; i<MAX_NUM_OF_MWA; i++)
 	{
@@ -911,8 +888,9 @@ int write_templates_to_files(void)
 				fprintf(fp, "%.20f\t", shared_memory->template_matching_data[i][j][k].log_det_S);	
 				fprintf(fp, "%E\t", shared_memory->template_matching_data[i][j][k].probability_thres);
 				fprintf(fp, "%d\t", shared_memory->template_matching_data[i][j][k].sorting_on);		
-				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].include_unit);																
+				fprintf(fp, "%d\t", shared_memory->template_matching_data[i][j][k].include_unit);																
 			}
+			fprintf(fp, "\n");																													
 		}
 	}
 
@@ -975,60 +953,164 @@ int delete_last_recording_v0(int num, ...)
 	return 1;
 }
 
-bool interrogate_mapping(void)
-{
-	int i, j, check = 0;
+int read_mapping_v0(int num, ...)
+{	
+	char *path_maps;
+	char line[100];
+	char word[100];
+  	va_list arguments;
+	va_start ( arguments, num );   
+    	path_maps = va_arg ( arguments, char *);   	
+	va_end ( arguments );	
+
+
+	int i,j, line_cntr=0;
+	int max_num_of_daq_card, max_num_of_channel_per_daq_card, max_num_of_mwa, max_num_of_channel_per_mwa;
+	FILE *fp=NULL;
+	int mwa, mwa_channel;
+
+	printf("Loading maps file...\n");
+
+	fp = fopen(path_maps, "r");
+	if (fp == NULL)
+	{
+		printf("ERROR: Couldn't fopen the maps file\n");
+		return 0;		
+	}
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;}   
+	if (strcmp(line, "BlueSpike - Data Acquisiton Cards vs Microwire Arrays Mapping File\n") != 0)
+	{
+		printf("ERROR: Not a valid DAQ Card - MWA Mapping Maps File\n");
+		fclose(fp);
+		return 0;
+	}  	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;	
+	max_num_of_daq_card = (int)atof(word);	
+	if (MAX_NUM_OF_DAQ_CARD	< max_num_of_daq_card )
+	{
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
+	{
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
 	
-	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
-	{	
-		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
-		{	
-			if ((shared_memory->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
-			{
-				printf ("DAQ: %d   Channel: %d  ----> MWA: Idle  Channel: Idle\n", i, j);
-			}
-			else if ((shared_memory->daq_mwa_map[i][j].mwa != MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
-			{
-				printf ("DAQ: %d   Channel: %d  ----> MWA: %d  Channel: Idle\n", i, j, shared_memory->daq_mwa_map[i][j].mwa);			
-				printf ("****************************************************************\n");			
-				printf ("*************************BUG*********************************\n");
-				printf ("BUG: MWA was not mapped but its channel was mapped\n");
-				printf ("*************************BUG*********************************\n");
-				printf ("****************************************************************\n");	
-				return FALSE;					
-			}
-			else if ((shared_memory->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel != MAX_NUM_OF_CHAN_PER_MWA))
-			{
-				printf ("DAQ: %d   Channel: %d  ----> MWA: Idle Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].channel);			
-				printf ("*******************************************************************\n");			
-				printf ("*************************BUG************************************\n");
-				printf ("BUG: MWA was mapped but its channel was not mapped\n");
-				printf ("*************************BUG************************************\n");
-				printf ("******************************************************************\n");	
-				return FALSE;					
-			}			
-			else
-			{
-				printf ("DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);
-				check =1;
-			}
-		}
-	}
-	if (check == 1)
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;} 
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;		  
+	max_num_of_channel_per_daq_card = (int)atof(word);
+	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD < max_num_of_channel_per_daq_card)
 	{
-		printf("---------------------------------------------------------------------------------------------\n");						
-		for (i = 0; i<MAX_NUM_OF_MWA; i++)
-		{	
-			for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-			{	
-				printf("MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
-			}
-		}
-		return TRUE;
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);	
+		fclose(fp);
+		return 0; 
 	}
-	else
+	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
 	{
-		printf("ERROR: None of the channels of any DAQ Card was mapped\n");
-		return FALSE;
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
 	}	
+	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;		
+	max_num_of_mwa = (int)atof(word);
+	if (MAX_NUM_OF_MWA < max_num_of_mwa)
+	{
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
+	{
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
+	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;
+	max_num_of_channel_per_mwa = (int)atof(word);	
+	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
+	{
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
+	{
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}	
+
+
+	for (i = 0; i<max_num_of_daq_card; i++)    /// Only configure the ones written in config file even though max_num_of_daq_card != MAX_NUM_OF_DAQ_CARD
+	{	
+		for (j = 0; j<max_num_of_channel_per_daq_card; j++)
+		{	
+			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;}  
+			if(!get_word_in_line('\t', 6, word, line, TRUE))
+				return 0; 
+			mwa = (int)atof(word);
+			if ((mwa >= MAX_NUM_OF_MWA) || (mwa < 0))  { printf("ERROR: Incompatible value at %d th line of maps file\n", line_cntr);  fclose(fp); return 0;} 
+			if(!get_word_in_line('\t', 8, word, line, TRUE))
+				return 0; 
+			mwa_channel = (int)atof(word);
+			if ((mwa_channel >= MAX_NUM_OF_CHAN_PER_MWA) || (mwa_channel < 0))  { printf("ERROR: Incompatible value at %d th line of maps file\n", line_cntr);  fclose(fp); return 0;} 
+						
+			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
+			// First delete mwa to daq mapping			
+			shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
+			shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+			shared_memory->daq_mwa_map[i][j].mwa = MAX_NUM_OF_MWA;
+			shared_memory->daq_mwa_map[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;			
+			// Now map daq to mwa	
+			shared_memory->daq_mwa_map[i][j].mwa = mwa;
+			shared_memory->daq_mwa_map[i][j].channel = mwa_channel;
+			// Now map mwa to daq
+			shared_memory->mwa_daq_map[mwa][mwa_channel].daq_card = i;
+			shared_memory->mwa_daq_map[mwa][mwa_channel].daq_chan = j;				
+		}
+	}
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_maps);  fclose(fp); return 0; } else {line_cntr++;} 
+	if (strcmp(line, "BlueSpike - End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n") != 0)
+	{
+		printf("ERROR: Not a valid DAQ Card - MWA Mapping Maps File\n");
+		fclose(fp);
+		for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)    /// Only configure the ones written in config file even though max_num_of_daq_card != MAX_NUM_OF_DAQ_CARD
+		{	
+			for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+			{	
+				while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
+				shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
+				shared_memory->mwa_daq_map[shared_memory->daq_mwa_map[i][j].mwa][shared_memory->daq_mwa_map[i][j].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+				shared_memory->daq_mwa_map[i][j].mwa = MAX_NUM_OF_MWA;
+				shared_memory->daq_mwa_map[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;			
+			}
+		}
+		return 0;
+	}  		
+
+	fclose(fp);
+
+	if (!interrogate_mapping())
+		return 0;
+	
+	return 1;	
+
 }
+

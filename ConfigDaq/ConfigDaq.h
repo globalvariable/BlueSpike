@@ -1,7 +1,7 @@
 #ifndef CONFIGDAQ_H
 #define CONFIGDAQ_H
 #include "../SharedMemory.h"
-
+#include "../DataHandling/DataHandling.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -38,6 +38,5 @@ void map_channels_button_func(void);
 void interrogate_mapping_button_func(void); 
 void cancel_all_mapping_button_func(void); 
 void load_maps_file_button_func(void); 
-bool interrogate_mapping(void);
 void set_directory_btn_select_directory_to_load(void);
 #endif
