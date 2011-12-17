@@ -341,43 +341,15 @@ void create_gui(void)
 	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0); 	
 	
-   	lbl = gtk_label_new("Template File (Load): ");
-        gtk_box_pack_start(GTK_BOX(hbox),lbl, TRUE,TRUE, 0);
-   	
 	btn_select_template_file_to_load = gtk_file_chooser_button_new ("Select Template File", GTK_FILE_CHOOSER_ACTION_OPEN);
         gtk_box_pack_start(GTK_BOX(hbox),btn_select_template_file_to_load, TRUE,TRUE,0);
 	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");	
-//	gtk_widget_set_size_request(btn_select_template_file_to_load, 218, 25) ;
-	
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);  		
+	gtk_widget_set_size_request(btn_select_template_file_to_load, 130, 25) ;
+	set_directory_btn_select_directory_to_load();
 	
 	btn_load_template_file = gtk_button_new_with_label("Load Template File");
         gtk_box_pack_start(GTK_BOX(hbox),btn_load_template_file,TRUE,TRUE, 0);	
         
-   	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 	
-	
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);  
- 
-   	lbl = gtk_label_new("Template Folder (Save): ");
-        gtk_box_pack_start(GTK_BOX(hbox),lbl, TRUE,TRUE, 0);
-  	
- 	btn_select_template_file_directory_to_save = gtk_file_chooser_button_new ("Select Template Files Folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
-        gtk_box_pack_start(GTK_BOX(hbox), btn_select_template_file_directory_to_save, TRUE,TRUE,0);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_directory_to_save),"/home");		
-//	gtk_widget_set_size_request(btn_select_template_file_directory_to_save, 90, 25) ;
-
-	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);  	
-        entry_template_file_name = gtk_entry_new();
-        gtk_box_pack_start(GTK_BOX(hbox), entry_template_file_name, TRUE,TRUE,0);
-	gtk_widget_set_size_request(entry_template_file_name, 120, 25) ;
-	
-	btn_save_template_file = gtk_button_new_with_label("Save Template File");
-        gtk_box_pack_start(GTK_BOX(hbox),btn_save_template_file,TRUE,TRUE, 0);	 	       
-
 	gtk_widget_show_all(window);
 	
   	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);	
@@ -394,7 +366,6 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_submit_probability_thres), "clicked", G_CALLBACK(submit_probability_thres_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_pause), "clicked", G_CALLBACK(pause_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_load_template_file ), "clicked", G_CALLBACK(load_template_file_button_func), NULL);
-	g_signal_connect(G_OBJECT(btn_save_template_file), "clicked", G_CALLBACK(save_template_file_button_func), NULL);
 	g_signal_connect(G_OBJECT(box_nonsorted_all_spike), "selection-finalized", G_CALLBACK(spike_selection_rectangle_func), NULL);
 	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
 	
@@ -675,13 +646,13 @@ void load_template_file_button_func(void)
 	fp = fopen(path_file, "r");
 	if (fp == NULL)
 	{
-		printf("ERROR: Couldn't fopen the config file\n");
+		printf("ERROR: Couldn't fopen the selected file\n");
 		return;		
 	}
 
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
-	if (strcmp(line, "--------------SpikeSorter Configuration File--------------\n") != 0)
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of selected file\n", line_cntr);  fclose(fp); return; }       
+	if (strcmp(line, "----------------BlueSpike - Template Matching File---------------\n") != 0)
 	{
 		printf("SpikeSorter:\n");	
 		printf("ERROR: Not a valid SpikeSorter Config File\n");
@@ -694,77 +665,77 @@ void load_template_file_button_func(void)
 	max_num_of_daq_card = (int)atof(line);	
 	if (MAX_NUM_OF_DAQ_CARD	< max_num_of_daq_card )
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("ERROR: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
 		fclose(fp); return;
 	}
 	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("WARNING: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
 		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }          
 	max_num_of_channel_per_daq_card = (int)atof(line);
 	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD < max_num_of_channel_per_daq_card)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("ERROR: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
 		fclose(fp); return;
 	}
 	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("WARNING: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
 		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}	
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }         
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }         
 	max_num_of_mwa = (int)atof(line);
 	if (MAX_NUM_OF_MWA < max_num_of_mwa)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("ERROR: Template file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
 		fclose(fp); return;
 	}
 	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("WARNING: Template file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
 		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }          
 	max_num_of_channel_per_mwa = (int)atof(line);
 	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Template file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
 		fclose(fp); return;
 	}
 	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Template file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
 		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}	
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }          
 	max_num_of_unit_per_chan = (int)atof(line);
 	if (MAX_NUM_OF_UNIT_PER_CHAN < max_num_of_channel_per_mwa)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Template file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_UNIT_PER_CHAN = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);	
 		fclose(fp); return;
 	}
 	else if (MAX_NUM_OF_UNIT_PER_CHAN > max_num_of_channel_per_mwa)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Template file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
 		printf("WARNING: Now it is MAX_NUM_OF_UNIT_PER_CHAN = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}				
@@ -827,14 +798,12 @@ void load_template_file_button_func(void)
 				shared_memory->template_matching_data[i][j][k].include_unit = (bool)atof(line);
 			}
 			line_cntr++;
-			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-			shared_memory->spike_thresholding.amplitude_thres[i][j] = atof(line);			
 		}
 	}	
 
 	line_cntr++;
 	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
-	if (strcmp(line, "---------------End of SpikeSorter Configuration File--------------\n") != 0)
+	if (strcmp(line, "----------------BlueSpike - End of Template Matching File---------------\n") != 0)
 	{
 		printf("SpikeSorter:\n");	
 		printf("ERROR: Not a valid SpikeSorter Config File\n");
@@ -846,88 +815,6 @@ void load_template_file_button_func(void)
 	
 	fclose(fp);	
 	printf("Loading template file complete.\n");	
-}
-
-void save_template_file_button_func(void)
-{
-	int i,j,k,m,n;
-	char *path_temp = NULL, *path = NULL, path_file[500];
-	FILE *fp = NULL;
-	time_t rawtime;
-	struct tm * timeinfo;
-	char * time_str;
-	
-	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_directory_to_save));
-	path = &path_temp[7];   // since     uri returns file:///home/....
-	strcpy(path_file, path);
-	strcat(path_file, "/");
-	time ( &rawtime );
-	timeinfo = localtime (&rawtime);	
-	time_str = asctime (timeinfo);
-	time_str[7]='_';
-	time_str[10]='_';
-	time_str[13]='_';
-	time_str[16]='_';
-	time_str[19]='_';
-	time_str[24]='_';
-	time_str[25]='_';	
-	strcat(path_file, time_str+4);	
-	
-	strcat(path_file, gtk_entry_get_text(GTK_ENTRY(entry_template_file_name)));
-	
-	printf("Saving template file...\n");
-	
-	fp = fopen(path_file, "w");
-	if (fp == NULL)
-	{
-		printf("ConfigDaq:\n");
-		printf("ERROR: fopen failed for file %s:\n", path_file);					
-		return;
-	}
-	fprintf(fp, "--------------SpikeSorter Configuration File--------------\n");	
-
-	fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
-	fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-	fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
-	fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);
-	fprintf(fp, "%d\n", MAX_NUM_OF_UNIT_PER_CHAN);
-
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
-					{				
-						fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].inv_S[m][n]);
-					}
-				}	
-			}
-		}
-	}
-
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].sqrt_det_S);
-				fprintf(fp, "%.20f\n", shared_memory->template_matching_data[i][j][k].log_det_S);	
-				fprintf(fp, "%E\n", shared_memory->template_matching_data[i][j][k].probability_thres);
-				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].sorting_on);		
-				fprintf(fp, "%d\n", shared_memory->template_matching_data[i][j][k].include_unit);																
-			}
-			fprintf(fp, "%f\n", shared_memory->spike_thresholding.amplitude_thres[i][j]);																			
-		}
-	}
-	fprintf(fp, "---------------End of SpikeSorter Configuration File--------------\n");	
-
-	fclose(fp);	
-	printf("Saving template file complete.\n");	 
 }
 
 void clear_spikes_screen(void)
@@ -1364,4 +1251,34 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	g_ptr_array_free(Y_spikes_in_range_array,FALSE);
 	g_free(Y_mean);
 	return;		
+}
+
+void set_directory_btn_select_directory_to_load(void)
+{
+	char line[600];
+	FILE *fp = NULL;
+	int len;
+       	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
+       	{ 
+       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");
+       	}
+       	else
+       	{
+		if (fgets(line, sizeof line, fp ) == NULL) 
+		{ 
+			printf("ERROR: Recorder: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");
+		}
+		else
+		{
+			len=strlen(line);
+			line[len-1]=0;      // to get rid of \n character (\n = .10)
+			if (!(gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),line)))
+				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");			
+		}
+		fclose(fp); 		
+	}  	 
 }

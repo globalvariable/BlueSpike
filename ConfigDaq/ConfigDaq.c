@@ -24,7 +24,7 @@ void create_gui(void)
 	GtkWidget *window, *hbox, *hbox1, *vbox, *vbox1, *lbl;
  	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  	gtk_window_set_default_size(GTK_WINDOW(window), 400, 400);
+  	gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
   	gtk_window_set_title(GTK_WINDOW(window), "ConfigDaq");
   	gtk_container_set_border_width(GTK_CONTAINER(window), 10);	
   	
@@ -155,7 +155,7 @@ void create_gui(void)
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
 		gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
 		gtk_widget_set_sensitive(btn_map_channels, FALSE);
-		gtk_widget_set_sensitive(btn_load_config_file, FALSE);		
+		gtk_widget_set_sensitive(btn_load_maps_file, FALSE);		
 		gtk_widget_set_sensitive(btn_cancel_all_mapping, FALSE);			
 	}
 	else
@@ -166,27 +166,13 @@ void create_gui(void)
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,20);	
 	
-	btn_select_config_file_to_load = gtk_file_chooser_button_new ("Select Config File", GTK_FILE_CHOOSER_ACTION_OPEN);
-        gtk_box_pack_start(GTK_BOX(hbox),btn_select_config_file_to_load, TRUE,TRUE,0);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_config_file_to_load),"/usr/local/BlueSpike_Config");	
+	btn_select_maps_file_to_load = gtk_file_chooser_button_new ("Select Maps File", GTK_FILE_CHOOSER_ACTION_OPEN);
+        gtk_box_pack_start(GTK_BOX(hbox),btn_select_maps_file_to_load, TRUE,TRUE,0);
+	set_directory_btn_select_directory_to_load();        
 
-	btn_load_config_file = gtk_button_new_with_label("Load Config File");
-        gtk_box_pack_start(GTK_BOX(hbox),btn_load_config_file,TRUE,TRUE, 0);		
-        
-        hbox = gtk_hbox_new(FALSE, 0);
-	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,20);	 
-        		
-	btn_select_config_file_directory_to_save = gtk_file_chooser_button_new ("Select Config Files Folder", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
-        gtk_box_pack_start(GTK_BOX(hbox), btn_select_config_file_directory_to_save, TRUE,TRUE,0);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_config_file_directory_to_save),"/home");		
-	
-        entry_config_file_name = gtk_entry_new();
-        gtk_box_pack_start(GTK_BOX(hbox), entry_config_file_name, FALSE,FALSE,0);
-	gtk_widget_set_size_request(entry_config_file_name, 150, 25) ;
-	
-	btn_save_config_file = gtk_button_new_with_label("Save Config File");
-        gtk_box_pack_start(GTK_BOX(hbox),btn_save_config_file,TRUE,TRUE, 0);				
-        
+	btn_load_maps_file = gtk_button_new_with_label("Load Maps File");
+        gtk_box_pack_start(GTK_BOX(hbox),btn_load_maps_file,TRUE,TRUE, 0);		
+
   	gtk_widget_show_all(window);
 
         g_signal_connect (GTK_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
@@ -194,8 +180,7 @@ void create_gui(void)
         g_signal_connect(G_OBJECT(btn_map_channels), "clicked", G_CALLBACK(map_channels_button_func), NULL);
         g_signal_connect(G_OBJECT(btn_interrogate_mapping), "clicked", G_CALLBACK(interrogate_mapping_button_func), NULL);      
         g_signal_connect(G_OBJECT(btn_cancel_all_mapping), "clicked", G_CALLBACK(cancel_all_mapping_button_func), NULL);              
-        g_signal_connect(G_OBJECT(btn_load_config_file), "clicked", G_CALLBACK(load_config_file_button_func), NULL);
-        g_signal_connect(G_OBJECT(btn_save_config_file), "clicked", G_CALLBACK(save_config_file_button_func), NULL);
+        g_signal_connect(G_OBJECT(btn_load_maps_file), "clicked", G_CALLBACK(load_maps_file_button_func), NULL);
         
 	return;
 }
@@ -208,7 +193,7 @@ void turn_daq_on_off_button_func(void)
 		shared_memory->kernel_task_ctrl.turn_daq_card_on = 0;
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : OFF");
 		gtk_widget_set_sensitive(btn_map_channels, TRUE);
-		gtk_widget_set_sensitive(btn_load_config_file, TRUE);	
+		gtk_widget_set_sensitive(btn_load_maps_file, TRUE);	
 	}
 	else
 	{
@@ -216,7 +201,7 @@ void turn_daq_on_off_button_func(void)
 		shared_memory->kernel_task_ctrl.turn_daq_card_on = 1;
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
 		gtk_widget_set_sensitive(btn_map_channels, FALSE);
-		gtk_widget_set_sensitive(btn_load_config_file, FALSE);		
+		gtk_widget_set_sensitive(btn_load_maps_file, FALSE);		
 		gtk_widget_set_sensitive(btn_cancel_all_mapping, FALSE);						
 	}		
 }
@@ -341,9 +326,9 @@ void map_channels_button_func(void)
 
 void interrogate_mapping_button_func(void)
 {
-	printf("Interrogating config file\n");
+	printf("Interrogating mapping\n");
 	interrogate_mapping();
-	printf("Interrogating config file...complete\n");	
+	printf("Interrogating mapping...complete\n");	
 	return;
 }
 
@@ -372,7 +357,7 @@ void cancel_all_mapping_button_func(void)
 	gtk_widget_set_sensitive(btn_turn_daq_on_off, FALSE);
 }
 
-void load_config_file_button_func(void)
+void load_maps_file_button_func(void)
 {
 	int i,j, line_cntr=0;
 	int max_num_of_daq_card, max_num_of_channel_per_daq_card, max_num_of_mwa, max_num_of_channel_per_mwa;
@@ -380,9 +365,9 @@ void load_config_file_button_func(void)
 	FILE *fp=NULL;
 	int mwa, mwa_channel;
 
-	path = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_config_file_to_load));
+	path = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_maps_file_to_load));
 
-	printf("Loading config file...\n");
+	printf("Loading maps file...\n");
 
 	if (path == NULL)
 	{	
@@ -394,83 +379,83 @@ void load_config_file_button_func(void)
 	fp = fopen(path_file, "r");
 	if (fp == NULL)
 	{
-		printf("ERROR: Couldn't fopen the config file\n");
+		printf("ERROR: Couldn't fopen the maps file\n");
 		return;		
 	}
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }       
 	if (strcmp(line, "Data Acquisiton Cards vs Microwire Arrays Mapping File\n" ) != 0)
 	{
-		printf("ERROR: Not a valid DAQ Card - MWA Mapping Config File\n");
+		printf("ERROR: Not a valid DAQ Card - MWA Mapping Maps File\n");
 		fclose(fp);
 		return;
 	}  	
 	
 	line_cntr++;	
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }         
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }         
 	max_num_of_daq_card = (int)atof(line);	
 	if (MAX_NUM_OF_DAQ_CARD	< max_num_of_daq_card )
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
 		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
 		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }          
 	max_num_of_channel_per_daq_card = (int)atof(line);
 	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD < max_num_of_channel_per_daq_card)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);	
 		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
 		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}	
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }         
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }         
 	max_num_of_mwa = (int)atof(line);
 	if (MAX_NUM_OF_MWA < max_num_of_mwa)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
 		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
 		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}
 	
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }          
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }          
 	max_num_of_channel_per_mwa = (int)atof(line);
 	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
 	{
-		printf("ERROR: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Maps file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
 		fclose(fp);
 		return;
 	}
 	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
 	{
-		printf("WARNING: Config file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Maps file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
 		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
 		printf("WARNING: Configuration was done but you should check validity\n");	
 	}	
@@ -481,13 +466,13 @@ void load_config_file_button_func(void)
 		for (j = 0; j<max_num_of_channel_per_daq_card; j++)
 		{	
 			line_cntr++;
-			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; } 
+			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; } 
 			mwa = (int)atof(line);
-			if ((mwa >= MAX_NUM_OF_MWA) || (mwa < 0))  { printf("ERROR: Incompatible value at %d th line of config file\n", line_cntr);  fclose(fp); return;} 
+			if ((mwa >= MAX_NUM_OF_MWA) || (mwa < 0))  { printf("ERROR: Incompatible value at %d th line of maps file\n", line_cntr);  fclose(fp); return;} 
 			line_cntr++;
-			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }   			
+			if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }   			
 			mwa_channel = (int)atof(line);
-			if ((mwa_channel >= MAX_NUM_OF_CHAN_PER_MWA) || (mwa_channel < 0))  { printf("ERROR: Incompatible value at %d th line of config file\n", line_cntr);  fclose(fp); return;} 
+			if ((mwa_channel >= MAX_NUM_OF_CHAN_PER_MWA) || (mwa_channel < 0))  { printf("ERROR: Incompatible value at %d th line of maps file\n", line_cntr);  fclose(fp); return;} 
 						
 			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }   // wait until rt_task_wait_period starts
 			// First delete mwa to daq mapping			
@@ -502,10 +487,10 @@ void load_config_file_button_func(void)
 		}
 	}
 	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of maps file\n", line_cntr);  fclose(fp); return; }       
 	if (strcmp(line, "End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n" ) != 0)
 	{
-		printf("ERROR: Not a valid DAQ Card - MWA Mapping Config File\n");
+		printf("ERROR: Not a valid DAQ Card - MWA Mapping Maps File\n");
 		printf("ERROR: End of File Coudln' t be found\n");
 		fclose(fp);
 		return;
@@ -519,74 +504,6 @@ void load_config_file_button_func(void)
 	
 	return;
 }
-void save_config_file_button_func(void)
-{
-	int i,j;
-	char *path_temp = NULL, *path = NULL, path_file[500];
-	FILE *fp = NULL;
-	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_config_file_directory_to_save));
-	path = &path_temp[7];   // since     uri returns file:///home/....
-	strcpy(path_file, path);
-	strcat(path_file, "/ConfigDaq_");
-	strcat(path_file, gtk_entry_get_text(GTK_ENTRY(entry_config_file_name)));
-	
-	printf("Saving Config file...\n");
-	
-	if (interrogate_mapping())
-	{
-		fp = fopen(path_file, "w");
-		if (fp == NULL)
-		{
-			printf("ConfigDaq:\n");
-			printf("ERROR: fopen failed for file %s:\n", path_file);					
-			return;
-		}
-		fprintf(fp, "Data Acquisiton Cards vs Microwire Arrays Mapping File\n");	
-		fprintf(fp, "%d\n", MAX_NUM_OF_DAQ_CARD);
-		fprintf(fp, "%d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-		fprintf(fp, "%d\n", MAX_NUM_OF_MWA);
-		fprintf(fp, "%d\n", MAX_NUM_OF_CHAN_PER_MWA);		
-		for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
-		{	
-			for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
-			{	
-				fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].mwa);
-				fprintf(fp, "%d\n", shared_memory->daq_mwa_map[i][j].channel);				
-			}
-		}
-		fprintf(fp, "End of Data Acquisiton Cards vs Microwire Arrays Mapping File\n");
-		fprintf(fp, "---------------------------------------------------------------------------------------------\n");			
-		fprintf(fp, "---------------------------------------------------------------------------------------------\n");					
-		fprintf(fp, "MAX_NUM_OF_DAQ_CARD: %d\n", MAX_NUM_OF_DAQ_CARD);
-		fprintf(fp, "MAX_NUM_OF_CHANNEL_PER_DAQ_CARD: %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-		fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_MWA);
-		fprintf(fp, "MAX_NUM_OF_MWA: %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
-		fprintf(fp, "DAQ Card Channels MWA Channels Mapping:\n");		
-		for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
-		{	
-			for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
-			{	
-				fprintf(fp, "DAQ: %d   Channel: %d  ----> MWA: %d   Channel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);	
-			}
-		}
-		fprintf(fp, "---------------------------------------------------------------------------------------------\n");							
-		fprintf(fp, "MWA Channels DAQ Card Channels Mapping:\n");		
-		for (i = 0; i<MAX_NUM_OF_MWA; i++)
-		{	
-			for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-			{	
-				fprintf(fp, "MWA: %d   Channel: %d  ----> DAQ Card: %d   Channel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
-			}
-		}								
-		fclose(fp);
-	}
-	else
-	{
-		printf("Didn' t save any config file since no valid mapping was detected\n");
-	}
-	return;
-}
-
 bool interrogate_mapping(void)
 {
 	int i, j, check = 0;
@@ -645,4 +562,33 @@ bool interrogate_mapping(void)
 	}	
 }
 
+void set_directory_btn_select_directory_to_load(void)
+{
+	char line[600];
+	FILE *fp = NULL;
+	int len;
+       	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
+       	{ 
+       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_maps_file_to_load),"/home");
+       	}
+       	else
+       	{
+		if (fgets(line, sizeof line, fp ) == NULL) 
+		{ 
+			printf("ERROR: Recorder: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_maps_file_to_load),"/home");
+		}
+		else
+		{
+			len=strlen(line);
+			line[len-1]=0;      // to get rid of \n character (\n = .10)
+			if (!(gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_maps_file_to_load),line)))
+				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_maps_file_to_load),"/home");			
+		}
+		fclose(fp); 		
+	}  	 
+}
 

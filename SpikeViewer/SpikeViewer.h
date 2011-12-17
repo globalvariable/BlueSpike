@@ -54,6 +54,9 @@ GtkWidget *btn_filter_highpass_400Hz;
 GtkWidget *btn_filter_lowpass_8KHz;
 GtkWidget *btn_print_spike_end_buff;
 
+GtkWidget *btn_select_spike_thresholds_file_to_load;
+GtkWidget *btn_load_spike_thresholds_file; 
+
 int spike_time_stamp_buff_read_idx;
 
 GtkWidget *entryThreshold;
@@ -93,5 +96,5 @@ gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
 void clear_spike_screen(void);
 void clear_raw_data_screen(void);
-
+void set_directory_btn_select_directory_to_load(void);
 #endif

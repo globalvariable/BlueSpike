@@ -96,10 +96,6 @@ GtkWidget *btn_pause;
 GtkWidget *btn_select_template_file_to_load;
 GtkWidget *btn_load_template_file; 
 
-GtkWidget *btn_select_template_file_directory_to_save;
-GtkWidget *entry_template_file_name;
-GtkWidget *btn_save_template_file;
-
 int disp_mwa;
 int disp_chan;
 int disp_unit;
@@ -129,10 +125,9 @@ void spike_filter_on_off_button_func(void);
 void submit_probability_thres_button_func(void);
 void pause_button_func(void);
 void load_template_file_button_func(void);
-void save_template_file_button_func(void);
 void clear_spikes_screen(void);
 void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle * selectionValues);
 gboolean timeout_callback(gpointer user_data);
-
+void set_directory_btn_select_directory_to_load(void);
 
 #endif

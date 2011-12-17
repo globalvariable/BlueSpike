@@ -101,9 +101,9 @@ void create_gui(void)
    	gtk_table_attach_defaults(GTK_TABLE(main_table), vbox, 12,15, 6, 9);      // Put adjustments the rightmost
 
   	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
-  	
-  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5);
+
+ 	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
 
         lbl = gtk_label_new("Microwire Array : ");
@@ -153,7 +153,18 @@ void create_gui(void)
   	
 	threshold_button = gtk_button_new_with_label("Submit Threshold");
 	gtk_box_pack_start (GTK_BOX (hbox), threshold_button, TRUE, TRUE, 0);	
-  	
+
+	hbox = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,0);	
+	
+	btn_select_spike_thresholds_file_to_load = gtk_file_chooser_button_new ("Select Spike Thresholds File", GTK_FILE_CHOOSER_ACTION_OPEN);
+        gtk_box_pack_start(GTK_BOX(hbox),btn_select_spike_thresholds_file_to_load, TRUE,TRUE,0);
+ 	gtk_widget_set_size_request(btn_select_spike_thresholds_file_to_load, 120, 25);       
+	set_directory_btn_select_directory_to_load();
+	        
+        btn_load_spike_thresholds_file = gtk_button_new_with_label("Load Thresholds");
+        gtk_box_pack_start(GTK_BOX(hbox),btn_load_spike_thresholds_file,TRUE,TRUE, 0);	
+          	
    	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
   	
@@ -531,4 +542,34 @@ void clear_raw_data_screen(void)
 		Y_raw[i] = 0;
 	}		
 	gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+}
+
+void set_directory_btn_select_directory_to_load(void)
+{
+	char line[600];
+	FILE *fp = NULL;
+	int len;
+       	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
+       	{ 
+       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),"/home");
+       	}
+       	else
+       	{
+		if (fgets(line, sizeof line, fp ) == NULL) 
+		{ 
+			printf("ERROR: Recorder: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),"/home");
+		}
+		else
+		{
+			len=strlen(line);
+			line[len-1]=0;      // to get rid of \n character (\n = .10)
+			if (!(gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),line)))
+				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),"/home");			
+		}
+		fclose(fp); 		
+	}  	 
 }
