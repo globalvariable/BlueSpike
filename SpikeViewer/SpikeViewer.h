@@ -17,6 +17,7 @@
 #define  SPIKEVIEWER_H
  
 #include "../SharedMemory.h"
+#include "../DataHandling/DataHandling.h"
 
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
@@ -94,6 +95,7 @@ gboolean pause_button_func (GtkDatabox * box);
 gboolean print_spike_end_buff_button_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
+gboolean load_spike_thresholds_file_button_func (GtkDatabox * box);
 void clear_spike_screen(void);
 void clear_raw_data_screen(void);
 void set_directory_btn_select_directory_to_load(void);

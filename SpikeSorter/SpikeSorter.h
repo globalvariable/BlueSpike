@@ -17,6 +17,7 @@
 #define SPIKESORTER_H
  
 #include "../SharedMemory.h"
+#include "../DataHandling/DataHandling.h"
 
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>

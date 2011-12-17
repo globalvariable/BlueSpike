@@ -69,5 +69,6 @@ int write_spike_thresholds_to_files(void);
 int write_templates_to_files(void);
 
 int read_mapping_v0(int num, ...);
-
+int read_spike_thresholds_v0(int num, ...);
+int read_spike_templates_v0(int num, ...);
 #endif

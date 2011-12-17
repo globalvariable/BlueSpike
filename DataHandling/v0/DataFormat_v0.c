@@ -861,9 +861,9 @@ int write_templates_to_files(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			fprintf(fp, "--------- MWA: %d\tChannel: %d ------\n", i,j);																					
 			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
 			{
+				fprintf(fp, "---------\tMWA:\t%d\tChannel:\t%d\tUnit:\t%d\t------\n", i,j, k);																								
 				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
 				{
 					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
@@ -872,7 +872,6 @@ int write_templates_to_files(void)
 					}
 					fprintf(fp, "\n");																										
 				}
-				fprintf(fp, "\n");																															
 			}
 		}
 	}
@@ -956,7 +955,7 @@ int delete_last_recording_v0(int num, ...)
 int read_mapping_v0(int num, ...)
 {	
 	char *path_maps;
-	char line[100];
+	char line[1000];
 	char word[100];
   	va_list arguments;
 	va_start ( arguments, num );   
@@ -1114,3 +1113,285 @@ int read_mapping_v0(int num, ...)
 
 }
 
+int read_spike_thresholds_v0(int num, ...)
+{	
+	char *path_thres;
+	char line[1000];
+	char word[100];
+  	va_list arguments;
+	va_start ( arguments, num );   
+    	path_thres = va_arg ( arguments, char *);   	
+	va_end ( arguments );	
+	
+	int i,j, line_cntr=0;
+	int max_num_of_mwa, max_num_of_channel_per_mwa;
+	FILE *fp=NULL;
+
+	printf("Loading spike thresholds file...\n");
+
+	fp = fopen(path_thres, "r");
+	if (fp == NULL)
+	{
+		printf("ERROR: Couldn't fopen /spike_thres file\n");
+		return 0;		
+	}
+	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_thres);  fclose(fp); return 0; } else {line_cntr++;}   
+	if (strcmp(line, "----------------BlueSpike - Spike Thresholds File---------------\n") != 0)
+	{
+		printf("ERROR: Not a valid Spike Thresholds File\n");
+		fclose(fp);
+		return 0;
+	}  	
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_thres);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;		
+	max_num_of_mwa = (int)atof(word);
+	if (MAX_NUM_OF_MWA < max_num_of_mwa)
+	{
+		printf("ERROR: Spike Thresholds file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
+	{
+		printf("WARNING: Spike Thresholds file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
+	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_thres);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;
+	max_num_of_channel_per_mwa = (int)atof(word);	
+	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
+	{
+		printf("ERROR: Spike Thresholds file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
+	{
+		printf("WARNING: Spike Thresholds file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}	
+
+	for (i = 0; i<max_num_of_mwa; i++)    /// Only configure the ones written in config file even though max_num_of_daq_card != MAX_NUM_OF_DAQ_CARD
+	{	
+		if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_thres);  fclose(fp); return 0; } else {line_cntr++;}  
+		for (j = 0; j < max_num_of_channel_per_mwa ; j++)
+		{	
+			if(!get_word_in_line('\t', j, word, line, TRUE))
+				return 0; 
+			if (atof(word) > 0)
+			{
+				printf("SpikeViewer: ERROR: Spike threshold cannot be smaller than zero.\n");
+				printf("SpikeViewer: ERROR: Invalid value in Spike Threshold file.\n");
+				return 0;
+			} 				
+			shared_memory->spike_thresholding.amplitude_thres[i][j]= atof(word);
+		}
+	}	
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_thres);  fclose(fp); return 0; } else {line_cntr++;} 
+	if (strcmp(line, "----------------BlueSpike - End of Spike Thresholds File----------------\n") != 0)
+	{
+		printf("ERROR: Not a valid Spike Thresholds File\n");
+		fclose(fp);
+		for (i = 0; i<MAX_NUM_OF_MWA; i++)    /// Only configure the ones written in config file even though max_num_of_daq_card != MAX_NUM_OF_DAQ_CARD
+		{	
+			for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+			{	
+				shared_memory->spike_thresholding.amplitude_thres[i][j] = 0;			
+			}
+		}
+		return 0;
+	} 
+	fclose(fp);	
+	
+	return 1; 	
+}
+
+
+int read_spike_templates_v0(int num, ...)
+{	
+	char *path_templates;
+	char line[5000];
+	char word[100];
+  	va_list arguments;
+	va_start ( arguments, num );   
+    	path_templates = va_arg ( arguments, char *);   	
+	va_end ( arguments );	
+	
+	int i,j, k,m ,n , line_cntr=0;
+	int max_num_of_mwa, max_num_of_channel_per_mwa, max_num_of_unit_per_chan, num_samp_per_spike;
+	FILE *fp=NULL;
+
+	printf("Loading spike templates file...\n");
+
+	fp = fopen(path_templates, "r");
+	if (fp == NULL)
+	{
+		printf("ERROR: Couldn't fopen /templates file\n");
+		return 0;		
+	}
+	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   
+	if (strcmp(line, "----------------BlueSpike - Template Matching File---------------\n") != 0)
+	{
+		printf("ERROR: Not a valid Spike Templates File\n");
+		fclose(fp);
+		return 0;
+	}  	
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;		
+	max_num_of_mwa = (int)atof(word);
+	if (MAX_NUM_OF_MWA < max_num_of_mwa)
+	{
+		printf("ERROR: Spike Templates file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
+	{
+		printf("WARNING: Spike Templates file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
+	
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;
+	max_num_of_channel_per_mwa = (int)atof(word);	
+	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
+	{
+		printf("ERROR: Spike Templates file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
+	{
+		printf("WARNING: Spike Templates file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
+		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}		
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;
+	max_num_of_unit_per_chan = (int)atof(word);	
+	if (MAX_NUM_OF_UNIT_PER_CHAN < max_num_of_unit_per_chan)
+	{
+		printf("ERROR: Spike Templates file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_unit_per_chan);
+		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);	
+		fclose(fp);
+		return 0;
+	}
+	else if (MAX_NUM_OF_UNIT_PER_CHAN > max_num_of_channel_per_mwa)
+	{
+		printf("WARNING: Spike Templates file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_unit_per_chan);
+		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);		
+		printf("WARNING: Configuration was done but you should check validity\n");	
+	}
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   
+	if(!get_word_in_line('\t', 1, word, line, TRUE))
+		return 0;
+	num_samp_per_spike = (int)atof(word);	
+	if (NUM_OF_SAMP_PER_SPIKE != max_num_of_unit_per_chan)
+	{
+		printf("ERROR: Spike Templates file was saved when NUM_OF_SAMP_PER_SPIKE = %d\n", num_samp_per_spike);
+		printf("ERROR: Now it is NUM_OF_SAMP_PER_SPIKE = %d\n", NUM_OF_SAMP_PER_SPIKE);	
+		fclose(fp);
+		return 0;
+	}
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   // skip one line
+	for (i=0; i<max_num_of_mwa; i++)
+	{
+		for (j=0; j<max_num_of_channel_per_mwa; j++)
+		{
+			for (k=0; k<max_num_of_unit_per_chan; k++)
+			{
+				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   // skip one line		
+				for (m=0; m<num_samp_per_spike; m++)
+				{
+					if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}  				
+					for (n=0; n<num_samp_per_spike; n++)
+					{				
+						if(!get_word_in_line('\t', n, word, line, TRUE))
+							return 0;
+						shared_memory->template_matching_data[i][j][k].inv_S[m][n] = atof(word);						
+					}
+				}
+			}
+		}
+	}
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   // skip one line
+
+	for (i=0; i<max_num_of_mwa; i++)
+	{
+		if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;}   // skip one line
+		for (j=0; j<max_num_of_channel_per_mwa; j++)
+		{
+			for (k=0; k<max_num_of_unit_per_chan; k++)
+			{
+				if(!get_word_in_line('\t', 0, word, line, TRUE))
+					return 0;			
+				shared_memory->template_matching_data[i][j][k].sqrt_det_S = atof(word);	
+				if(!get_word_in_line('\t', 0, word, line, TRUE))
+					return 0;			
+				shared_memory->template_matching_data[i][j][k].log_det_S = atof(word);	
+				if(!get_word_in_line('\t', 0, word, line, TRUE))
+					return 0;			
+				shared_memory->template_matching_data[i][j][k].probability_thres = atof(word);
+				if(!get_word_in_line('\t', 0, word, line, TRUE))
+					return 0;			
+				shared_memory->template_matching_data[i][j][k].sorting_on = (bool)atof(word);
+				if(!get_word_in_line('\t', 0, word, line, TRUE))
+					return 0;			
+				shared_memory->template_matching_data[i][j][k].include_unit = (bool)atof(word);
+			}
+		}
+	}
+
+	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path_templates);  fclose(fp); return 0; } else {line_cntr++;} 
+	if (strcmp(line, "----------------BlueSpike - End of Template Matching File---------------\n") != 0)
+	{
+		printf("ERROR: Not a valid Spike Temnplates File\n");
+		fclose(fp);
+		for (i=0; i<MAX_NUM_OF_MWA; i++)
+		{
+			for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+			{
+				for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
+				{
+					for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
+					{
+						for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
+						{				
+							shared_memory->template_matching_data[i][j][k].inv_S[m][n] = 0;						
+						}
+					}
+				}
+				shared_memory->template_matching_data[i][j][k].sqrt_det_S = 0;
+				shared_memory->template_matching_data[i][j][k].log_det_S = 0;		
+				shared_memory->template_matching_data[i][j][k].probability_thres = 0;	
+				shared_memory->template_matching_data[i][j][k].sorting_on = 0;			
+				shared_memory->template_matching_data[i][j][k].include_unit = 0;
+			}
+		}
+	} 
+	fclose(fp);	
+			
+
+	return 1;
+}

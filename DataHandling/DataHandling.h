@@ -25,6 +25,9 @@ void (*get_buffer_reading_range_indexes_for_recording[MAX_NUMBER_OF_DATA_FORMAT_
 TimeStamp (*get_buffer_reading_end_indexes_and_time_for_recording[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );
 
 int (*read_mapping[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );
+int (*read_spike_detection_files[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );
+int (*read_spike_sorting_files[MAX_NUMBER_OF_DATA_FORMAT_VER]) (int num, ... );
+
 
 int initialize_data_read_write_handlers(void);
 int is_blue_spike_data(char *blue_spike_data_path);

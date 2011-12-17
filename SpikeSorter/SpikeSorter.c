@@ -627,194 +627,29 @@ void pause_button_func(void)
 
 void load_template_file_button_func(void)
 {
-	int i,j, k,m ,n , line_cntr=0;
-	int max_num_of_daq_card, max_num_of_channel_per_daq_card, max_num_of_mwa, max_num_of_channel_per_mwa, max_num_of_unit_per_chan;
-	char *path = NULL, *path_file = NULL, line[200];
-	FILE *fp=NULL;
 
-	path = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_to_load));
+	char *path_template = NULL, path_temp[600];
 
-	printf("Loading template file...\n");
+	int version;
+	path_template = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_to_load));
+	strcpy(path_temp, path_template);
+	path_temp[(strlen(path_template))-10] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/templates)
 
-	if (path == NULL)
-	{	
-		printf("ERROR: No file is choosen with file chooser\n");
+	if (!get_format_version(&version, path_temp))
+	{
+		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");		
 		return;
 	}
-	path_file = &path[7];   // since     uri returns file:///home/....
-
-	fp = fopen(path_file, "r");
-	if (fp == NULL)
+	
+	if (!((*read_spike_sorting_files[version])(1, path_template)))
 	{
-		printf("ERROR: Couldn't fopen the selected file\n");
-		return;		
-	}
-
-	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of selected file\n", line_cntr);  fclose(fp); return; }       
-	if (strcmp(line, "----------------BlueSpike - Template Matching File---------------\n") != 0)
-	{
-		printf("SpikeSorter:\n");	
-		printf("ERROR: Not a valid SpikeSorter Config File\n");
-		fclose(fp); return;
+		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");	
 		return;
-	}  	
-	
-	line_cntr++;	
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }         
-	max_num_of_daq_card = (int)atof(line);	
-	if (MAX_NUM_OF_DAQ_CARD	< max_num_of_daq_card )
-	{
-		printf("ERROR: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
-		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
-		fclose(fp); return;
-	}
-	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
-	{
-		printf("WARNING: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
-		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
 	}
 	
-	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }          
-	max_num_of_channel_per_daq_card = (int)atof(line);
-	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD < max_num_of_channel_per_daq_card)
-	{
-		printf("ERROR: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
-		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);
-		fclose(fp); return;
-	}
-	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
-	{
-		printf("WARNING: Template file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
-		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}	
 	
-	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }         
-	max_num_of_mwa = (int)atof(line);
-	if (MAX_NUM_OF_MWA < max_num_of_mwa)
-	{
-		printf("ERROR: Template file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
-		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
-		fclose(fp); return;
-	}
-	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
-	{
-		printf("WARNING: Template file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
-		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}
 	
-	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }          
-	max_num_of_channel_per_mwa = (int)atof(line);
-	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
-	{
-		printf("ERROR: Template file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
-		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
-		fclose(fp); return;
-	}
-	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
-	{
-		printf("WARNING: Template file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
-		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}	
-	
-	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of template file\n", line_cntr);  fclose(fp); return; }          
-	max_num_of_unit_per_chan = (int)atof(line);
-	if (MAX_NUM_OF_UNIT_PER_CHAN < max_num_of_channel_per_mwa)
-	{
-		printf("ERROR: Template file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
-		printf("ERROR: Now it is MAX_NUM_OF_UNIT_PER_CHAN = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);	
-		fclose(fp); return;
-	}
-	else if (MAX_NUM_OF_UNIT_PER_CHAN > max_num_of_channel_per_mwa)
-	{
-		printf("WARNING: Template file was saved when MAX_NUM_OF_UNIT_PER_CHAN = %d\n", max_num_of_channel_per_mwa);
-		printf("WARNING: Now it is MAX_NUM_OF_UNIT_PER_CHAN = %d\n", MAX_NUM_OF_UNIT_PER_CHAN);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}				
 
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					line_cntr++;
-					if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-					shared_memory->template_matching_data[i][j][k].template[m] = atof(line);
-				}	
-			}
-		}
-	}
-	
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				for (m=0; m<NUM_OF_SAMP_PER_SPIKE; m++)
-				{
-					for (n=0; n<NUM_OF_SAMP_PER_SPIKE; n++)
-					{				
-						line_cntr++;
-						if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-						shared_memory->template_matching_data[i][j][k].inv_S[m][n] = atof(line);	
-					}
-				}	
-			}
-		}
-	}	
-	
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			for (k=0; k<MAX_NUM_OF_UNIT_PER_CHAN; k++)
-			{
-				line_cntr++;
-				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-				shared_memory->template_matching_data[i][j][k].sqrt_det_S = atof(line);				
-				line_cntr++;
-				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-				shared_memory->template_matching_data[i][j][k].log_det_S = atof(line);			
-				line_cntr++;
-				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-				shared_memory->template_matching_data[i][j][k].probability_thres = atof(line);
-				line_cntr++;
-				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-				shared_memory->template_matching_data[i][j][k].sorting_on = (bool)atof(line);
-				line_cntr++;
-				if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }  				
-				shared_memory->template_matching_data[i][j][k].include_unit = (bool)atof(line);
-			}
-			line_cntr++;
-		}
-	}	
-
-	line_cntr++;
-	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of config file\n", line_cntr);  fclose(fp); return; }       
-	if (strcmp(line, "----------------BlueSpike - End of Template Matching File---------------\n") != 0)
-	{
-		printf("SpikeSorter:\n");	
-		printf("ERROR: Not a valid SpikeSorter Config File\n");
-		printf("ERROR: Couldn't find the end of file\n\n");		
-		fclose(fp); return;
-		return;
-	}  				
-	
-	
-	fclose(fp);	
-	printf("Loading template file complete.\n");	
 }
 
 void clear_spikes_screen(void)

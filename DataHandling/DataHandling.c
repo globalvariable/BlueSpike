@@ -19,6 +19,8 @@ int initialize_data_read_write_handlers(void)
 	get_buffer_reading_end_indexes_and_time_for_recording[0] = &get_buffer_reading_end_indexes_and_time_for_recording_v0;
 	
 	read_mapping[0] = &read_mapping_v0;
+	read_spike_detection_files[0] = &read_spike_thresholds_v0;
+	read_spike_sorting_files[0] = &read_spike_templates_v0;		
 	
 	return 1;
 }

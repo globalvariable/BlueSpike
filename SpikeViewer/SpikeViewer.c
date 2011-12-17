@@ -241,6 +241,8 @@ void create_gui(void)
 
  	gtk_widget_show_all(window);
  	
+ 	initialize_data_read_write_handlers();	
+ 	
 	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
 
   	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
@@ -253,7 +255,8 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(threshold_button), "clicked", G_CALLBACK(threshold_but_func), NULL);
 	g_signal_connect(G_OBJECT(clear_button), "clicked", G_CALLBACK(clear_screen_but_func), NULL);
 	g_signal_connect(G_OBJECT(btn_print_spike_end_buff), "clicked", G_CALLBACK(print_spike_end_buff_button_func), NULL);	
-
+	g_signal_connect(G_OBJECT(btn_load_spike_thresholds_file), "clicked", G_CALLBACK(load_spike_thresholds_file_button_func), NULL);	
+	
 	g_timeout_add(50, timeout_callback, box_signal);
 
 
@@ -572,4 +575,30 @@ void set_directory_btn_select_directory_to_load(void)
 		}
 		fclose(fp); 		
 	}  	 
+}
+
+gboolean load_spike_thresholds_file_button_func (GtkDatabox * box)
+{
+
+	char *path_thres = NULL, path_temp[600];
+
+	int version;
+	path_thres = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load));
+	strcpy(path_temp, path_thres);
+	path_temp[(strlen(path_thres)-12)] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/spike_thres)
+
+	if (!get_format_version(&version, path_temp))
+	{
+		printf("Couldn't retrieve spike thresholds.\n");		
+		return TRUE;
+	}
+	
+	if (!((*read_spike_detection_files[version])(1, path_thres)))
+	{
+		printf("Couldn't retrieve thresholds.\n");	
+		return TRUE;
+	}
+
+
+	return TRUE;	
 }
