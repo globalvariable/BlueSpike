@@ -33,7 +33,7 @@ int create_main_directory_v0(int num, ...)
 		return 0;
 		
 	if ((fp = fopen("./path_initial_directory", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
-	fprintf(fp, "%s", main_directory_path);
+	fprintf(fp, "%s", path_chooser);
 	fclose (fp);		
 
 	return 1;
@@ -547,7 +547,7 @@ int create_meta_data(TimeStamp rec_start)
 	fprintf(fp,"----------BlueSpike - Meta File----------\n");
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);
-	fprintf(fp,"DATE\t%s\n", asctime (timeinfo)); 	
+	fprintf(fp,"DATE\t%s", asctime (timeinfo)); 	
 	fprintf(fp,"START\t%llu\n", rec_start);		
 	fclose(fp);	
 	return 1;	
@@ -668,8 +668,12 @@ int write_notes_to_files_v0(int num, ...)
 	}
 	fclose(fp);
 
-	if ((fp = fopen("./path_initial_note", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./path_initial_directory"); return 0; }
-	fprintf(fp, "%s", temp_path); fclose (fp);	
+	if ((fp = fopen("./initial_note", "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't find directory: %s\n\n", "./initial_note"); return 0; }
+	for (i = 0; i < char_count; i++)
+	{
+		fprintf(fp, "%c", text_buffer[i]);		
+	}
+	fclose(fp);
 	
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);	
@@ -712,7 +716,7 @@ int write_additional_notes_to_files_v0(int num, ...)
  	strcat(temp_path, "/notes");
 	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't append text to file: %s\n\n", temp_path); return 0; }		
 
-	fprintf(fp,"---------------------------------------------------------------------------------\n");	
+	fprintf(fp,"\n---------------------------------------------------------------------------------\n");	
 	fprintf(fp,"Additional Note:\n%s", asctime (timeinfo)); 		
 	
 	for (i = 0; i < char_count; i++)

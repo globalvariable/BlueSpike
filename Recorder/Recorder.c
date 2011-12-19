@@ -181,7 +181,7 @@ void submit_notes_button_func (void)
 	if (!((*write_notes_to_files[DATA_FORMAT_VERSION])(1, txv_notes)))	
 		return;
 	gtk_widget_set_sensitive(btn_submit_additional_notes, TRUE);			// Reset of notes is available until starting of first recording
-	gtk_widget_set_sensitive(btn_btn_start_stop_recording, TRUE);			// Reset of notes is available until starting of first recording	
+	gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);			// Reset of notes is available until starting of first recording	
 }   
 
 void submit_additional_notes_button_func (void)
@@ -249,6 +249,7 @@ void *recording_handler(void *ptr)
 				(*fclose_all_data_files[DATA_FORMAT_VERSION])(0);
 				break;
 			}
+			gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
 			gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);						
 		}
 		else if ((recording_ongoing) && (!stop_recording_request))
@@ -268,6 +269,7 @@ void *recording_handler(void *ptr)
 			if ((*write_data_in_buffer[DATA_FORMAT_VERSION])(2, part_num, recording_end_time_ns))		
 				gtk_widget_set_sensitive( btn_delete_last_recording, TRUE);
 			(*fclose_all_data_files[DATA_FORMAT_VERSION])(0);
+			gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Start");			
 			break;														
 		}
 		else
@@ -287,7 +289,6 @@ void set_directory_btn_select_directory_to_save(void)
 {
 	char line[600];
 	FILE *fp = NULL;
-	int len;
        	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
        	{ 
        		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
@@ -304,8 +305,6 @@ void set_directory_btn_select_directory_to_save(void)
 		}
 		else
 		{
-			len=strlen(line);
-			line[len-1]=0;      // to get rid of \n character (\n = .10)
 			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_directory_to_save),line);
 		}
 		fclose(fp); 		
@@ -317,34 +316,14 @@ void fill_notes_text_view(void)
 	char line[1000];
 	FILE *fp = NULL;
 	int i = 0;
-	char temp_path[600];
-	int len;
 	GtkTextIter start, end;
 	GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(txv_notes));	
        	gtk_text_buffer_get_start_iter ( buffer, &start);
         gtk_text_buffer_get_end_iter ( buffer, &end);
         
-        if ((fp = fopen("./path_initial_note", "r")) == NULL)  
+        if ((fp = fopen("./initial_note", "r")) == NULL)  
        	{ 
-       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_note\n"); 
-       		printf ("ERROR: Recorder: N/A is loaded as initial note\n");
-		gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(txv_notes)), "N/A\n", -1);
-		return;       		 
-       	} 
-       	      
-	if (fgets(line, sizeof line, fp ) == NULL) 
-	{
-       		printf ("ERROR: Recorder: Couldn't read file: ./path_initial_note\n"); 
-       		printf ("ERROR: Recorder: N/A is loaded as initial note\n");
-		gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(txv_notes)), "N/A\n", -1);		
-		return;
-	}
- 	len=strlen(line);
-	line[len-1]=0;      // to get rid of \n character (\n = .10)
-	strcpy(temp_path, line);       
-       	if ((fp = fopen(temp_path, "r")) == NULL)  
-       	{ 
-       		printf ("ERROR: Recorder: Couldn't find file: %s\n",temp_path ); 
+       		printf ("ERROR: Recorder: Couldn't find file ./initial_note\n"); 
        		printf ("ERROR: Recorder: N/A is loaded as initial note\n");
 		gtk_text_buffer_set_text (gtk_text_view_get_buffer(GTK_TEXT_VIEW(txv_notes)), "N/A\n", -1);       		 
        	}
