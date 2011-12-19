@@ -53,12 +53,12 @@ int create_mov_obj_event_data(void);
 int create_mov_obj_command_data(void);
 int create_meta_data(TimeStamp rec_start);
 
-int write_recording_data(void);
-int write_spike_timestamp_data(void);
-int write_exp_envi_event_data(void);		
-int write_exp_envi_command_data(void);			
-int write_mov_obj_event_data(void);		
-int write_mov_obj_command_data(void);
+int write_recording_data(bool finalize);
+int write_spike_timestamp_data(bool finalize);
+int write_exp_envi_event_data(bool finalize);		
+int write_exp_envi_command_data(bool finalize);			
+int write_mov_obj_event_data(bool finalize);		
+int write_mov_obj_command_data(bool finalize);
 int end_meta_data(TimeStamp rec_end);
 
 int create_main_meta_file(void);

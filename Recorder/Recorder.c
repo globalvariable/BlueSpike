@@ -249,6 +249,7 @@ void *recording_handler(void *ptr)
 				(*fclose_all_data_files[DATA_FORMAT_VERSION])(0);
 				break;
 			}
+			usleep(100000);		
 			gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
 			gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);						
 		}

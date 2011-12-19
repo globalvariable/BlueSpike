@@ -350,22 +350,23 @@ int write_data_in_buffer_v0(int num, ...)
 	int time_prev = rt_get_cpu_time_ns();
 	int time_curr;
 	int part_num;
-	
+	int finalize = 0;
   	va_list arguments;
 	va_start ( arguments, num );   
     	part_num = va_arg ( arguments, int);   	
 	if (num == 2)	// it is last part to write. write end of recording time into meta
 	{
-		end_meta_data(va_arg ( arguments, TimeStamp));		
+		end_meta_data(va_arg ( arguments, TimeStamp));
+		finalize = 1;		
 	}
 	va_end ( arguments );
 	
-	write_recording_data();
-	write_spike_timestamp_data();
-	write_exp_envi_event_data();
-	write_exp_envi_command_data();
-	write_mov_obj_event_data();
-	write_mov_obj_command_data();
+	write_recording_data(finalize);
+	write_spike_timestamp_data(finalize);
+	write_exp_envi_event_data(finalize);
+	write_exp_envi_command_data(finalize);
+	write_mov_obj_event_data(finalize);
+	write_mov_obj_command_data(finalize);
 
 	time_curr = rt_get_cpu_time_ns();
 	if ((time_curr - time_prev) > 100000000)		// if writing exceeds x milliseconds, there might be buffer reading error. (buffer might be overwrited before reading it.)
@@ -384,7 +385,7 @@ int write_data_in_buffer_v0(int num, ...)
 	return 1;
 }
 
-int write_recording_data(void)
+int write_recording_data(bool finalize)
 {
 	int i, j, idx, end_idx;
 	int file_ptr_arr_start_idx = RECORDING_DATA_FILE_IDX;
@@ -403,12 +404,16 @@ int write_recording_data(void)
 				if (idx ==	RECORDING_DATA_BUFF_SIZE)
 					idx = 0;	
 			}
+			if (finalize)
+			{
+				fprintf(file_ptr_arr[(file_ptr_arr_start_idx+(i*MAX_NUM_OF_CHAN_PER_MWA))+j],"----------BlueSpike - End of Recording Data File----------\n");						
+			}
 		}
 	}		
 	return 1;
 }
 
-int write_spike_timestamp_data(void)
+int write_spike_timestamp_data(bool finalize)
 {
 	int idx, end_idx;
 	int file_ptr_start_idx = SPIKE_TIMESTAMP_DATA_FILE_IDX;
@@ -426,11 +431,15 @@ int write_spike_timestamp_data(void)
 		idx++;	
 		if (idx ==	buff_size)
 			idx = 0;	
+		if (finalize)
+		{
+			fprintf(file_ptr_arr[file_ptr_start_idx],"----------BlueSpike - End of Spike TimeStamps File----------\n");						
+		}
 	}
 	return 1;
 }
 
-int write_exp_envi_event_data(void)
+int write_exp_envi_event_data(bool finalize)
 {
 	int idx, end_idx;
 	int file_ptr_start_idx = EXP_ENVI_EVENT_DATA_FILE_IDX;
@@ -450,11 +459,15 @@ int write_exp_envi_event_data(void)
 			if (idx ==	buff_size)
 				idx = 0;	
 		}
+		if (finalize)
+		{
+			fprintf(file_ptr_arr[file_ptr_start_idx+i],"----------BlueSpike - End of Experimental Environment Event TimeStamps File----------\n");						
+		}
 	}		
 	return 1;
 }	
 	
-int write_exp_envi_command_data(void)
+int write_exp_envi_command_data(bool finalize)
 {
 	int idx, end_idx;
 	int file_ptr_start_idx = EXP_ENVI_COMMAND_DATA_FILE_IDX;
@@ -474,11 +487,15 @@ int write_exp_envi_command_data(void)
 			if (idx ==	buff_size)
 				idx = 0;	
 		}
+		if (finalize)
+		{
+			fprintf(file_ptr_arr[file_ptr_start_idx+i],"----------BlueSpike - End of Experimental Environment Command TimeStamps File----------\n");						
+		}
 	}		
 	return 1;
 }	
 		
-int write_mov_obj_event_data(void)
+int write_mov_obj_event_data(bool finalize)
 {
 	int i, j, idx, end_idx;
 	int file_ptr_arr_start_idx = MOV_OBJ_EVENT_DATA_FILE_IDX;
@@ -502,11 +519,15 @@ int write_mov_obj_event_data(void)
 			if (idx == buff_size)
 				idx = 0;	
 		}
+		if (finalize)
+		{
+			fprintf(file_ptr_arr[file_ptr_arr_start_idx+i],"----------BlueSpike - End of Moving Object Event TimeStamps File----------\n");		
+		}
 	}
 	return 1;
 }	
 	
-int write_mov_obj_command_data(void)
+int write_mov_obj_command_data(bool finalize)
 {
 	int i, j, idx, end_idx;
 	int file_ptr_arr_start_idx = MOV_OBJ_COMMAND_DATA_FILE_IDX;
@@ -529,6 +550,10 @@ int write_mov_obj_command_data(void)
 			idx++;	
 			if (idx == buff_size)
 				idx = 0;	
+		}
+		if (finalize)
+		{
+			fprintf(file_ptr_arr[file_ptr_arr_start_idx+i],"----------BlueSpike - End of Moving Object Command TimeStamps File----------\n");		
 		}
 	}
 	return 1;
