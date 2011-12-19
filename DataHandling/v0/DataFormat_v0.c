@@ -608,7 +608,7 @@ int create_main_meta_file(void)
 	fprintf(fp,"DATA_FORMAT_VERSION\t%d\n", 0);	
 	time ( &rawtime );
 	timeinfo = localtime (&rawtime);
-	fprintf(fp,"CREATION_DATE\t%s\n", asctime (timeinfo)); 	
+	fprintf(fp,"CREATION_DATE\t%s", asctime (timeinfo)); 	
 	fprintf(fp,"MAX_NUM_OF_MWA\t%d\n", MAX_NUM_OF_MWA);
 	fprintf(fp,"MAX_NUM_OF_CHAN_PER_MWA\t%d\n",MAX_NUM_OF_CHAN_PER_MWA);
 	fprintf(fp,"MAX_NUM_OF_UNIT_PER_CHAN\t%d\n",MAX_NUM_OF_UNIT_PER_CHAN);
@@ -713,7 +713,7 @@ int write_additional_notes_to_files_v0(int num, ...)
 	if ((fp = fopen(temp_path, "a+")) == NULL)  { printf ("ERROR: Recorder: Couldn't append text to file: %s\n\n", temp_path); return 0; }		
 
 	fprintf(fp,"---------------------------------------------------------------------------------\n");	
-	fprintf(fp,"%s\t\tAdditional Note:\n", asctime (timeinfo)); 		
+	fprintf(fp,"Additional Note:\n%s", asctime (timeinfo)); 		
 	
 	for (i = 0; i < char_count; i++)
 	{
