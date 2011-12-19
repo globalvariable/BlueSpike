@@ -5,7 +5,7 @@ TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording_v0 (int
 	int i, j;
 	TimeStamp start_time;
 	
-	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
 	
 	for (i=0; i < MAX_NUM_OF_MWA; i++)
 	{
@@ -175,7 +175,7 @@ TimeStamp get_buffer_reading_end_indexes_and_time_for_recording_v0 (int num, ...
 		mov_obj_command_buff_prev_idx[i] = mov_obj_command_buff_end_idx[i];
 	}		
 	
-	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }	
+	while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }	
 	
 	for (i=0; i < MAX_NUM_OF_MWA; i++)
 	{

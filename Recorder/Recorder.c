@@ -201,7 +201,8 @@ void start_stop_recording_button_func (void)
 		gtk_widget_set_sensitive(btn_submit_notes, FALSE);
 		gtk_widget_set_sensitive(btn_submit_additional_notes, TRUE);
 		gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);
-		gtk_widget_set_sensitive(btn_delete_last_recording, TRUE);				
+		gtk_widget_set_sensitive(btn_delete_last_recording, TRUE);
+		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Start");						
 	}
 	else if ((!recording_ongoing) & (!start_recording_request))
 	{
@@ -218,7 +219,8 @@ void start_stop_recording_button_func (void)
 		gtk_widget_set_sensitive(btn_submit_notes, FALSE);
 		gtk_widget_set_sensitive(btn_submit_additional_notes, TRUE);
 		gtk_widget_set_sensitive(btn_start_stop_recording, TRUE);
-		gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);	// do not let any deletion during recording			
+		gtk_widget_set_sensitive(btn_delete_last_recording, FALSE);	// do not let any deletion during recording	
+		gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
 	}
 	return;
 	
@@ -249,9 +251,7 @@ void *recording_handler(void *ptr)
 				(*fclose_all_data_files[DATA_FORMAT_VERSION])(0);
 				break;
 			}
-			usleep(100000);		
-			gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Stop");
-			gtk_widget_set_sensitive( btn_delete_last_recording, FALSE);						
+			usleep(100000);		// Let creation of files.
 		}
 		else if ((recording_ongoing) && (!stop_recording_request))
 		{
@@ -260,15 +260,13 @@ void *recording_handler(void *ptr)
 			if ((*write_data_in_buffer[DATA_FORMAT_VERSION])(1, part_num))		
 				continue;
 			(*fclose_all_data_files[DATA_FORMAT_VERSION])(0);	
-			gtk_widget_set_sensitive( btn_delete_last_recording, TRUE);							
 			break;
 		}
 		else if (stop_recording_request)
 		{
 			stop_recording_request = 0;
 			recording_end_time_ns = (*get_buffer_reading_end_indexes_and_time_for_recording[DATA_FORMAT_VERSION])(0);				
-			if ((*write_data_in_buffer[DATA_FORMAT_VERSION])(2, part_num, recording_end_time_ns))		
-				gtk_widget_set_sensitive( btn_delete_last_recording, TRUE);
+			(*write_data_in_buffer[DATA_FORMAT_VERSION])(2, part_num, recording_end_time_ns);		
 			(*fclose_all_data_files[DATA_FORMAT_VERSION])(0);
 			gtk_button_set_label (GTK_BUTTON(btn_start_stop_recording),"Start");			
 			break;														

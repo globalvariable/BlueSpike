@@ -431,10 +431,10 @@ int write_spike_timestamp_data(bool finalize)
 		idx++;	
 		if (idx ==	buff_size)
 			idx = 0;	
-		if (finalize)
-		{
-			fprintf(file_ptr_arr[file_ptr_start_idx],"----------BlueSpike - End of Spike TimeStamps File----------\n");						
-		}
+	}
+	if (finalize)
+	{
+		fprintf(file_ptr_arr[file_ptr_start_idx],"----------BlueSpike - End of Spike TimeStamps File----------\n");						
 	}
 	return 1;
 }
