@@ -55,13 +55,6 @@ void rt_handler(int t)
 	kern_prev_time = &kernel_task_ctrl->previous_time_ns;		
 	kill_all_rt_tasks = &kernel_task_ctrl->kill_all_rt_tasks;
 	
-	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
-	{
-		front[i] = 0;
-		back[i] = 0;
-		daq_chan_num[i] = 0;
-	}
-	
 	while (!(*kill_all_rt_tasks)) 
 	{
 		rt_task_wait_period();
@@ -76,7 +69,14 @@ void rt_handler(int t)
 		{
 			*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
 			*kern_prev_time = previous_time_ns;		
-			*kernel_task_idle = 1;			
+			*kernel_task_idle = 1;
+			for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
+			{
+				front[i] = 0;
+				back[i] = 0;
+				daq_chan_num[i] = 0;
+			}
+			*highpass_150Hz_on = 0; *highpass_400Hz_on = 0; *lowpass_8KHz_on = 0;	
 			continue;
 		}	
 			
