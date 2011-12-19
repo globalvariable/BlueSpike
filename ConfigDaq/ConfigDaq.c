@@ -155,13 +155,15 @@ void create_gui(void)
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : ON");
 		gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
 		gtk_widget_set_sensitive(btn_map_channels, FALSE);
-		gtk_widget_set_sensitive(btn_load_maps_file, FALSE);		
-		gtk_widget_set_sensitive(btn_cancel_all_mapping, FALSE);			
+		gtk_widget_set_sensitive(btn_load_maps_file, FALSE);	
+		if (!shared_memory->kernel_task_ctrl.daq_card_mapped)
+			gtk_widget_set_sensitive(btn_cancel_all_mapping, FALSE);			
 	}
 	else
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : OFF");		
-		gtk_widget_set_sensitive(btn_turn_daq_on_off, FALSE);
+		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : OFF");	
+		if (!shared_memory->kernel_task_ctrl.daq_card_mapped)
+			gtk_widget_set_sensitive(btn_turn_daq_on_off, FALSE);
 	}
 	hbox = gtk_hbox_new(FALSE, 0);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,20);	
@@ -322,6 +324,7 @@ void map_channels_button_func(void)
 	printf ("DAQ Card -> Microwire Array mapping completed\n");
 	printf ("Microwire Array -> DAQ Card mapping completed\n");
 	interrogate_mapping();
+	shared_memory->kernel_task_ctrl.daq_card_mapped = 1;
 	gtk_widget_set_sensitive(btn_turn_daq_on_off, TRUE);
 	return;
 }

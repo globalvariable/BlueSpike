@@ -27,7 +27,7 @@ void rt_handler(int t)
 
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
-	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks; 
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks, *daq_card_mapped; 
 	TimeStamp *kern_curr_time, *kern_prev_time;
 	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
 	int curr_time ;		// local_time  unsigned int
@@ -54,6 +54,14 @@ void rt_handler(int t)
 	kern_curr_time = &kernel_task_ctrl->current_time_ns;
 	kern_prev_time = &kernel_task_ctrl->previous_time_ns;		
 	kill_all_rt_tasks = &kernel_task_ctrl->kill_all_rt_tasks;
+	daq_card_mapped = &kernel_task_ctrl->daq_card_mapped;
+	
+	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
+	{
+		front[i] = 0;
+		back[i] = 0;
+		daq_chan_num[i] = 0;
+	}	
 	
 	while (!(*kill_all_rt_tasks)) 
 	{
@@ -65,7 +73,7 @@ void rt_handler(int t)
 		previous_time_ns = current_time_ns;		
 		prev_time = curr_time;
 
-		if (handle_daq_cards())
+		if ((handle_daq_cards()) || (!(*daq_card_mapped)))
 		{
 			*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
 			*kern_prev_time = previous_time_ns;		
