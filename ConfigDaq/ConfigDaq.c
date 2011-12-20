@@ -368,6 +368,7 @@ void load_maps_file_button_func(void)
 
 	int version;
 	path_maps = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_maps_file_to_load));
+	path_maps = &path_maps[7];                  ///     file:///path
 	strcpy(path_temp, path_maps);
 	path_temp[(strlen(path_maps)-5)] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/maps)
 
@@ -389,7 +390,7 @@ void set_directory_btn_select_directory_to_load(void)
 {
 	char line[600];
 	FILE *fp = NULL;
-	int len;
+	GFile *gfile_path; 
        	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
        	{ 
        		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
@@ -406,10 +407,9 @@ void set_directory_btn_select_directory_to_load(void)
 		}
 		else
 		{
-			len=strlen(line);
-			line[len-1]=0;      // to get rid of \n character (\n = .10)
-			if (!(gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_maps_file_to_load),line)))
-				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_maps_file_to_load),"/home");			
+			gfile_path = g_file_new_for_path (line); 
+			gtk_file_chooser_set_file (GTK_FILE_CHOOSER (btn_select_maps_file_to_load), gfile_path, NULL);
+			g_object_unref(gfile_path);
 		}
 		fclose(fp); 		
 	}  	 

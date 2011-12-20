@@ -33,7 +33,6 @@ int is_blue_spike_data(char *blue_spike_data_path)
 	int line_cntr = 0;
 	strcpy(path, blue_spike_data_path);
 	strcat(path, "/meta");
-	
 	if ((fp = fopen(path, "r")) == NULL)  { printf ("ERROR: Recorder: Couldn't read file: %s\n\n", path); return 0; }
 	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;}   
 	fclose(fp);   
@@ -52,6 +51,8 @@ int get_format_version(int *version, char *blue_spike_data_path)
 	FILE *fp;
 	if (is_blue_spike_data(blue_spike_data_path))
 	{
+		strcpy(path, blue_spike_data_path);
+		strcat(path, "/meta");		
 		if ((fp = fopen(path, "r")) == NULL)  { printf ("ERROR: Recorder: Couldn't read file: %s\n\n", path); return 0; }
 		if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;}   
 		if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;}   

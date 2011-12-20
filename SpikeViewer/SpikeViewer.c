@@ -551,7 +551,7 @@ void set_directory_btn_select_directory_to_load(void)
 {
 	char line[600];
 	FILE *fp = NULL;
-	int len;
+	GFile *gfile_path; 
        	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
        	{ 
        		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
@@ -568,10 +568,9 @@ void set_directory_btn_select_directory_to_load(void)
 		}
 		else
 		{
-			len=strlen(line);
-			line[len-1]=0;      // to get rid of \n character (\n = .10)
-			if (!(gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),line)))
-				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),"/home");			
+			gfile_path = g_file_new_for_path (line); 
+			gtk_file_chooser_set_file (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load), gfile_path, NULL);
+			g_object_unref(gfile_path);			
 		}
 		fclose(fp); 		
 	}  	 
@@ -584,6 +583,7 @@ gboolean load_spike_thresholds_file_button_func (GtkDatabox * box)
 
 	int version;
 	path_thres = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load));
+	path_thres = &path_thres[7];                  ///     file:///path
 	strcpy(path_temp, path_thres);
 	path_temp[(strlen(path_thres)-12)] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/spike_thres)
 

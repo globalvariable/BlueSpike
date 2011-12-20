@@ -343,7 +343,6 @@ void create_gui(void)
 	
 	btn_select_template_file_to_load = gtk_file_chooser_button_new ("Select Template File", GTK_FILE_CHOOSER_ACTION_OPEN);
         gtk_box_pack_start(GTK_BOX(hbox),btn_select_template_file_to_load, TRUE,TRUE,0);
-	gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");	
 	gtk_widget_set_size_request(btn_select_template_file_to_load, 130, 25) ;
 	set_directory_btn_select_directory_to_load();
 	
@@ -367,10 +366,11 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_pause), "clicked", G_CALLBACK(pause_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_load_template_file ), "clicked", G_CALLBACK(load_template_file_button_func), NULL);
 	g_signal_connect(G_OBJECT(box_nonsorted_all_spike), "selection-finalized", G_CALLBACK(spike_selection_rectangle_func), NULL);
-	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
 	
 	spike_time_stamp_buff_read_idx = shared_memory->spike_time_stamp.buff_idx_write;
-
+	
+	initialize_data_read_write_handlers();
+	
 	g_timeout_add(50, timeout_callback, NULL);
 	
 }
@@ -632,15 +632,17 @@ void load_template_file_button_func(void)
 
 	int version;
 	path_template = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_to_load));
+	path_template = &path_template[7];                  ///     file:///path	
 	strcpy(path_temp, path_template);
-	path_temp[(strlen(path_template))-10] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/templates)
+	path_temp[strlen(path_template)-10] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/templates)
+
 
 	if (!get_format_version(&version, path_temp))
 	{
 		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");		
 		return;
 	}
-	
+
 	if (!((*read_spike_sorting_files[version])(1, path_template)))
 	{
 		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");	
@@ -1092,7 +1094,7 @@ void set_directory_btn_select_directory_to_load(void)
 {
 	char line[600];
 	FILE *fp = NULL;
-	int len;
+	GFile *gfile_path; 	
        	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
        	{ 
        		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
@@ -1109,10 +1111,9 @@ void set_directory_btn_select_directory_to_load(void)
 		}
 		else
 		{
-			len=strlen(line);
-			line[len-1]=0;      // to get rid of \n character (\n = .10)
-			if (!(gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),line)))
-				gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");			
+			gfile_path = g_file_new_for_path (line); 
+			gtk_file_chooser_set_file (GTK_FILE_CHOOSER (btn_select_template_file_to_load), gfile_path, NULL);
+			g_object_unref(gfile_path);
 		}
 		fclose(fp); 		
 	}  	 
