@@ -759,6 +759,7 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 		else if (((*filtered_recording_data_chan_buff)[idx] >  amplitude_thres) && (*in_spike))
 		{
 			*in_spike = 0;
+			*in_spike_sample_cntr = 0;
 			min = (*filtered_recording_data_chan_buff)[idx];
 			min_idx = idx;
 			for (i=0; i<20; i++)
