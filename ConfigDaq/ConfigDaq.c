@@ -198,6 +198,7 @@ void turn_daq_on_off_button_func(void)
 		gtk_button_set_label (GTK_BUTTON(btn_turn_daq_on_off),"DAQ Card : OFF");
 		gtk_widget_set_sensitive(btn_map_channels, TRUE);
 		gtk_widget_set_sensitive(btn_load_maps_file, TRUE);	
+		gtk_widget_set_sensitive(btn_cancel_all_mapping, TRUE);						
 	}
 	else
 	{

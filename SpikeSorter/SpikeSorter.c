@@ -387,7 +387,6 @@ void combo_mwa_func (void)
 		printf ("BUG: 0th Microwire Array selected automatically\n");
 		idx = 0;
 	}
-	while (plotting_in_progress) { usleep(1); }	
 	disp_mwa = idx;
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
 	{
@@ -422,7 +421,6 @@ void combo_chan_func (void)
 		printf ("BUG: 0th Microwire Array Channel selected automatically\n");
 		idx = 0;
 	}
-	while (plotting_in_progress) { usleep(1); }		
 	disp_chan = idx;	
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
 	{
@@ -456,7 +454,6 @@ void combo_unit_func (void)
 		printf ("BUG: 0th Microwire Array Channel Unit selected automatically\n");
 		idx = 0;
 	}
-	while (plotting_in_progress) { usleep(1); }		
 	disp_unit = idx;	
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_mwa].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
 	{
