@@ -548,13 +548,13 @@ void unit_sorting_on_off_button_func(void)
 {
 	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }										
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on = 0;
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }															
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }															
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on = 1;
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	}
@@ -565,13 +565,13 @@ void include_unit_on_off_button_func(void)
 {
  	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }										
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit = 0;
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }															
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }															
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit = 1;
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	}
@@ -597,7 +597,7 @@ void submit_probability_thres_button_func(void)
 	double threshold = atof(gtk_entry_get_text(GTK_ENTRY(entry_probability_thres)));
 	if (threshold >= 0.0)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(1); }
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
 		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres=threshold;
 		printf("Spike detection is disable for this channel by applying 0.0 Volts as threshold\n");		
 	}
