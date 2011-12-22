@@ -855,10 +855,6 @@ void template_matching(void)
 		if (is_index_between_indexes(spike_end_handling.filtered_recording_data_prev_idx[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
 		{
 			run_template_matching(filtered_recording_data, mwa, chan, filtered_recording_data_buff_idx, peak_time);
-			if ((spike_end_handling.buff_start_idx +1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
-				spike_end_handling.buff_start_idx = 0;
-			else
-				spike_end_handling.buff_start_idx++;			
 		}
 		else
 		{
@@ -871,17 +867,12 @@ void template_matching(void)
 				spike_end_handling.buff_write_idx = 0;
 			else
 				spike_end_handling.buff_write_idx++;			
-
-			if ((spike_end_handling.buff_start_idx + 1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
-				spike_end_handling.buff_start_idx = 0;
-			else	
-				spike_end_handling.buff_start_idx++;						
- 		}
+		}
 		idx ++;
 		if (idx ==	SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 			idx = 0;		
 	}
-
+	spike_end_handling.buff_start_idx = spike_end_handling_buff_end_idx;
 
 	// Handle spike_end_buffer
 
