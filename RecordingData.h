@@ -16,7 +16,8 @@ typedef RecordingDataChanBuff RecordingDataBuff[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_
 typedef struct __RecordingData
 {
 	RecordingDataBuff	recording_data_buff;
-	int				buff_idx_write[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];      // Do not read data pointed by buff_idx_write. Read up to buff_idx_write by excluding buff_idx_write 
+	int				buff_idx_write[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];      // Do not read data pointed by buff_idx_write. Read up to buff_idx_write by excluding buff_idx_write
+	int				buff_idx_prev[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];     
 } RecordingData;
 
 

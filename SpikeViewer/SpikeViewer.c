@@ -330,7 +330,23 @@ gboolean timeout_callback(gpointer user_data)
 					if (spike_idx < 0)
 						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
 				}
-				gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
+				
+				if ((spike_time_stamp_buff_recording_data_idx - 15) < 0)
+				{
+					if (((*handling_data_chan_buff)[spike_time_stamp_buff_recording_data_idx - 15 + RECORDING_DATA_BUFF_SIZE]) > (-100.0))
+					{
+						printf("template_matching %d %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan);
+						disp_paused = 1;
+					}
+				}
+				else
+				{
+					if (((*handling_data_chan_buff)[spike_time_stamp_buff_recording_data_idx - 15]) > (-100.0))
+					{
+						printf("template_matching %d %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan);
+						disp_paused = 1;
+					}		
+				}								
 			}
 			if (print_spike_end_buff)
 				printf ("%d %d %llu %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_peak_time, spike_time_stamp_buff_recording_data_idx);	
@@ -338,6 +354,7 @@ gboolean timeout_callback(gpointer user_data)
 			if (idx == SPIKE_TIMESTAMP_BUFF_SIZE)
 				idx = 0;	
 		}
+		gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 	}
 	spike_time_stamp_buff_read_idx = spike_time_stamp_buff_end_idx;
 	return TRUE;  
@@ -348,13 +365,13 @@ gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 {
 	if (shared_memory->kernel_task_ctrl.highpass_150Hz_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
 		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 0;	
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz ON");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }								
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }								
 		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 1;	
 		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 0;		
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz OFF");
@@ -367,13 +384,13 @@ gboolean filter_highpass_400Hz_button_func (GtkDatabox * box)
 {
 	if (shared_memory->kernel_task_ctrl.highpass_400Hz_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }										
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
 		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 0;		
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz ON");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }																					
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }																					
 		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 1;		
 		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 0;	
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz OFF");		
@@ -386,7 +403,7 @@ gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box)
 {
 	if (shared_memory->kernel_task_ctrl.lowpass_8KHz_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }										
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
 		shared_memory->kernel_task_ctrl.lowpass_8KHz_on = 0;
 		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz ON");
 	}
@@ -394,7 +411,7 @@ gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box)
 	{
 		if ((shared_memory->kernel_task_ctrl.highpass_150Hz_on) || (shared_memory->kernel_task_ctrl.highpass_400Hz_on))
 		{
-			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }															
+			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }															
 			shared_memory->kernel_task_ctrl.lowpass_8KHz_on = 1;
 			gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz OFF");
 		}
@@ -498,7 +515,7 @@ gboolean threshold_but_func (GtkDatabox * box)
 	float threshold = atof(gtk_entry_get_text(GTK_ENTRY(entryThreshold)));
 	if (threshold <= 0.0)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { printf("in while\n"); }
+		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
 		shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]=threshold;
 		if (threshold == 0.0)
 		{

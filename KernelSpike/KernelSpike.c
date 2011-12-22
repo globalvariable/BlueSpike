@@ -38,9 +38,12 @@ void rt_handler(int t)
 	 
 	current_time_ns = 0;		// global time  long long unsigned int  // TimeStamp	
 	previous_time_ns = 0;
-	spike_end_buff_control_cntr = 0; 
+	spike_end_handling_buff_control_cntr = 0; 
 	spike_timestamp_buff_control_cntr = 0;	
 	daq_cards_on = 0;
+	
+	spike_time_stamp_buff_size = SPIKE_TIMESTAMP_BUFF_SIZE;
+	spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
 	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
 	recording_data = &shared_memory->recording_data;
@@ -148,7 +151,7 @@ void rt_handler(int t)
 			
 		if ((*highpass_150Hz_on) || (*highpass_400Hz_on))
 		{
-			spike_end_buff_control_cntr = 0;
+			spike_end_handling_buff_control_cntr = 0;
 			spike_timestamp_buff_control_cntr = 0;	
 			for (k=0; k<MAX_NUM_OF_MWA; k++)
 			{
@@ -158,7 +161,7 @@ void rt_handler(int t)
 					find_spike_end(filtered_recording_data, k, m);
 				}
 			}
-			template_matching();
+			handle_spike_end_handling_buffer();
 		}
 		else
 		{
@@ -168,10 +171,8 @@ void rt_handler(int t)
 				for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
 				{
 					filtered_recording_data->buff_idx_write[k][m] = recording_data->buff_idx_write[k][m];
-				//	spike_end->search_idx_start[k][m] = filtered_recording_data->buff_idx_write[k][m];             //redundant
 				}
 			} 	
-			// spike_time_stamp->spike_end_buff_read_idx = spike_end->buff_idx_write;	// redundant
 			spike_end_handling.buff_start_idx = spike_end_handling.buff_write_idx;   // clear spike_end_handling_buffer
 		} 
 		
@@ -342,8 +343,8 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *filter
 	highpass_filtered_recording_data_chan_buff = &(highpass_filtered_recording_data.recording_data_buff[mwa][mwa_chan]);	
 	
 	start_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];	
-														
 	end_idx = recording_data->buff_idx_write[mwa][mwa_chan];													
+
 	idx = start_idx;		
 												
 	if ((lowpass_8KHz_on) && (highpass_400Hz_on))	 
@@ -724,6 +725,7 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *filter
 		}
 	}
 	filtered_recording_data->buff_idx_write[mwa][mwa_chan] = end_idx;   
+	filtered_recording_data->buff_idx_prev[mwa][mwa_chan] = start_idx;   	
 }
 
 void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_chan)
@@ -734,15 +736,19 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 	float amplitude_thres, min;
 	bool *in_spike;
 	int *in_spike_sample_cntr;
+	SpikeEndHandlingBuff 	*spike_end_handling_buff;	
+	TimeStamp peak_time;			
+
 	amplitude_thres = shared_memory->spike_thresholding.amplitude_thres[mwa][mwa_chan];
 	if (amplitude_thres == 0.0)
 	{
-		spike_end.filtered_recording_data_start_idx_to_read[mwa][mwa_chan] = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
 		return;
 	}
 	
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][mwa_chan]);
-	start_idx = spike_end.filtered_recording_data_start_idx_to_read[mwa][mwa_chan];
+	spike_end_handling_buff = &(spike_end_handling.spike_end_handling_buff);
+	
+	start_idx = filtered_recording_data->buff_idx_prev[mwa][mwa_chan];
 	end_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
 	in_spike = &(shared_memory->spike_thresholding.in_spike[mwa][mwa_chan]);
 	in_spike_sample_cntr = &(shared_memory->spike_thresholding.in_spike_sample_cntr[mwa][mwa_chan]);
@@ -762,7 +768,7 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 			*in_spike_sample_cntr = 0;
 			min = (*filtered_recording_data_chan_buff)[idx];
 			min_idx = idx;
-			for (i=0; i<20; i++)
+			for (i=0; i<15; i++)	// do not change this value for 40 KHz sampling rate when SPIKE_MIN_END_SAMP_NUM = 15. Otherwise spike_end_handling_buff will fail. the spike end idx might be smaller than filtered_recording_data->buff_idx_prev[mwa][mwa_chan]
 			{
 				if (idx < i)   // if (idx - i <0) 
 				{
@@ -789,19 +795,25 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM - RECORDING_DATA_BUFF_SIZE;
 			else		
 				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM;
-				
 			
-	
-			//   Write spike end into shared_memory->spike_end
-			spike_end.spike_end_buff[spike_end.buff_idx_write].end_of_spike_in_filtered_recording_data_buff = spike_end_idx;
-			spike_end.spike_end_buff[spike_end.buff_idx_write].mwa = mwa;
-			spike_end.spike_end_buff[spike_end.buff_idx_write].chan = mwa_chan;
-			spike_end.spike_end_buff[spike_end.buff_idx_write].peak_time = previous_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds
-			if ((spike_end.buff_idx_write + 1) == SPIKE_END_DATA_BUFF_SIZE)
-				spike_end.buff_idx_write = 0;
-			else
-				(spike_end.buff_idx_write)++;
-			spike_end_buff_control_cntr++;		// to check if the buffer gets full in one rt task period
+			peak_time = previous_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds;
+				
+			if (is_index_between_indexes(filtered_recording_data->buff_idx_prev[mwa][mwa_chan], filtered_recording_data->buff_idx_write[mwa][mwa_chan], spike_end_idx))
+			{
+				run_template_matching(filtered_recording_data, mwa, mwa_chan, spike_end_idx, peak_time);  // SAMPLING_INTERVAL = 25000 nanoseconds;
+			}			
+			else 	//   Write spike end into shared_memory->spike_end_handing
+			{
+				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].mwa = mwa;		// push to the end off buffer to be handled later on
+				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = mwa_chan;
+				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = spike_end_idx;
+				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
+				if ((spike_end_handling.buff_write_idx + 1) == spike_end_handling_buff_size)
+					spike_end_handling.buff_write_idx = 0;
+				else
+					spike_end_handling.buff_write_idx++;		
+				spike_end_handling_buff_control_cntr++;	
+			}
 		}
 		else if (*in_spike)
 		{
@@ -816,106 +828,52 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 		if (idx ==	RECORDING_DATA_BUFF_SIZE)
 			idx = 0;
 	}											
-	spike_end.filtered_recording_data_start_idx_to_read[mwa][mwa_chan] = filtered_recording_data->buff_idx_write[mwa][mwa_chan];	
 }
-
-
-void template_matching(void)
+void handle_spike_end_handling_buffer(void)
 {
 	RecordingData		*filtered_recording_data;
-	
-	SpikeEndHandlingBuff 	*spike_end_handling_buff;	
-	SpikeEndBuff			*spike_end_buff;	
+	SpikeEndHandlingBuff 	*spike_end_handling_buff;			
 
-	int i, j;	
-	int idx;
-	int spike_end_handling_buff_start_idx, spike_end_handling_buff_end_idx;
-	int spike_end_buff_start_idx, spike_end_buff_end_idx;
-
-	int mwa, chan, filtered_recording_data_buff_idx;
+	int mwa, chan, filtered_recording_data_buff_idx;	
 	TimeStamp	peak_time;
 	
-	filtered_recording_data = &shared_memory->filtered_recording_data;
+	int idx, start_idx, end_idx;	
+	
+	filtered_recording_data = &shared_memory->filtered_recording_data;	
 	spike_end_handling_buff = &(spike_end_handling.spike_end_handling_buff);
 
-	// Handle spike_end_handling_buffer
+	start_idx = spike_end_handling.buff_start_idx;
+	end_idx = spike_end_handling.buff_write_idx;
 	
- 	spike_end_handling_buff_start_idx = spike_end_handling.buff_start_idx;
-	spike_end_handling_buff_end_idx = spike_end_handling.buff_write_idx;
-
-	idx = spike_end_handling_buff_start_idx;
-
-	while (idx != spike_end_handling_buff_end_idx)
-	{
+	idx = start_idx;
+	while (idx != end_idx)
+	{	
 		mwa = (*spike_end_handling_buff)[idx].mwa;
 		chan = (*spike_end_handling_buff)[idx].chan;
 		filtered_recording_data_buff_idx = (*spike_end_handling_buff)[idx].end_of_spike_in_filtered_recording_data_buff;
-		peak_time = (*spike_end_handling_buff)[idx].peak_time;		
-
-		if (is_index_between_indexes(spike_end_handling.filtered_recording_data_prev_idx[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
-		{
-			run_template_matching(filtered_recording_data, mwa, chan, filtered_recording_data_buff_idx, peak_time);
-		}
-		else
-		{
-			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].mwa = mwa;		// push to the end off buffer to be handled later on
-			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = chan;
-			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
-			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
-
-			if ((spike_end_handling.buff_write_idx +1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
-				spike_end_handling.buff_write_idx = 0;
-			else
-				spike_end_handling.buff_write_idx++;			
-		}
-		idx ++;
-		if (idx ==	SPIKE_END_HANDLING_DATA_BUFF_SIZE)
-			idx = 0;		
-	}
-	spike_end_handling.buff_start_idx = spike_end_handling_buff_end_idx;
-
-	// Handle spike_end_buffer
-
-	spike_end_buff = &(spike_end.spike_end_buff);
-	
-	spike_end_buff_start_idx = spike_end_handling.spike_end_buff_prev_idx;
-	spike_end_buff_end_idx = spike_end.buff_idx_write;
-
-	idx = spike_end_buff_start_idx;
-	while (idx != spike_end_buff_end_idx)
-	{	
-		mwa = (*spike_end_buff)[idx].mwa;
-		chan = (*spike_end_buff)[idx].chan;
-		filtered_recording_data_buff_idx = (*spike_end_buff)[idx].end_of_spike_in_filtered_recording_data_buff;
-		peak_time = (*spike_end_buff)[idx].peak_time;
+		peak_time = (*spike_end_handling_buff)[idx].peak_time;
 		
-		if (is_index_between_indexes(spike_end_handling.filtered_recording_data_prev_idx[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
+		if (is_index_between_indexes(filtered_recording_data->buff_idx_prev[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
 		{
 			run_template_matching(filtered_recording_data, mwa, chan, filtered_recording_data_buff_idx, peak_time);
-		}
+		}	
 		else
 		{
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].mwa = mwa;		// push to the end off buffer to be handled later on
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = chan;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
-			if ((spike_end_handling.buff_write_idx + 1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
+			if ((spike_end_handling.buff_write_idx + 1) == spike_end_handling_buff_size)
 				spike_end_handling.buff_write_idx = 0;
 			else
 				spike_end_handling.buff_write_idx++;
+			spike_end_handling_buff_control_cntr++;
 		}
 		idx ++;
-		if (idx ==	SPIKE_END_DATA_BUFF_SIZE)
+		if (idx ==	spike_end_handling_buff_size)
 			idx = 0;
 	}
-	for (i=0; i<MAX_NUM_OF_MWA; i++)
-	{
-		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
-		{
-			spike_end_handling.filtered_recording_data_prev_idx[i][j] =  filtered_recording_data->buff_idx_write[i][j];
-		}
-	}	
-	spike_end_handling.spike_end_buff_prev_idx = spike_end.buff_idx_write;   // set read index even though spike sorting is off. otherwise template mathing might work through all spike ends saved before enabling spike sorting. 
+	spike_end_handling.buff_start_idx = end_idx;  
 }
 
 
@@ -994,7 +952,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].unit = greatest_idx;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
 	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
-	if ((spike_time_stamp->buff_idx_write +1) ==  SPIKE_TIMESTAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+	if ((spike_time_stamp->buff_idx_write +1) ==  spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		spike_time_stamp->buff_idx_write = 0;
 	else
 		spike_time_stamp->buff_idx_write++;	
@@ -1010,51 +968,51 @@ void print_warning_and_errors(void)
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;
 	}
-	if ((SPIKE_END_DATA_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
+	if ((spike_end_handling_buff_size - spike_end_handling_buff_control_cntr) < 100)
 	{
 		printk("KernelSpike: ------------------------------------------------------\n");
 		printk("KernelSpike: ------------   WARNING  !!!  -----------------\n");
 		printk("KernelSpike: ---- Spike End Buffer is getting full ----\n");
 		printk("KernelSpike: ---- Spike End Buffer is getting full ----\n");				
-		printk("KernelSpike: --Latest # of detected spikes is %d---\n", spike_end_buff_control_cntr);	
-		printk("KernelSpike: -------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
+		printk("KernelSpike: --Latest # of detected spikes is %d---\n", spike_end_handling_buff_control_cntr);	
+		printk("KernelSpike: -------Spike End buffer size  is %d------\n", spike_end_handling_buff_size);
 		printk("KernelSpike: ------------------------------------------------------\n");					
 	}  
-	else if (SPIKE_END_DATA_BUFF_SIZE <= spike_end_buff_control_cntr)
+	else if (spike_end_handling_buff_size <= spike_end_handling_buff_control_cntr)
 	{
 		printk("KernelSpike: ------------------------------------------------------\n");
 		printk("KernelSpike: ----------------   ERROR !!!  -----------------\n");
 		printk("KernelSpike: ---- Spike End Buffer is full ---------------\n");
 		printk("KernelSpike: ---- Spike End Buffer is full ---------------\n");				
-		printk("KernelSpike: --Latest # of detected spikes is %d ---\n", spike_end_buff_control_cntr);	
-		printk("KernelSpike: -------Spike End buffer size  is %d------\n", SPIKE_END_DATA_BUFF_SIZE);
+		printk("KernelSpike: --Latest # of detected spikes is %d ---\n", spike_end_handling_buff_control_cntr);	
+		printk("KernelSpike: -------Spike End buffer size  is %d------\n", spike_end_handling_buff_size);
 		printk("KernelSpike: ------------------------------------------------------\n");
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}  
-	if ((SPIKE_TIMESTAMP_BUFF_SIZE - spike_end_buff_control_cntr) < 100)
+	if ((spike_time_stamp_buff_size - spike_timestamp_buff_control_cntr) < 100)
 	{
 		printk("KernelSpike: --------------------------------------------------------\n");
 		printk("KernelSpike: ------------   WARNING  !!!  -------------------\n");
 		printk("KernelSpike: ---- Spike Timestamp Buffer is getting full ------\n");
 		printk("KernelSpike: ---- Spike Timestamp Buffer is getting full ------\n");				
 		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
-		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", spike_time_stamp_buff_size);
 		printk("KernelSpike: --------------------------------------------------------\n");					
 	}  
-	else if (SPIKE_TIMESTAMP_BUFF_SIZE <= spike_timestamp_buff_control_cntr)
+	else if (spike_time_stamp_buff_size <= spike_timestamp_buff_control_cntr)
 	{
 		printk("KernelSpike: ---------------------------------------------------------\n");
 		printk("KernelSpike: ----------------   ERROR  !!!  --------------------\n");
 		printk("KernelSpike: ---- Spike Timestamp Buffer is full -------\n");
 		printk("KernelSpike: ---- Spike Timestamp Buffer is full -------\n");				
 		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
-		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", SPIKE_TIMESTAMP_BUFF_SIZE);
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", spike_time_stamp_buff_size);
 		printk("KernelSpike: --------------------------------------------------------\n");
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}	
-	spike_end_buff_control_cntr = 0;
+	spike_end_handling_buff_control_cntr = 0;
 	spike_timestamp_buff_control_cntr = 0;
 }
 	
