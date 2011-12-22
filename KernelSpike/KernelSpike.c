@@ -768,7 +768,7 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 			*in_spike_sample_cntr = 0;
 			min = (*filtered_recording_data_chan_buff)[idx];
 			min_idx = idx;
-			for (i=0; i<15; i++)	// do not change this value for 40 KHz sampling rate when SPIKE_MIN_END_SAMP_NUM = 15. Otherwise spike_end_handling_buff will fail. the spike end idx might be smaller than filtered_recording_data->buff_idx_prev[mwa][mwa_chan]
+			for (i=0; i<SPIKE_MIN_END_SAMP_NUM; i++)	// cannot be larger than SPIKE_MIN_END_SAMP_NUM.. Otherwise handle_spike_end_handling_buffer will fail. since spike end idx might be smaller than filtered_recording_data->buff_idx_prev[mwa][mwa_chan]
 			{
 				if (idx < i)   // if (idx - i <0) 
 				{
