@@ -330,23 +330,6 @@ gboolean timeout_callback(gpointer user_data)
 					if (spike_idx < 0)
 						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
 				}
-				
-				if ((spike_time_stamp_buff_recording_data_idx - 15) < 0)
-				{
-					if (((*handling_data_chan_buff)[spike_time_stamp_buff_recording_data_idx - 15 + RECORDING_DATA_BUFF_SIZE]) > (-100.0))
-					{
-						printf("template_matching %d %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan);
-						disp_paused = 1;
-					}
-				}
-				else
-				{
-					if (((*handling_data_chan_buff)[spike_time_stamp_buff_recording_data_idx - 15]) > (-100.0))
-					{
-						printf("template_matching %d %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan);
-						disp_paused = 1;
-					}		
-				}								
 			}
 			if (print_spike_end_buff)
 				printf ("%d %d %llu %d\n", spike_time_stamp_buff_mwa, spike_time_stamp_buff_chan, spike_time_stamp_buff_peak_time, spike_time_stamp_buff_recording_data_idx);	
