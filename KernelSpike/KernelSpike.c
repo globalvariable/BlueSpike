@@ -38,11 +38,10 @@ void rt_handler(int t)
 	 
 	current_time_ns = 0;		// global time  long long unsigned int  // TimeStamp	
 	previous_time_ns = 0;
-	spike_end_handling_buff_control_cntr = 0; 
-	spike_timestamp_buff_control_cntr = 0;	
+
 	daq_cards_on = 0;
 	
-	spike_time_stamp_buff_size = SPIKE_TIMESTAMP_BUFF_SIZE;
+	blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 	spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
 	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
@@ -152,7 +151,7 @@ void rt_handler(int t)
 		if ((*highpass_150Hz_on) || (*highpass_400Hz_on))
 		{
 			spike_end_handling_buff_control_cntr = 0;
-			spike_timestamp_buff_control_cntr = 0;	
+			blue_spike_time_stamp_buff_control_cntr = 0;	
 			for (k=0; k<MAX_NUM_OF_MWA; k++)
 			{
 				for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
@@ -883,7 +882,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	TemplateMatchingData	*template_matching_data;
 	TemplateMatchingUnitData *unit_template_data;	
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
-	SpikeTimeStamp 		*spike_time_stamp;
+	BlueSpikeTimeStamp 	*blue_spike_time_stamp;
 
 		
 	double g_x[MAX_NUM_OF_UNIT_PER_CHAN];
@@ -893,10 +892,11 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	double probabl[MAX_NUM_OF_UNIT_PER_CHAN];
 	double greatest;	
 	int i, j, unit, greatest_idx;
-
+	int blue_spike_time_stamp_buff_idx_write;
+	
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][chan]);
 	template_matching_data = &shared_memory->template_matching_data;
-	spike_time_stamp = &shared_memory->spike_time_stamp;
+	blue_spike_time_stamp = &shared_memory->blue_spike_time_stamp;
 
 	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
@@ -946,17 +946,18 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	
 
 	//   Write spike time stamp into shared_memory->spike_time_stamp
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].peak_time = peak_time;
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].mwa = mwa;
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].channel = chan;
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].unit = greatest_idx;
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
-	spike_time_stamp->spike_timestamp_buff[spike_time_stamp->buff_idx_write].include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
-	if ((spike_time_stamp->buff_idx_write +1) ==  spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
-		spike_time_stamp->buff_idx_write = 0;
+	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].peak_time = peak_time;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].mwa = mwa;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].channel = chan;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].unit = greatest_idx;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
+	if ((blue_spike_time_stamp_buff_idx_write +1) ==  blue_spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+		blue_spike_time_stamp->buff_idx_write = 0;
 	else
-		spike_time_stamp->buff_idx_write++;	
-	spike_timestamp_buff_control_cntr++;		// to check if the buffer gets full in one rt task period
+		blue_spike_time_stamp->buff_idx_write++;	
+	blue_spike_time_stamp_buff_control_cntr++;		// to check if the buffer gets full in one rt task period
 }
 
 void print_warning_and_errors(void)
@@ -990,30 +991,30 @@ void print_warning_and_errors(void)
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}  
-	if ((spike_time_stamp_buff_size - spike_timestamp_buff_control_cntr) < 100)
+	if ((blue_spike_time_stamp_buff_size - blue_spike_time_stamp_buff_control_cntr) < 100)
 	{
 		printk("KernelSpike: --------------------------------------------------------\n");
 		printk("KernelSpike: ------------   WARNING  !!!  -------------------\n");
-		printk("KernelSpike: ---- Spike Timestamp Buffer is getting full ------\n");
-		printk("KernelSpike: ---- Spike Timestamp Buffer is getting full ------\n");				
-		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
-		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", spike_time_stamp_buff_size);
+		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is getting full ------\n");
+		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is getting full ------\n");				
+		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", blue_spike_time_stamp_buff_control_cntr);	
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", blue_spike_time_stamp_buff_size);
 		printk("KernelSpike: --------------------------------------------------------\n");					
 	}  
-	else if (spike_time_stamp_buff_size <= spike_timestamp_buff_control_cntr)
+	else if (blue_spike_time_stamp_buff_size <= blue_spike_time_stamp_buff_control_cntr)
 	{
 		printk("KernelSpike: ---------------------------------------------------------\n");
 		printk("KernelSpike: ----------------   ERROR  !!!  --------------------\n");
-		printk("KernelSpike: ---- Spike Timestamp Buffer is full -------\n");
-		printk("KernelSpike: ---- Spike Timestamp Buffer is full -------\n");				
-		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", spike_timestamp_buff_control_cntr);	
-		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", spike_time_stamp_buff_size);
+		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is full -------\n");
+		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is full -------\n");				
+		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", blue_spike_time_stamp_buff_control_cntr);	
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", blue_spike_time_stamp_buff_size);
 		printk("KernelSpike: --------------------------------------------------------\n");
 		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}	
 	spike_end_handling_buff_control_cntr = 0;
-	spike_timestamp_buff_control_cntr = 0;
+	blue_spike_time_stamp_buff_control_cntr = 0;
 }
 	
 	

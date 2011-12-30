@@ -29,13 +29,13 @@ TimeStamp current_time_ns;
 TimeStamp previous_time_ns;
 
 int spike_end_handling_buff_control_cntr;     // to check if the buffer gets full in one rt task period
-int spike_timestamp_buff_control_cntr;    // to check if the buffer gets full in one rt task period
+int blue_spike_time_stamp_buff_control_cntr;    // to check if the buffer gets full in one rt task period
 
 int rt_task_stay_alive;
 
 int daq_cards_on;
 
-int spike_time_stamp_buff_size;
+int blue_spike_time_stamp_buff_size;
 int spike_end_handling_buff_size;
 
 comedi_t* ni6070_comedi_dev[MAX_NUM_OF_DAQ_CARD];

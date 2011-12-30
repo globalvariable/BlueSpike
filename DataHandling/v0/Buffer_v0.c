@@ -14,7 +14,7 @@ TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording_v0 (int
 			recording_data_buff_start_idx[i][j] = recording_data->buff_idx_write[i][j];
 		}
 	}		
-	spike_timestamp_buff_start_idx = spike_time_stamp->buff_idx_write;
+	blue_spike_time_stamp_buff_start_idx = blue_spike_time_stamp->buff_idx_write;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_start_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
@@ -41,7 +41,7 @@ TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording_v0 (int
 			recording_data_buff_prev_idx[i][j] = recording_data_buff_start_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_prev_idx = spike_timestamp_buff_start_idx;
+	blue_spike_time_stamp_buff_prev_idx = blue_spike_time_stamp_buff_start_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_start_idx[i];
@@ -66,7 +66,7 @@ TimeStamp initialize_buffer_reading_start_indexes_and_time_for_recording_v0 (int
 			recording_data_buff_end_idx[i][j] = recording_data_buff_start_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_end_idx = spike_timestamp_buff_start_idx;
+	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp_buff_start_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_end_idx[i] = exp_envi_event_buff_start_idx[i];
@@ -97,7 +97,7 @@ void get_buffer_reading_range_indexes_for_recording_v0 (int num, ...)
 			recording_data_buff_prev_idx[i][j] = recording_data_buff_end_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_prev_idx = spike_timestamp_buff_end_idx;
+	blue_spike_time_stamp_buff_prev_idx = blue_spike_time_stamp_buff_end_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_end_idx[i];
@@ -124,7 +124,7 @@ void get_buffer_reading_range_indexes_for_recording_v0 (int num, ...)
 			recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
 		}
 	}		
-	spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp->buff_idx_write;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];
@@ -157,7 +157,7 @@ TimeStamp get_buffer_reading_end_indexes_and_time_for_recording_v0 (int num, ...
 			recording_data_buff_prev_idx[i][j] = recording_data_buff_end_idx[i][j];
 		}
 	}		
-	spike_timestamp_buff_prev_idx = spike_timestamp_buff_end_idx;
+	blue_spike_time_stamp_buff_prev_idx = blue_spike_time_stamp_buff_end_idx;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_prev_idx[i] = exp_envi_event_buff_end_idx[i];
@@ -184,7 +184,7 @@ TimeStamp get_buffer_reading_end_indexes_and_time_for_recording_v0 (int num, ...
 			recording_data_buff_end_idx[i][j] = recording_data->buff_idx_write[i][j];
 		}
 	}		
-	spike_timestamp_buff_end_idx = spike_time_stamp->buff_idx_write;
+	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp->buff_idx_write;
 	for (i=0; i <MAX_NUM_OF_EXP_ENVI_ITEMS; i++)
 	{
 		exp_envi_event_buff_end_idx[i] = exp_envi_event_time_stamp->buff_idx_write[i];

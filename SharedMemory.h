@@ -5,7 +5,7 @@
 #include "DaqMwaMap.h"
 #include "RecordingData.h"
 #include "SpikeThresholding.h"
-#include "SpikeTimeStamp.h"
+#include "BlueSpikeTimeStamp.h"
 #include "ExpEnviEventTimeStamp.h"
 #include "MovingObjEventTimeStamp.h"
 #include "TemplateMatchingData.h"
@@ -27,7 +27,7 @@ typedef struct __SharedMemStruct
 	RecordingData				recording_data;
 	RecordingData				filtered_recording_data;
 	SpikeThresholding			spike_thresholding;
-	SpikeTimeStamp 			spike_time_stamp;
+	BlueSpikeTimeStamp 		blue_spike_time_stamp;
 	ExpEnviEventTimeStamp		exp_envi_event_time_stamp;
 	ExpEnviCommandTimeStamp 	exp_envi_command_time_stamp;		
 	MovingObjEventTimeStamp	mov_obj_event_time_stamp;

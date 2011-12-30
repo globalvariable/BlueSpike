@@ -58,7 +58,7 @@ GtkWidget *btn_print_spike_end_buff;
 GtkWidget *btn_select_spike_thresholds_file_to_load;
 GtkWidget *btn_load_spike_thresholds_file; 
 
-int spike_time_stamp_buff_read_idx;
+int blue_spike_time_stamp_buff_read_idx;
 
 GtkWidget *entryThreshold;
 
