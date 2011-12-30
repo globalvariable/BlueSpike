@@ -6,6 +6,7 @@
 #include "RecordingData.h"
 #include "SpikeThresholding.h"
 #include "BlueSpikeTimeStamp.h"
+#include "SpikeTimeStamp.h"
 #include "ExpEnviEventTimeStamp.h"
 #include "MovingObjEventTimeStamp.h"
 #include "TemplateMatchingData.h"
@@ -28,6 +29,7 @@ typedef struct __SharedMemStruct
 	RecordingData				filtered_recording_data;
 	SpikeThresholding			spike_thresholding;
 	BlueSpikeTimeStamp 		blue_spike_time_stamp;
+	SpikeTimeStamp 			spike_time_stamp;	
 	ExpEnviEventTimeStamp		exp_envi_event_time_stamp;
 	ExpEnviCommandTimeStamp 	exp_envi_command_time_stamp;		
 	MovingObjEventTimeStamp	mov_obj_event_time_stamp;

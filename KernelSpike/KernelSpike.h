@@ -35,9 +35,6 @@ int rt_task_stay_alive;
 
 int daq_cards_on;
 
-int blue_spike_time_stamp_buff_size;
-int spike_end_handling_buff_size;
-
 comedi_t* ni6070_comedi_dev[MAX_NUM_OF_DAQ_CARD];
 comedi_cmd ni6070_comedi_cmd[MAX_NUM_OF_DAQ_CARD];
 unsigned ni6070_comedi_chanlist[MAX_NUM_OF_DAQ_CARD][MAX_NUM_OF_CHANNEL_PER_DAQ_CARD];

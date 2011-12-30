@@ -15,6 +15,9 @@
  ***************************************************************************/
 #include "KernelSpike.h"
 
+static int spike_time_stamp_buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
+static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
+static int spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
 
 void rt_handler(int t)
 {
@@ -41,8 +44,7 @@ void rt_handler(int t)
 
 	daq_cards_on = 0;
 	
-	blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
-	spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
+
 	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
 	recording_data = &shared_memory->recording_data;
@@ -883,7 +885,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	TemplateMatchingUnitData *unit_template_data;	
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
 	BlueSpikeTimeStamp 	*blue_spike_time_stamp;
-
+	SpikeTimeStamp 		*spike_time_stamp;
 		
 	double g_x[MAX_NUM_OF_UNIT_PER_CHAN];
 	double diff[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
@@ -893,10 +895,13 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	double greatest;	
 	int i, j, unit, greatest_idx;
 	int blue_spike_time_stamp_buff_idx_write;
+	int include_unit;
+	int spike_time_stamp_buff_idx_write;
 	
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][chan]);
 	template_matching_data = &shared_memory->template_matching_data;
 	blue_spike_time_stamp = &shared_memory->blue_spike_time_stamp;
+	spike_time_stamp = &shared_memory->spike_time_stamp;
 
 	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
@@ -947,17 +952,31 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 
 	//   Write spike time stamp into shared_memory->spike_time_stamp
 	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
+	include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
 	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].peak_time = peak_time;
 	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].mwa = mwa;
 	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].channel = chan;
 	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].unit = greatest_idx;
 	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
+	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].include_unit = include_unit;
 	if ((blue_spike_time_stamp_buff_idx_write +1) ==  blue_spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		blue_spike_time_stamp->buff_idx_write = 0;
 	else
 		blue_spike_time_stamp->buff_idx_write++;	
 	blue_spike_time_stamp_buff_control_cntr++;		// to check if the buffer gets full in one rt task period
+	
+	if (include_unit)	// fill in spike time stamp buff
+	{
+		spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].peak_time = peak_time;
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].mwa = mwa;
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].channel = chan;
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].unit = greatest_idx;	
+		if ((spike_time_stamp_buff_idx_write +1) ==  spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+			spike_time_stamp->buff_idx_write = 0;
+		else
+			spike_time_stamp->buff_idx_write++;			
+	}
 }
 
 void print_warning_and_errors(void)

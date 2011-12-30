@@ -129,6 +129,8 @@ int create_data_files(TimeStamp rec_start)
 		return 0;
 	if (!create_blue_spike_time_stamp_data())
 		return 0;
+	if (!create_spike_time_stamp_data())
+		return 0;		
 	if (!create_exp_envi_event_data())
 		return 0;		
 	if (!create_exp_envi_command_data())
@@ -228,6 +230,18 @@ int create_blue_spike_time_stamp_data(void)
 	if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
 	file_ptr_arr[BLUE_SPIKE_TIME_STAMP_DATA_FILE_IDX] =  fp;		
 	fprintf(fp,"----------BlueSpike - Blue Spike Time Stamps File----------\n");						
+	return 1;
+}
+int create_spike_time_stamp_data(void)
+{
+	char temp[600];
+	FILE *fp;
+	
+	strcpy(temp, data_directory_path);	
+	strcat(temp, "/SpikeTimeStamp");
+	if ((fp = fopen(temp, "w")) == NULL)  { printf ("ERROR: Recorder: Couldn't create file: %s\n\n", temp); return 0; }
+	file_ptr_arr[SPIKE_TIME_STAMP_DATA_FILE_IDX] =  fp;		
+	fprintf(fp,"----------BlueSpike - Spike Time Stamps File----------\n");						
 	return 1;
 }
 int create_exp_envi_event_data(void)
@@ -363,6 +377,7 @@ int write_data_in_buffer_v0(int num, ...)
 	
 	write_recording_data(finalize);
 	write_blue_spike_time_stamp_data(finalize);
+	write_spike_time_stamp_data(finalize);	
 	write_exp_envi_event_data(finalize);
 	write_exp_envi_command_data(finalize);
 	write_mov_obj_event_data(finalize);
@@ -438,7 +453,30 @@ int write_blue_spike_time_stamp_data(bool finalize)
 	}
 	return 1;
 }
+int write_spike_time_stamp_data(bool finalize)
+{
+	int idx, end_idx;
+	int file_ptr_start_idx = SPIKE_TIME_STAMP_DATA_FILE_IDX;
+	int buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
 
+	idx = spike_time_stamp_buff_prev_idx;
+	end_idx = spike_time_stamp_buff_end_idx;
+	while (idx != end_idx)
+	{
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%llu\t", spike_time_stamp->spike_time_stamp_buff[idx].peak_time);
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].mwa);	
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].channel);
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].unit);
+		idx++;	
+		if (idx ==	buff_size)
+			idx = 0;	
+	}
+	if (finalize)
+	{
+		fprintf(file_ptr_arr[file_ptr_start_idx],"----------BlueSpike - End of Spike TimeStamps File----------\n");						
+	}
+	return 1;
+}
 int write_exp_envi_event_data(bool finalize)
 {
 	int idx, end_idx;
@@ -652,6 +690,7 @@ int create_main_meta_file(void)
 	fprintf(fp,"MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT\t%d\n",MAX_NUM_OF_COMPONENT_PER_MOVING_OBJECT); 		
 	fprintf(fp,"RECORDING_DATA_BUFF_SIZE\t%d\n",RECORDING_DATA_BUFF_SIZE);
 	fprintf(fp,"BLUE_SPIKE_TIME_STAMP_BUFF_SIZE\t%d\n",BLUE_SPIKE_TIME_STAMP_BUFF_SIZE);
+	fprintf(fp,"SPIKE_TIME_STAMP_BUFF_SIZE\t%d\n", SPIKE_TIME_STAMP_BUFF_SIZE);	
 	fprintf(fp,"EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE\t%d\n",EXP_ENVI_EVENT_TIMESTAMP_BUFF_SIZE);
 	fprintf(fp,"EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE\t%d\n",EXP_ENVI_COMMAND_TIMESTAMP_BUFF_SIZE);
 	fprintf(fp,"MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE\t%d\n",MOVING_OBJ_EVENT_TIMESTAMP_BUFF_SIZE);		
