@@ -11,6 +11,7 @@
 
 #include "Buffer_v0.h"
 #include "./../../Misc/Misc.h"
+#include "./../../Interrogate/Interrogate.h"
 
 //Index table of FILE **file_ptr_arr
 #define RECORDING_DATA_FILE_IDX     				0																		
