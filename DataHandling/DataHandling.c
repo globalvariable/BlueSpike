@@ -58,6 +58,7 @@ int get_format_version(int *version, char *blue_spike_data_path)
 		if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;}   
 		if (!(get_word_in_line('\t', 1, word, line, TRUE)))
 			return 0;
+		fclose(fp);   	
 		*version = atof(word);
 		return 1;
 	}
