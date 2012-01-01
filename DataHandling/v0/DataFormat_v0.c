@@ -466,7 +466,7 @@ int write_spike_time_stamp_data(bool finalize)
 		fprintf(file_ptr_arr[file_ptr_start_idx],"%llu\t", spike_time_stamp->spike_time_stamp_buff[idx].peak_time);
 		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].mwa);	
 		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].channel);
-		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].unit);
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\n", spike_time_stamp->spike_time_stamp_buff[idx].unit);
 		idx++;	
 		if (idx ==	buff_size)
 			idx = 0;	

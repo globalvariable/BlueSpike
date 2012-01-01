@@ -969,9 +969,9 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	{
 		spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
 		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].peak_time = peak_time;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].mwa = mwa;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].channel = chan;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].unit = greatest_idx;	
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].mwa_or_layer = mwa;
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].channel_or_neuron_group = chan;
+		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].unit_or_neuron = greatest_idx;	
 		if ((spike_time_stamp_buff_idx_write +1) ==  spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 			spike_time_stamp->buff_idx_write = 0;
 		else
