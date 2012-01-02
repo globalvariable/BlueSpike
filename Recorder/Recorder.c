@@ -334,7 +334,7 @@ void fill_notes_text_view(void)
         		gtk_text_buffer_get_end_iter ( buffer, &end);   				
 			gtk_text_buffer_insert(buffer, &end, line, -1);
 			i++;
-			if (i == 100)
+			if (i == 200)
 			{
        				printf ("ERROR: Recorder: ./initial_note is longer than 200 lines.\n");
        				printf ("ERROR: Recorder: Only initial 200 lines were read.\n\n");      
