@@ -11,7 +11,7 @@ static int num_of_all_patterns = 0;
 static TimeStamp pattern_length_ns = 0;	
 static TimeStamp bin_size_ns = 0;		
 
-static FiringRateTrain ***firing_rate_statistics = NULL;	// num_of_mwas_or_layers * num_of_channels_or_nrn_groups * num_of_units_or_neurons
+static NeuronFiringRate ***firing_rate_statistics = NULL;	// num_of_mwas_or_layers * num_of_channels_or_nrn_groups * num_of_units_or_neurons
 
 static double ****sum_of_spikes_in_bin = NULL; 	// num_of_mwas_or_layers * num_of_channels_or_nrn_groups * num_of_units_or_neurons * num_of_all_bins
 static double *****sum_of_spikes_in_bin_in_pattern = NULL; 	// num_of_mwas_or_layers * num_of_channels_or_nrn_groups * num_of_units_or_neurons * num_of_all_bins * num_of_patterns;
@@ -94,7 +94,7 @@ int firing_rate_allocate_bins(TimeStamp pattern_length, TimeStamp bin_size)
 		printf ("FiringRate: BUG: Firing Rate Statistics was not free' d before.\n");
 		return -1;	
 	}
-	firing_rate_statistics = g_new0(FiringRateTrain **, num_of_all_mwas);
+	firing_rate_statistics = g_new0(NeuronFiringRate **, num_of_all_mwas);
 	if (firing_rate_statistics == NULL)
 	{
 		printf ("FiringRate: ERROR: Couldn' t allocate firing_rate_statistics.\n");
@@ -146,7 +146,7 @@ int firing_rate_allocate_bins(TimeStamp pattern_length, TimeStamp bin_size)
 	}				
 	for (i = 0; i < num_of_all_mwas; i++)
 	{
-		firing_rate_statistics[i] = g_new0(FiringRateTrain*, num_of_channels_in_mwa[i]);
+		firing_rate_statistics[i] = g_new0(NeuronFiringRate*, num_of_channels_in_mwa[i]);
 		if (firing_rate_statistics[i] == NULL)
 		{
 			printf ("FiringRate: ERROR: Couldn' t allocate firing_rate_statistics[%d].\n", i);
@@ -178,7 +178,7 @@ int firing_rate_allocate_bins(TimeStamp pattern_length, TimeStamp bin_size)
 		}								
 		for (j = 0; j < num_of_channels_in_mwa[i]; j++)
 		{	
-			firing_rate_statistics[i][j] = g_new0(FiringRateTrain, num_of_units_in_channel[i][j]);
+			firing_rate_statistics[i][j] = g_new0(NeuronFiringRate, num_of_units_in_channel[i][j]);
 			if (firing_rate_statistics[i][j] == NULL)
 			{
 				printf ("FiringRate: ERROR: Couldn' t allocate firing_rate_statistics[%d][%d].\n", i, j);
@@ -506,4 +506,11 @@ static bool calculate_firing_rate_variances(void)
 		}
 	}	
 	return TRUE;
+}
+
+
+
+NeuronFiringRate* get_neuron_firing_rate_statistics(int mwa, int channel, int unit)
+{
+	return &(firing_rate_statistics[mwa][channel][unit]);
 }

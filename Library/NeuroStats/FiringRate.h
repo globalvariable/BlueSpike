@@ -14,13 +14,13 @@ typedef struct __FiringRateBinItem
 	double 		variance;		
 } FiringRateBinItem;
 
-typedef struct __FiringRateTrain
+typedef struct __NeuronFiringRate
 {
 	FiringRateBinItem 	*train_bins;
 	double			*num_of_spikes_in_pattern;
 	double			mean_num_of_spikes_per_neuron;	
 	double			variance_of_num_of_spikes_per_neuron;		
-} FiringRateTrain;
+} NeuronFiringRate;
 
 
 /// Functions
@@ -34,7 +34,7 @@ void firing_rate_deallocate_all(void);
 bool firing_rate_add_spike_to_statistics(TimeStamp pattern_start_time, TimeStamp pattern_end_time, SpikeTimeStampItem spike, int pattern_num);
 bool calculate_firing_rate_statistics(void);
 
-FiringRateTrain* get_neuron_firing_rate_statistics(int layer, int channel, int unit);
+NeuronFiringRate* get_neuron_firing_rate_statistics(int mwa, int channel, int unit);
 
 
 #endif
