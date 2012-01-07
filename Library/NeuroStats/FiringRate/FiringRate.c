@@ -81,6 +81,7 @@ bool firing_rate_submit_number_of_patterns (int num_of_patterns)
 int firing_rate_allocate_bins(TimeStamp pattern_length, TimeStamp bin_size)
 {
 	int i,j, k, m;
+	
 	num_of_all_bins = pattern_length / bin_size;
 	if (num_of_all_bins <= 0)
 	{
@@ -252,6 +253,11 @@ int firing_rate_allocate_bins(TimeStamp pattern_length, TimeStamp bin_size)
 			}						
 		}
 	}
+	printf ("FiringRate: INFO: allocated firing rate statistics for all neurons.\n");
+	printf ("FiringRate: INFO: Bin size(ns): 		%llu.\n", bin_size_ns);
+	printf ("FiringRate: INFO: Pattern Length(ns): 	%llu.\n", pattern_length_ns);
+	printf ("FiringRate: INFO: Number of bins: 		%d.\n", num_of_all_bins);
+		
 	return num_of_all_bins;
 }
 
@@ -279,7 +285,7 @@ void firing_rate_clear_all_statistics(void)
 				} 
 				for (m = 0; m <num_of_all_bins; m++)
 				{	
-					for (n = 0; n <num_of_all_bins; n++)
+					for (n = 0; n <num_of_all_patterns; n++)
 					{									
 						sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] = 0;
 					}
@@ -301,7 +307,6 @@ void firing_rate_deallocate_all(void)
 
 	for (i = 0; i < num_of_all_mwas; i++)
 	{
-
 		for (j = 0; j < num_of_channels_in_mwa[i]; j++)
 		{	
 			for (k = 0; k <num_of_units_in_channel[i][j]; k++)
@@ -445,28 +450,28 @@ static bool calculate_firing_rate_variances(void)
 			{
 				for (m = 0; m <num_of_all_bins; m++)
 				{	
-					for (n = 0; n <num_of_all_bins; n++)
+					for (n = 0; n <num_of_all_patterns; n++)
 					{									
 						sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] = sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] / (bin_size_ns / 1000000000.0);
 					}
 				} 
 				for (m = 0; m <num_of_all_bins; m++)
 				{	
-					for (n = 0; n <num_of_all_bins; n++)
+					for (n = 0; n <num_of_all_patterns; n++)
 					{									
 						sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] = sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] - firing_rate_statistics[i][j][k].train_bins[m].mean;
 					}
 				} 
 				for (m = 0; m <num_of_all_bins; m++)
 				{	
-					for (n = 0; n <num_of_all_bins; n++)
+					for (n = 0; n <num_of_all_patterns; n++)
 					{									
 						sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] = sum_of_spikes_in_bin_in_pattern[i][j][k][m][n] * sum_of_spikes_in_bin_in_pattern[i][j][k][m][n];
 					}
 				} 
 				for (m = 0; m <num_of_all_bins; m++)
 				{	
-					for (n = 0; n <num_of_all_bins; n++)
+					for (n = 0; n <num_of_all_patterns; n++)
 					{									
 						firing_rate_statistics[i][j][k].train_bins[m].variance = firing_rate_statistics[i][j][k].train_bins[m].variance + sum_of_spikes_in_bin_in_pattern[i][j][k][m][n];
 					}
@@ -513,4 +518,19 @@ static bool calculate_firing_rate_variances(void)
 NeuronFiringRate* get_neuron_firing_rate_statistics(int mwa, int channel, int unit)
 {
 	return &(firing_rate_statistics[mwa][channel][unit]);
+}
+
+int firing_rate_get_num_of_bins(void)
+{
+	return num_of_all_bins;
+}
+
+int firing_rate_get_num_of_patterns(void)
+{
+	return num_of_all_patterns;
+}
+
+TimeStamp firing_rate_get_pattern_length_ns(void)
+{
+	return pattern_length_ns;
 }
