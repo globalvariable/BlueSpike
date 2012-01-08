@@ -46,6 +46,11 @@ bool firing_rate_submit_number_of_mwas(int num_of_mwas)
 	}	
 	return TRUE;
 }
+int firing_rate_get_number_of_mwas(void)
+{
+	return num_of_all_mwas;
+}
+
 bool firing_rate_submit_number_of_channels_in_mwa(int mwa_num, int num_of_channels)
 {
 	if (num_of_channels_in_mwa[mwa_num] != 0)
@@ -62,6 +67,12 @@ bool firing_rate_submit_number_of_channels_in_mwa(int mwa_num, int num_of_channe
 	}
 	return TRUE;
 }
+
+int firing_rate_get_number_of_channels_in_mwa(int mwa_num)
+{
+	return num_of_channels_in_mwa[mwa_num]; 
+}
+
 bool firing_rate_submit_number_of_units_in_mwa_channel(int mwa_num, int channel_num, int num_of_units)
 {
 	if (num_of_units_in_channel[mwa_num][channel_num] != 0)
@@ -72,6 +83,11 @@ bool firing_rate_submit_number_of_units_in_mwa_channel(int mwa_num, int channel_
 	num_of_units_in_channel[mwa_num][channel_num] = num_of_units;
 	return TRUE;
 }
+int firing_rate_get_number_of_units_in_mwa_channel(int mwa_num, int channel_num)
+{
+	return num_of_units_in_channel[mwa_num][channel_num];
+}
+
 bool firing_rate_submit_number_of_patterns (int num_of_patterns)
 {
 	num_of_all_patterns = num_of_patterns;	

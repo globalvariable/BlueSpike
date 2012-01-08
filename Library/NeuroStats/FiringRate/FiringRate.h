@@ -30,8 +30,11 @@ typedef struct __NeuronFiringRate
 
 /// Functions
 bool firing_rate_submit_number_of_mwas(int num_of_mwas);
+int firing_rate_get_number_of_mwas(void);
 bool firing_rate_submit_number_of_channels_in_mwa(int mwa_num, int num_of_channels);
+int firing_rate_get_number_of_channels_in_mwa(int mwa_num);
 bool firing_rate_submit_number_of_units_in_mwa_channel(int mwa_num, int channel_num, int num_of_units);
+int firing_rate_get_number_of_units_in_mwa_channel(int mwa_num, int channel_num);
 bool firing_rate_submit_number_of_patterns (int num_of_patterns);
 int firing_rate_allocate_bins(TimeStamp pattern_length, TimeStamp bin_size);
 void firing_rate_clear_all_statistics(void);
