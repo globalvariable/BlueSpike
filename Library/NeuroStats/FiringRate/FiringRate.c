@@ -383,7 +383,7 @@ bool firing_rate_add_spike_to_statistics(TimeStamp pattern_start_time, TimeStamp
 	chan = spike.channel_or_neuron_group;
 	unit = spike.unit_or_neuron;	
 	
-	if (pattern_end_time - pattern_start_time > pattern_length_ns)
+	if ((pattern_end_time - pattern_start_time) > pattern_length_ns)
 	{
 		printf ("FiringRate: ERROR: Submitted patterrn to calculate firing rate statistics is invalid!!!.\n");
 		printf ("FiringRate: ERROR: Its length is %llu ns which is smaller than pattern length(%llu ns) to calculate statistics!!!.\n", pattern_end_time - pattern_start_time, pattern_length_ns);		
