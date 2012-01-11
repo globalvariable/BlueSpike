@@ -464,9 +464,9 @@ int write_spike_time_stamp_data(bool finalize)
 	while (idx != end_idx)
 	{
 		fprintf(file_ptr_arr[file_ptr_start_idx],"%llu\t", spike_time_stamp->spike_time_stamp_buff[idx].peak_time);
-		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].mwa);	
-		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].channel);
-		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\n", spike_time_stamp->spike_time_stamp_buff[idx].unit);
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].mwa_or_layer);	
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\t", spike_time_stamp->spike_time_stamp_buff[idx].channel_or_neuron_group);
+		fprintf(file_ptr_arr[file_ptr_start_idx],"%d\n", spike_time_stamp->spike_time_stamp_buff[idx].unit_or_neuron);
 		idx++;	
 		if (idx ==	buff_size)
 			idx = 0;	

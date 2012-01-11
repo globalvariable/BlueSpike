@@ -12,8 +12,8 @@ GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
 all: SpikeSorter
 
-SpikeSorter: SpikeSorter.c ../DataHandling/DataHandling.o ../DataHandling/v0/DataFormat_v0.o ../DataHandling/v0/Buffer_v0.o ../Misc/Misc.o
-	$(CC) $(LXRT_CFLAGS) -o $@ $< ../DataHandling/DataHandling.o ../DataHandling/v0/DataFormat_v0.o ../DataHandling/v0/Buffer_v0.o ../Misc/Misc.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
+SpikeSorter: SpikeSorter.c ../DataHandling/DataHandling.o ../DataHandling/v0/DataFormat_v0.o ../DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Interrogate/Interrogate.o
+	$(CC) $(LXRT_CFLAGS) -o $@ $< ../DataHandling/DataHandling.o ../DataHandling/v0/DataFormat_v0.o ../DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Interrogate/Interrogate.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
 
 ../DataHandling/DataHandling.o: ../DataHandling/DataHandling.c 
 	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 
@@ -24,10 +24,13 @@ SpikeSorter: SpikeSorter.c ../DataHandling/DataHandling.o ../DataHandling/v0/Dat
 ../DataHandling/v0/DataFormat_v0.o: ../DataHandling/v0/DataFormat_v0.c
 	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
 	
-../Misc/Misc.o: ../Misc/Misc.c
+../Library/Misc/Misc.o: ../Library/Misc/Misc.c
 	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
 
+../Interrogate/Interrogate.o: ../Interrogate/Interrogate.c
+	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 	
+
 clean:
-	rm -f *.o SpikeSorter ../DataHandling/DataHandling.o ../DataHandling/v0/Buffer_v0.o ../DataHandling/v0/DataFormat_v0.o ../Misc/Misc.o
+	rm -f *.o SpikeSorter ../DataHandling/DataHandling.o ../DataHandling/v0/Buffer_v0.o ../DataHandling/v0/DataFormat_v0.o ../Library/Misc/Misc.o ../Interrogate/Interrogate.o
 
 .PHONY: clean

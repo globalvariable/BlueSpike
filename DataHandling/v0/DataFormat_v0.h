@@ -10,7 +10,8 @@
 #include <string.h>
 
 #include "Buffer_v0.h"
-#include "./../../Misc/Misc.h"
+#include "./../../Library/Misc/Misc.h"
+#include "./../../SharedMemory.h"
 #include "./../../Interrogate/Interrogate.h"
 
 //Index table of FILE **file_ptr_arr
