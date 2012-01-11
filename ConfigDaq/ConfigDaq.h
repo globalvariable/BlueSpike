@@ -1,7 +1,7 @@
 #ifndef CONFIGDAQ_H
 #define CONFIGDAQ_H
 #include "../SharedMemory.h"
-#include "../DataHandling/DataHandling.h"
+#include "../Library/DataHandling/DataHandling.h"
 
 #include <stdlib.h>
 #include <stdbool.h>
