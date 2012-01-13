@@ -38,11 +38,11 @@ int get_word_in_line(char separator, int word_order, char *word, char *line, boo
 	return 0; // couldnt find that word
 }
 
-bool is_allocated(void* data, bool print_message, char *module, char *function, int message_type, char *message)
+bool is_allocated(void* data, bool print_message, char *module, char *function, int message_type, char *message, bool expects_allocated)
 {
 	if (data == NULL)
 	{
-		if (print_message)
+		if (print_message  && expects_allocated)
 		{
 			if (message_type == ALLOCATION_FAILED)
 			{
@@ -62,9 +62,9 @@ bool is_allocated(void* data, bool print_message, char *module, char *function, 
 		}
 		return FALSE;
 	}
-	else
+	else 
 	{
-		if (print_message)
+		if (print_message && (!expects_allocated))
 		{
 			if (message_type == ALLOCATION_FAILED)
 			{
