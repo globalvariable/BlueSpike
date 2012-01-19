@@ -54,11 +54,16 @@ bool is_allocated(void* data, bool print_message, char *module, char *function, 
 				printf("%s : %s : WARNING: Given data was not allocated\n", module, function);
 				printf("Message: %s\n", message);				
 			}
-			else 
+			else if (message_type == ALLOCATION_BUG)
 			{
 				printf("%s : %s : BUG: Given data was not allocated\n", module, function);
 				printf("Message: %s\n", message);						
 			}
+			else
+			{
+				printf("%s : %s : BUG: Inconvenient message type %d for Misc: is_allocated()\n", module, function, message_type);
+				printf("Message: %s\n", message);						
+			}			
 		}
 		return FALSE;
 	}
@@ -76,13 +81,49 @@ bool is_allocated(void* data, bool print_message, char *module, char *function, 
 				printf("%s : %s : WARNING: Given data was allocated\n", module, function);
 				printf("Message: %s\n", message);				
 			}
-			else 
+			else if (message_type == ALLOCATION_BUG)
 			{
 				printf("%s : %s : BUG: Given data was allocated\n", module, function);
 				printf("Message: %s\n", message);						
 			}
+			else
+			{
+				printf("%s : %s : BUG: Inconvenient message type %d for Misc: is_allocated()\n", module, function, message_type);
+				printf("Message: %s\n", message);						
+			}				
 		}	
 		return TRUE;
 	}
+}
+
+
+bool print_message(int message_type, char* program, char *module, char *function, char *message)
+{
+	if (message_type == ERROR_MSG)
+	{
+		printf("ERROR: %s: %s: %s: %s\n", program, module, function, message);
+		return FALSE;		
+	}
+	else if (message_type == WARNING_MSG)
+	{
+		printf("WARNING: %s: %s: %s: %s\n", program, module, function, message);
+		return TRUE;
+	}
+	else if (message_type == INFO_MSG)
+	{
+		printf("INFO: %s: %s\n", program, message);
+		return TRUE;		
+	}	
+	else if (message_type == BUG_MSG)
+	{
+		printf("BUG: %s: %s: %s: %s\n", program, module, function, message);
+		return FALSE;				
+	} 
+	else
+	{
+		printf("BUG: %s: %s: %s: Inconvenient message type (%d) for Misc: print_message\n", program, module, function, message_type);
+		return FALSE;				
+	}
+
 }
 
