@@ -111,7 +111,7 @@ bool print_message(int message_type, char* program, char *module, char *function
 	}
 	else if (message_type == INFO_MSG)
 	{
-		printf("INFO: %s: %s\n", program, message);
+		printf("INFO: %s: %s: %s: %s\n", program, module, function, message);
 		return TRUE;		
 	}	
 	else if (message_type == BUG_MSG)
