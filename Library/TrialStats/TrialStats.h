@@ -3,7 +3,7 @@
 
 
 
-typedef struct __TrialMainStats TrialMainStats;
+typedef struct __MainTrialStats MainTrialStats;
 
 
 #include "../Misc/Misc.h"
@@ -11,7 +11,7 @@ typedef struct __TrialMainStats TrialMainStats;
 #include <gtk/gtk.h>
 #include "../../TimeStamp.h"
 
-struct __TrialMainStats
+struct __MainTrialStats
 {
 	TimeStamp	*trial_starts_ns;   // num_of_trials
 	TimeStamp	*trial_durations_ns;   // num_of_trials
@@ -20,10 +20,11 @@ struct __TrialMainStats
 };
 
 
-TrialMainStats* allocate_main_trial_stats(TrialMainStats* main_stats, unsigned int num_of_trials_to_allocate);
-TrialMainStats* deallocate_main_trial_stats(TrialMainStats* main_stats);
-bool write_to_main_trial_stats(TrialMainStats* main_stats, TimeStamp trial_start_ns , TimeStamp trial_duration_ns);
-bool reset_main_trial_stats_write_idx(TrialMainStats* main_stats);
-
+MainTrialStats* allocate_main_trial_stats(MainTrialStats* main_stats, unsigned int num_of_trials_to_allocate);
+MainTrialStats* deallocate_main_trial_stats(MainTrialStats* main_stats);
+bool write_to_main_trial_stats(MainTrialStats* main_stats, TimeStamp trial_start_ns , TimeStamp trial_duration_ns);
+bool reset_main_trial_stats_write_idx(MainTrialStats* main_stats);
+bool get_main_trial_stats_num_of_trials(MainTrialStats* main_stats,  unsigned int *num_of_trials_used, unsigned int *num_of_trials_allocated);
+bool get_main_trial_stats_trial_times_ns(MainTrialStats* main_stats, unsigned int trial_num, TimeStamp *trial_start_ns, TimeStamp *trial_duration_ns);
 
 #endif

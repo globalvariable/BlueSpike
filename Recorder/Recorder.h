@@ -4,7 +4,7 @@
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 
-#include "./../DataHandling/DataHandling.h"
+#include "./../Library/DataHandling/DataHandling.h"
 
 
 GtkWidget *main_table;

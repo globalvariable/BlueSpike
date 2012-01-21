@@ -20,6 +20,8 @@ int create_main_directory_v0(int num, ...)
         	printf ("Recorder: ERROR: Select another folder or delete BlueSpikeData directory.\n\n");		        		
                 return 0;
         }
+        closedir(dir_main_folder );
+        
  	strcpy(main_directory_path, temp_dir_path);	
 	mkdir(main_directory_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH | S_IWOTH);
 
@@ -98,6 +100,8 @@ int create_data_directory_v0(int num, ...)
         	printf ("Recorder: ERROR: path: %s already has %s folder.\n", main_directory_path, data_directory_name);		
                 return 0;
         }
+        closedir(dir_data_directory);
+        
 	mkdir(data_directory_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH | S_IWOTH);	
 
 	if (create_data_files(rec_start))
@@ -986,7 +990,8 @@ int delete_last_recording_v0(int num, ...)
         	printf ("Recorder: ERROR: Couldn't opendir: %s\n\n", data_directory_path);		
                 return 0;
         }
-
+	closedir(dir_data_directory);
+	
 	while ((dirent_item = readdir(dir_data_directory)) !=NULL)
 	{	
 		if ((strcmp( dirent_item->d_name, "." ) == 0) || (strcmp(dirent_item->d_name, ".." ) == 0)) 	

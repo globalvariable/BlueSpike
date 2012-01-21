@@ -138,7 +138,6 @@ bool add_single_spike_pattern_to_spike_patterns(SingleSpikePattern* single_spike
 	if (used_pattern_num == spike_patterns->num_of_allocated_patterns)
 		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "add_single_spike_pattern_to_spike_patterns", "spike_patterns->num_of_used_patterns == spike_patterns->num_of_allocated_patterns");					
 
-	printf("%u %u\n", used_num_of_spikes,used_pattern_num );	
 	for (i=0; i < used_num_of_spikes; i++)
 	{
 		spike_patterns->patterns[used_pattern_num].spikes[0].peak_time = single_spike_pattern->spikes[0].peak_time;
