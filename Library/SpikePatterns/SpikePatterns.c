@@ -71,15 +71,50 @@ SingleSpikePattern* deallocate_single_spike_pattern(SingleSpikePattern* single_s
 	return NULL;	
 }
 
-bool reset_spike_pattern_write_idx(SingleSpikePattern* single_spike_pattern)
+bool reset_single_spike_pattern_write_idx(SingleSpikePattern* single_spike_pattern)
 {
 	if (single_spike_pattern == NULL)
-		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "reset_spike_pattern_write_idx", "SpikePatterns *single_spike_pattern was not allocated.");
+		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "reset_spike_pattern_write_idx", "single_spike_pattern was not allocated.");
 	single_spike_pattern->used_num_of_spikes = 0;
 	return TRUE;
 }
 
-bool write_spike_time_stamp_to_spike_pattern(SingleSpikePattern* single_spike_pattern, SpikeTimeStampItem *spike_time_stamp)
+bool get_used_num_of_spikes_of_single_spike_pattern(SingleSpikePattern* single_spike_pattern, unsigned int *used_num_of_spikes)
+{
+	*used_num_of_spikes = 0;
+	if (single_spike_pattern == NULL)
+		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "get_used_num_of_spikes_of_single_spike_pattern", "single_spike_pattern was not allocated.");	
+	*used_num_of_spikes = single_spike_pattern->used_num_of_spikes;
+	return TRUE;
+}
+
+bool get_allocated_num_of_spikes_of_single_spike_pattern(SingleSpikePattern* single_spike_pattern, unsigned int *allocated_num_of_spikes)
+{
+	*allocated_num_of_spikes = 0;
+	if (single_spike_pattern == NULL)
+		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "get_allocated_num_of_spikes_of_single_spike_pattern", "single_spike_pattern was not allocated.");	
+	*allocated_num_of_spikes = single_spike_pattern->allocated_num_of_spikes;
+	return TRUE;
+}
+
+bool set_used_num_of_spikes_of_single_spike_pattern(SingleSpikePattern* single_spike_pattern, unsigned int used_num_of_spikes)
+{
+	if (single_spike_pattern == NULL)
+		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "set_used_num_of_spikes_of_single_spike_pattern", "single_spike_pattern was not allocated.");	
+	single_spike_pattern->used_num_of_spikes = used_num_of_spikes;
+	return TRUE;	
+}
+
+bool get_spikes_ptr_of_single_spike_pattern(SingleSpikePattern* single_spike_pattern, SpikeTimeStampItem **spikes)
+{
+	*spikes = NULL;
+	if (single_spike_pattern == NULL)
+		return print_message(ERROR_MSG ,"BlueSpike", "SpikePatterns", "get_spikes_ptr_of_single_spike_pattern", "single_spike_pattern was not allocated.");	
+	*spikes = 	single_spike_pattern->spikes;
+	return TRUE;
+}
+
+bool write_spike_time_stamp_to_single_spike_pattern(SingleSpikePattern* single_spike_pattern, SpikeTimeStampItem *spike_time_stamp)
 {
 	// reset before every use
 	int i;
