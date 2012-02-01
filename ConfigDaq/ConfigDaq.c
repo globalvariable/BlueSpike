@@ -9,7 +9,7 @@ int main( int argc, char *argv[])
 		printf("rtai_malloc() failed (maybe /dev/rtai_shm is missing)!\n");
 		return -1;
    	}
-        printf("sizeof(SharedMemStruct) : %d SHARED_MEM_SIZE: %d\n", sizeof(SharedMemStruct), SHARED_MEM_SIZE);
+        printf("sizeof(SharedMemStruct) : %lu SHARED_MEM_SIZE: %d\n", sizeof(SharedMemStruct), SHARED_MEM_SIZE);
 	gtk_init(&argc, &argv);
 	create_gui(); 	
 	gtk_main();
