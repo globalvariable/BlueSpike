@@ -44,7 +44,6 @@ void rt_handler(int t)
 
 	daq_cards_on = 0;
 
-	
 	daq_mwa_map = &shared_memory->daq_mwa_map;
 	recording_data = &shared_memory->recording_data;
 	filtered_recording_data = &shared_memory->filtered_recording_data;
