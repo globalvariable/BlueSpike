@@ -211,7 +211,7 @@ int __init xinit_module(void)
 		return -ENOMEM;
 	memset(shared_memory, 0, SHARED_MEM_SIZE);
         printk("KernelSpike: Shared Memory allocated.\n");
-        printk("KernelSpike: sizeof(SharedMemStruct) : %d.\n", SHARED_MEM_SIZE);
+        printk("KernelSpike: sizeof(SharedMemStruct) : %lu.\n", SHARED_MEM_SIZE);
         
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -1090,7 +1090,7 @@ int open_daq_cards(void)
 	for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)
 	{	
 		ret = comedi_map(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI, &(comedi_map_ptr[i]));
-		printk("KernelSpike: %d th device comedi_map return: %d, ptr: %d\n", i, ret, (int)(comedi_map_ptr[i]));
+		printk("KernelSpike: %d th device comedi_map return: %d, ptr: %lu\n", i, ret, (unsigned long int)(comedi_map_ptr[i]));
 		if (ret != 0)
 		{
 			break;
