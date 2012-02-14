@@ -7,12 +7,12 @@
 #include "SpikeThresholding.h"
 #include "BlueSpikeTimeStamp.h"
 #include "SpikeTimeStamp.h"
-#include "ExpEnviEventTimeStamp.h"
-#include "MovingObjEventTimeStamp.h"
 #include "TemplateMatchingData.h"
 #include "KernelTaskCtrl.h"
 #include "KernelTaskStat.h"
 #include "RtData.h"
+#include "SharedMemoryAdditionalData.h"
+
 
 #define SHARED_MEM_NAME  "SHMEM"
 #ifdef KERNELSPIKE_H
@@ -20,6 +20,10 @@
 #else
 #define SHARED_MEM_SIZE 0
 #endif
+
+
+
+
 
 typedef struct __SharedMemStruct
 {
@@ -29,11 +33,8 @@ typedef struct __SharedMemStruct
 	RecordingData				filtered_recording_data;
 	SpikeThresholding			spike_thresholding;
 	BlueSpikeTimeStamp 		blue_spike_time_stamp;
-	SpikeTimeStamp 			spike_time_stamp;	
-	ExpEnviEventTimeStamp		exp_envi_event_time_stamp;
-	ExpEnviCommandTimeStamp 	exp_envi_command_time_stamp;		
-	MovingObjEventTimeStamp	mov_obj_event_time_stamp;
-	MovingObjCommandTimeStamp	mov_obj_command_time_stamp;
+	SpikeTimeStamp 			spike_time_stamp;
+	void					*additional_data[MAX_NUM_OF_SHM_ADDITIONAL_DATA];	
 	TemplateMatchingData		template_matching_data;
 	KernelTaskCtrl				kernel_task_ctrl;
 	KernelTaskStat				kernel_task_stat;
