@@ -9,8 +9,7 @@
 #include "SpikeTimeStamp.h"
 #include "TemplateMatchingData.h"
 #include "KernelTaskCtrl.h"
-#include "KernelTaskStat.h"
-#include "RtData.h"
+#include "RtTasksData.h"
 #include "SharedMemoryAdditionalData.h"
 
 
@@ -37,7 +36,7 @@ typedef struct __SharedMemStruct
 	void					*additional_data[MAX_NUM_OF_SHM_ADDITIONAL_DATA];	
 	TemplateMatchingData		template_matching_data;
 	KernelTaskCtrl				kernel_task_ctrl;
-	KernelTaskStat				kernel_task_stat;
+	RtTasksData				rt_tasks_data;
 } SharedMemStruct;
 
 SharedMemStruct *shared_memory;

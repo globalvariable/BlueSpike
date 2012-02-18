@@ -32,8 +32,8 @@ void rt_handler(int t)
 	int mwa, mwa_chan;
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks, *daq_card_mapped; 
 	TimeStamp *kern_curr_time, *kern_prev_time;
-	int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
-	int curr_time ;		// local_time  unsigned int
+	unsigned int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
+	unsigned int curr_time ;		// local_time  unsigned int
 
 	int rt_task_kill_timer_cntr;
 	
@@ -232,18 +232,37 @@ int __init xinit_module(void)
 	shared_memory->kernel_task_ctrl.kernel_task_idle = 1;
 
 	rt_set_periodic_mode();
-	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, KERNELSPIKE_CPUID);
-	tick_period = start_rt_timer(nano2count(KERNELSPIKE_TICK_PERIOD));
+	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, (KERNELSPIKE_CPU_ID*MAX_NUM_OF_THREADS_PER_CPU)+KERNELSPIKE_CPU_THREAD_ID);
+
+	tick_period = nano2count(KERNELSPIKE_PERIOD);
+	start_rt_timer(tick_period);
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
-	printk("KernelSpike: rt task created with %d nanoseconds period.\n", KERNELSPIKE_TICK_PERIOD);
+
+	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].rt_task_period = KERNELSPIKE_PERIOD;
+	shared_memory->rt_tasks_data.num_of_total_rt_tasks++;
+	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].num_of_rt_tasks_at_cpu++;
+	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_rt_tasks_at_cpu_thread++;
+
+	printk("KernelSpike: rt task created with %d nanoseconds period.\n", KERNELSPIKE_PERIOD);
 	return 0;
 }
 
 void __exit xcleanup_module(void)
 {
 	int i;
-	stop_rt_timer();
+
+	if (shared_memory->rt_tasks_data.num_of_total_rt_tasks != 1)
+	{
+		printk("KernelSpike: ERROR: There are other tasks using rt_timer.\n");
+		return;
+	}	
+
+	if (shared_memory->rt_tasks_data.num_of_total_rt_tasks == 0)
+		printk("KernelSpike: BUG: KernelSpike is a task. Total num of rt_tasks cannot be zero!!!\n");			// Allow rmmod to run.
+
 	rt_task_delete(&rt_task0);	
+	stop_rt_timer();
+
 	if (daq_cards_on)
 	{
 		for (i = 0; i<MAX_NUM_OF_DAQ_CARD; i++)

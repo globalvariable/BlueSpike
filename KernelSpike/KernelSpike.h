@@ -15,8 +15,7 @@
 #include <linux/comedi.h>
 #include <linux/comedilib.h>
 
-#include "./../SharedMemory.h"
-//#include "SpikeEnd.h"
+#include "../SharedMemory.h"
 #include "SpikeEndHandling.h"
 
 #define KERNELSPIKE_RUN_TIME_LIMIT 18446744000000000000ULL
