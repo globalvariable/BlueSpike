@@ -33,8 +33,9 @@ void rt_handler(int t)
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks, *daq_card_mapped; 
 	TimeStamp *kern_curr_time, *kern_prev_time;
 	unsigned int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
-	unsigned int curr_time ;		// local_time  unsigned int
-
+	unsigned int curr_time;		// local_time  unsigned int
+	unsigned int period_occured;		
+	
 	int rt_task_kill_timer_cntr;
 	
 	rt_task_kill_timer_cntr = 0;
@@ -53,10 +54,11 @@ void rt_handler(int t)
 	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
 	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;
 	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;
-	kern_curr_time = &kernel_task_ctrl->current_time_ns;
-	kern_prev_time = &kernel_task_ctrl->previous_time_ns;		
 	kill_all_rt_tasks = &kernel_task_ctrl->kill_all_rt_tasks;
 	daq_card_mapped = &kernel_task_ctrl->daq_card_mapped;
+
+	kern_curr_time = &shared_memory->rt_tasks_data.current_system_time;
+	kern_prev_time = &shared_memory->rt_tasks_data.previous_system_time;
 	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -71,7 +73,9 @@ void rt_handler(int t)
 		
 		*kernel_task_idle = 0;	
 		curr_time = rt_get_cpu_time_ns();
-		current_time_ns += (curr_time - prev_time);
+		period_occured = curr_time - prev_time;
+		current_time_ns += period_occured;
+		evaluate_jitter(period_occured);
 		previous_time_ns = current_time_ns;		
 		prev_time = curr_time;
 
@@ -87,6 +91,7 @@ void rt_handler(int t)
 				daq_chan_num[i] = 0;
 			}
 			*highpass_150Hz_on = 0; *highpass_400Hz_on = 0; *lowpass_8KHz_on = 0;	
+			evaluate_period_run_time(curr_time);
 			continue;
 		}	
 			
@@ -179,7 +184,9 @@ void rt_handler(int t)
 		*kern_prev_time = previous_time_ns;
 			
 		print_warning_and_errors();
-		
+
+		evaluate_period_run_time(curr_time);
+
 		*kernel_task_idle = 1;				
 	}
 	
@@ -234,8 +241,8 @@ int __init xinit_module(void)
 	rt_set_periodic_mode();
 	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, (KERNELSPIKE_CPU_ID*MAX_NUM_OF_THREADS_PER_CPU)+KERNELSPIKE_CPU_THREAD_ID);
 
+	start_rt_timer(nano2count(START_RT_TIMER_PERIOD));
 	tick_period = nano2count(KERNELSPIKE_PERIOD);
-	start_rt_timer(tick_period);
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
 
 	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].rt_task_period = KERNELSPIKE_PERIOD;
@@ -1164,4 +1171,37 @@ int handle_daq_cards(void)
 	}
 	return 1;		// to get rid of warning, unnecessary	
 }
+void evaluate_period_run_time(unsigned int curr_time)
+{
+	static unsigned int max_period_run_time = 0;		
+	unsigned int period_run_time, period_end_time;
 
+	period_end_time = rt_get_cpu_time_ns();
+	period_run_time = period_end_time - curr_time;
+	if (period_run_time > max_period_run_time)
+	{
+		max_period_run_time = period_run_time;
+		shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_period_run_time = max_period_run_time;
+	}	
+}
+void evaluate_jitter(unsigned int period_occured)
+{
+	static unsigned int max_positive_jitter = 0;
+	static unsigned int max_negative_jitter = 0;	
+	if (period_occured > KERNELSPIKE_PERIOD)
+	{
+		if ((period_occured - KERNELSPIKE_PERIOD) > max_positive_jitter)
+		{
+			max_positive_jitter = period_occured - KERNELSPIKE_PERIOD;
+			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_positive_jitter = max_positive_jitter;
+		}
+	}
+	else
+	{
+		if ((KERNELSPIKE_PERIOD - period_occured) > max_negative_jitter)
+		{
+			max_negative_jitter = KERNELSPIKE_PERIOD - period_occured;
+			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_negative_jitter = max_negative_jitter;
+		}			
+	} 
+}

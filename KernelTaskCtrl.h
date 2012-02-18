@@ -5,8 +5,6 @@
 
 typedef struct __KernelTaskCtrl
 {
-	TimeStamp	current_time_ns;
-	TimeStamp	previous_time_ns;	
 	bool 		highpass_150Hz_on;
 	bool 		highpass_400Hz_on;
 	bool 		lowpass_8KHz_on;

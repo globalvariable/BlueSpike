@@ -56,5 +56,6 @@ bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
 int open_daq_cards(void);
 void close_daq_cards(void);
 int handle_daq_cards(void);
-
+void evaluate_period_run_time(unsigned int curr_time);
+void evaluate_jitter(unsigned int period_occured);
 #endif

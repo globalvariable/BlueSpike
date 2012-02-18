@@ -7,9 +7,8 @@ typedef struct __CpuThreadRtTasksData
 {
 	unsigned int	num_of_rt_tasks_at_cpu_thread;
 	TimeStamp	max_period_run_time;		// each task checks its max run time in a task period and writes here if exceeds
-	TimeStamp	min_period_run_time;
 	TimeStamp	max_positive_jitter;			// each task checks its max jitter
-	TimeStamp	min_negative_jitter;
+	TimeStamp	max_negative_jitter;
 	unsigned int	num_of_jitter_exceeding_threshold;	// each task determine a threshold and writes threshold-exceeding jitters here.  			
 } CpuThreadRtTasksData;
 
@@ -25,13 +24,15 @@ typedef struct __RtTasksData
 {
 	unsigned int		num_of_total_rt_tasks;	
 	CpuRtTasksData 	cpu_rt_task_data[MAX_NUM_OF_CPUS];
+	TimeStamp		current_system_time;
+	TimeStamp		previous_system_time;
 } RtTasksData;
 
 
-
+#define START_RT_TIMER_PERIOD 			50000		// 50 us
 
 // KernelSpike
-#define KERNELSPIKE_PERIOD 				1000000
+#define KERNELSPIKE_PERIOD 				1000000		//1 ms
 #define KERNELSPIKE_TASK_PRIORITY 			1
 #define KERNELSPIKE_STACK_SIZE 			10000
 #define KERNELSPIKE_CPU_ID 				1
