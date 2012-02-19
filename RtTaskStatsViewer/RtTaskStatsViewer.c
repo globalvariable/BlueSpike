@@ -1,4 +1,4 @@
-#include "RtTaskStats.h"
+#include "RtTaskStatsViewer.h"
 
 int main( int argc, char *argv[])
 {

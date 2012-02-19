@@ -1,5 +1,5 @@
-#ifndef RT_TASK_STATS
-#define RT_TASK_STATS
+#ifndef RT_TASK_STATS_VIEWER
+#define RT_TASK_STATS_VIEWER
 
 #include "../SharedMemory.h"
 #include <gtk/gtk.h>

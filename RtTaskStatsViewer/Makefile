@@ -10,12 +10,12 @@ LXRT_LDFLAGS = $(shell rtai-config --lxrt-ldflags)
 COMEDI_FLAGS = -lcomedi -lm 
 GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
-all: RtTaskStats
+all: RtTaskStatsViewer
 
-RtTaskStats: RtTaskStats.c 
+RtTaskStatsViewer: RtTaskStatsViewer.c 
 	$(CC) $(LXRT_CFLAGS) -o $@ $< $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
 
 clean:
-	rm -f *.o RtTaskStats
+	rm -f *.o RtTaskStatsViewer
 
 .PHONY: clean
