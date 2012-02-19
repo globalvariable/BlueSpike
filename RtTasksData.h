@@ -32,7 +32,7 @@ typedef struct __RtTasksData
 #define START_RT_TIMER_PERIOD 			50000		// 50 us
 
 // KernelSpike
-#define KERNELSPIKE_PERIOD 				1000000		//1 ms
+#define KERNELSPIKE_PERIOD 				500000		//0.5 ms
 #define KERNELSPIKE_TASK_PRIORITY 			1
 #define KERNELSPIKE_STACK_SIZE 			10000
 #define KERNELSPIKE_CPU_ID 				1
