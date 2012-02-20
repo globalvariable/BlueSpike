@@ -32,11 +32,13 @@ void rt_handler(int t)
 	int mwa, mwa_chan;
 	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks, *daq_card_mapped; 
 	TimeStamp *kern_curr_time, *kern_prev_time;
-	unsigned int prev_time= rt_get_cpu_time_ns(); // local_time  unsigned int
+	unsigned int prev_time; // local_time  unsigned int
 	unsigned int curr_time;		// local_time  unsigned int
 	unsigned int period_occured;		
 	
 	int rt_task_kill_timer_cntr;
+
+	prev_time= rt_get_cpu_time_ns();	
 	
 	rt_task_kill_timer_cntr = 0;
 	 
@@ -66,7 +68,7 @@ void rt_handler(int t)
 		back[i] = 0;
 		daq_chan_num[i] = 0;
 	}	
-	
+
 	while (!(*kill_all_rt_tasks)) 
 	{
 		rt_task_wait_period();
@@ -249,6 +251,8 @@ int __init xinit_module(void)
 	shared_memory->rt_tasks_data.num_of_total_rt_tasks++;
 	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].num_of_rt_tasks_at_cpu++;
 	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_rt_tasks_at_cpu_thread++;
+	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold = KERNELSPIKE_POSITIVE_JITTER_THRES;
+	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold = KERNELSPIKE_NEGATIVE_JITTER_THRES;
 
 	printk("KernelSpike: rt task created with %d nanoseconds period.\n", KERNELSPIKE_PERIOD);
 	return 0;
@@ -259,10 +263,7 @@ void __exit xcleanup_module(void)
 	int i;
 
 	if (shared_memory->rt_tasks_data.num_of_total_rt_tasks != 1)
-	{
-		printk("KernelSpike: ERROR: There are other tasks using rt_timer.\n");
-		return;
-	}	
+		printk("KernelSpike: BUG: KernelSpike is a task. Total num of rt_tasks cannot be zero!!!\n");			// Allow rmmod to run, otherwise it will lock
 
 	if (shared_memory->rt_tasks_data.num_of_total_rt_tasks == 0)
 		printk("KernelSpike: BUG: KernelSpike is a task. Total num of rt_tasks cannot be zero!!!\n");			// Allow rmmod to run.
@@ -1187,21 +1188,28 @@ void evaluate_period_run_time(unsigned int curr_time)
 void evaluate_jitter(unsigned int period_occured)
 {
 	static unsigned int max_positive_jitter = 0;
-	static unsigned int max_negative_jitter = 0;	
+	static unsigned int max_negative_jitter = 0;
+	unsigned int jitter;	
 	if (period_occured > KERNELSPIKE_PERIOD)
 	{
-		if ((period_occured - KERNELSPIKE_PERIOD) > max_positive_jitter)
+		jitter = period_occured - KERNELSPIKE_PERIOD;
+		if (jitter > max_positive_jitter)
 		{
-			max_positive_jitter = period_occured - KERNELSPIKE_PERIOD;
+			max_positive_jitter = jitter;
 			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_positive_jitter = max_positive_jitter;
 		}
+		if (jitter > shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold)
+			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_positive_jitter_exceeding_threshold++;
 	}
 	else
 	{
-		if ((KERNELSPIKE_PERIOD - period_occured) > max_negative_jitter)
+		jitter = KERNELSPIKE_PERIOD - period_occured;
+		if (jitter > max_negative_jitter)
 		{
-			max_negative_jitter = KERNELSPIKE_PERIOD - period_occured;
+			max_negative_jitter = jitter;
 			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_negative_jitter = max_negative_jitter;
-		}			
+		}	
+		if (jitter > shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold)
+			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_negative_jitter_exceeding_threshold++;		
 	} 
 }

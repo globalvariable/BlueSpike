@@ -24,9 +24,13 @@ int main( int argc, char *argv[])
 			printf("CPU_RT_TASK_PERIOD: 		%lu\n", (long unsigned int) shared_memory->rt_tasks_data.cpu_rt_task_data[i].rt_task_period);	
 	       		printf("NUM_OF_TASKS_AT_CPU: 		%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].num_of_rt_tasks_at_cpu);			
        		 	printf("NUM_OF_TASKS_AT_THREAD: 	%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].num_of_rt_tasks_at_cpu_thread);
-       		 	printf("PERIOD_RUN_TIME - MAX: 		%lu\n", (long unsigned int)shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].max_period_run_time);		
-       		 	printf("JITTER - MAX_POSITIVE: 		%lu\n", (long unsigned int)shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].max_positive_jitter);		
-	 		printf("JITTER - MAX_NEGATIVE: 		%lu\n", (long unsigned int)shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].max_negative_jitter);					
+       		 	printf("PERIOD_RUN_TIME - MAX: 		%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].max_period_run_time);		
+       		 	printf("JITTER - MAX_POSITIVE: 		%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].max_positive_jitter);		
+	 		printf("JITTER - MAX_NEGATIVE: 		%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].max_negative_jitter);	
+       		 	printf("JITTER - POSITIVE_THRES:	%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].positive_jitter_threshold);		
+	 		printf("JITTER - NEGATIVE_THRES:	%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].negative_jitter_threshold);	
+       		 	printf("JITTER - POSITIVE_ALARM:	%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].num_of_positive_jitter_exceeding_threshold);		
+	 		printf("JITTER - NEGATIVE_ALARM:	%u\n", shared_memory->rt_tasks_data.cpu_rt_task_data[i].cpu_thread_rt_task_data[j].num_of_negative_jitter_exceeding_threshold);					
 		}		
 	}
 	printf("---------------------------------------------------------------------------------------------------------------\n");
