@@ -30,7 +30,7 @@ typedef struct __RtTasksData
 {
 	unsigned int		num_of_total_rt_tasks;	
 	CpuRtTasksData 	cpu_rt_task_data[MAX_NUM_OF_CPUS];
-	TimeStamp		current_system_time;
+	TimeStamp		current_system_time;		// shared clocking set by kernelspike and others read it. kernel_spike detects exact spike times and other tasks adjusts themselves according to kernelspike
 	TimeStamp		previous_system_time;
 } RtTasksData;
 

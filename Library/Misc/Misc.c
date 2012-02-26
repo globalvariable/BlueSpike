@@ -127,3 +127,25 @@ bool print_message(int message_type, char* program, char *module, char *function
 
 }
 
+bool is_buffer_getting_full(unsigned int buffer_read_idx,  unsigned int buffer_write_idx, unsigned int buffer_size, bool printf_message)	// check in every period of buffer reader/handler routines.
+{
+	if (buffer_read_idx > buffer_write_idx) 
+	{
+		if ((buffer_size - buffer_read_idx + buffer_write_idx) > (0.5 * buffer_size))	// check number of unread buffer items
+		{
+			if (printf_message)
+				print_message(WARNING_MSG ,"BlueSpike", "Misc", "is_buffer_getting_full", "Buffer is getting full.");		
+			return TRUE;
+		}
+	}
+	else
+	{
+		if ((buffer_write_idx - buffer_read_idx) > (0.5 * buffer_size)) 		// check number of unread buffer items
+		{
+			if (printf_message)
+				print_message(WARNING_MSG ,"BlueSpike", "Misc", "is_buffer_getting_full", "Buffer is getting full.");		
+			return TRUE;
+		}
+	}	
+	return FALSE;
+}

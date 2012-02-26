@@ -21,5 +21,6 @@
 int get_word_in_line(char separator, int word_order, char *word, char *line, bool print_warning);
 bool is_allocated(void* data, bool print_message, char *module, char *function, int message_type, char *message, bool expects_allocated);
 bool print_message(int message_type, char* program, char *module, char *function, char *message);
+bool is_buffer_getting_full(unsigned int buffer_read_idx,  unsigned int buffer_write_idx, unsigned int buffer_size, bool printf_message);
 
 #endif
