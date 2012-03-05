@@ -15,6 +15,13 @@
  ***************************************************************************/
 #include "KernelSpike.h"
 
+// to get rid of warning: the frame size of 2912 bytes is larger than 1024 bytes for run_template_matching func. Stack size for function is limited to 1024, define variables here.
+double template_matching_g_x[MAX_NUM_OF_UNIT_PER_CHAN];
+double template_matching_diff[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
+double template_matching_diff_temporary[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
+double template_matching_exponent[MAX_NUM_OF_UNIT_PER_CHAN];	
+double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
+
 static int spike_time_stamp_buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
 static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 static int spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
@@ -912,11 +919,6 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	BlueSpikeTimeStamp 	*blue_spike_time_stamp;
 	SpikeTimeStamp 		*spike_time_stamp;
 		
-	double g_x[MAX_NUM_OF_UNIT_PER_CHAN];
-	double diff[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-	double diff_temporary[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-	double exponent[MAX_NUM_OF_UNIT_PER_CHAN];	
-	double probabl[MAX_NUM_OF_UNIT_PER_CHAN];
 	double greatest;	
 	int i, j, unit, greatest_idx;
 	int blue_spike_time_stamp_buff_idx_write;
@@ -936,39 +938,39 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 		unit_template_data =  &(*template_matching_data)[mwa][chan][unit];
 		if (unit_template_data->sorting_on)
 		{
-			g_x[unit] = 0.0;
+			template_matching_g_x[unit] = 0.0;
 			for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 			{
 				{
 					if (filtered_recording_data_buff_idx < i)   //  spike_end_idx_in_filtered_recording - i  < 0
-						diff[unit][i] = (*filtered_recording_data_chan_buff)[filtered_recording_data_buff_idx-i+RECORDING_DATA_BUFF_SIZE] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+						template_matching_diff[unit][i] = (*filtered_recording_data_chan_buff)[filtered_recording_data_buff_idx-i+RECORDING_DATA_BUFF_SIZE] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 					else
-						diff[unit][i] = (*filtered_recording_data_chan_buff)[filtered_recording_data_buff_idx-i] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+						template_matching_diff[unit][i] = (*filtered_recording_data_chan_buff)[filtered_recording_data_buff_idx-i] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 				}
 			}
 			for (i=0; i <NUM_OF_SAMP_PER_SPIKE;i++)
 			{
-				diff_temporary[unit][i] = 0;
+				template_matching_diff_temporary[unit][i] = 0;
 			}
 			for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 			{
 				for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 				{
-					diff_temporary[unit][i] = diff_temporary[unit][i] + (diff[unit][j] * unit_template_data->inv_S[i][j]);
+					template_matching_diff_temporary[unit][i] = template_matching_diff_temporary[unit][i] + (template_matching_diff[unit][j] * unit_template_data->inv_S[i][j]);
 				}
 			}
 			for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 			{
-				g_x[unit] = g_x[unit] + (diff_temporary[unit][i] * diff[unit][i]);
+				template_matching_g_x[unit] = template_matching_g_x[unit] + (template_matching_diff_temporary[unit][i] * template_matching_diff[unit][i]);
 			}
-			exponent[unit] = exp((-0.5)*g_x[unit]);
-			probabl[unit] = (1.06488319787324016356e-12/unit_template_data->sqrt_det_S)*exponent[unit];       //   ( 1/ (   ((2*pi)^(d/2)) * (det_S^(1/2)) ) * exp( (-1/2) * (x-u)' * (S^ (-1)) - (x-u) )   d= 30
+			template_matching_exponent[unit] = exp((-0.5)*template_matching_g_x[unit]);
+			template_matching_probabl[unit] = (1.06488319787324016356e-12/unit_template_data->sqrt_det_S)*template_matching_exponent[unit];       //   ( 1/ (   ((2*pi)^(d/2)) * (det_S^(1/2)) ) * exp( (-1/2) * (x-u)' * (S^ (-1)) - (x-u) )   d= 30
 
-			g_x[unit] = 0 - (unit_template_data->log_det_S) - (g_x[unit]);	
+			template_matching_g_x[unit] = 0 - (unit_template_data->log_det_S) - (template_matching_g_x[unit]);	
 			
-			if ((g_x[unit] > greatest) && (probabl[unit] > unit_template_data->probability_thres))    // assign spike to a unit.
+			if ((template_matching_g_x[unit] > greatest) && (template_matching_probabl[unit] > unit_template_data->probability_thres))    // assign spike to a unit.
 			{
-				greatest = g_x[unit];
+				greatest = template_matching_g_x[unit];
 				greatest_idx = unit;
 			}	
 		}
