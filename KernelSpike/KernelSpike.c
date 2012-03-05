@@ -16,11 +16,11 @@
 #include "KernelSpike.h"
 
 // to get rid of warning: the frame size of 2912 bytes is larger than 1024 bytes for run_template_matching func. Stack size for function is limited to 1024, define variables here.
-double template_matching_g_x[MAX_NUM_OF_UNIT_PER_CHAN];
-double template_matching_diff[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-double template_matching_diff_temporary[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
-double template_matching_exponent[MAX_NUM_OF_UNIT_PER_CHAN];	
-double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
+static double template_matching_g_x[MAX_NUM_OF_UNIT_PER_CHAN];
+static double template_matching_diff[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
+static double template_matching_diff_temporary[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_SAMP_PER_SPIKE];
+static double template_matching_exponent[MAX_NUM_OF_UNIT_PER_CHAN];	
+static double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
 
 static int spike_time_stamp_buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
 static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
