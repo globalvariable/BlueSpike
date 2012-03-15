@@ -10,7 +10,6 @@
 #include "TemplateMatchingData.h"
 #include "KernelTaskCtrl.h"
 #include "RtTasksData.h"
-#include "SharedMemoryAdditionalData.h"
 
 
 #define SHARED_MEM_NAME  "SHMEM"
@@ -28,14 +27,13 @@ typedef struct __SharedMemStruct
 {
 	DaqMwaMap				daq_mwa_map;
 	MwaDaqMap				mwa_daq_map;
-	RecordingData				recording_data;
-	RecordingData				filtered_recording_data;
+	RecordingData			recording_data;
+	RecordingData			filtered_recording_data;
 	SpikeThresholding			spike_thresholding;
 	BlueSpikeTimeStamp 		blue_spike_time_stamp;
 	SpikeTimeStamp 			spike_time_stamp;
-	void					*additional_data[MAX_NUM_OF_SHM_ADDITIONAL_DATA];	
 	TemplateMatchingData		template_matching_data;
-	KernelTaskCtrl				kernel_task_ctrl;
+	KernelTaskCtrl			kernel_task_ctrl;
 	RtTasksData				rt_tasks_data;
 } SharedMemStruct;
 
