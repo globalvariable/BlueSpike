@@ -117,3 +117,14 @@ double randn_trig(double mu, double sigma) {
 		return storedDeviate*sigma + mu;
 	}
 }
+
+double get_rand_number(void)
+{
+	static bool not_seeded = true;
+	if (not_seeded)
+	{
+		not_seeded = false;
+		srand ( time(NULL) );
+	}
+	return rand()/((double)RAND_MAX);
+}

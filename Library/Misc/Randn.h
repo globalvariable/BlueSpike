@@ -7,7 +7,7 @@
 
 double randn_notrig(double mu, double sigma);
 double randn_trig(double mu, double sigma);
-
+double get_rand_number(void);
 
 
 #endif
