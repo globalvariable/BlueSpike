@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 double randn_notrig(double mu, double sigma);
 double randn_trig(double mu, double sigma);
