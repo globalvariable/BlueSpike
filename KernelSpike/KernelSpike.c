@@ -994,7 +994,7 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	
 	if (include_unit)	// fill in spike time stamp buff
 	{
-		spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
+		spike_time_stamp_buff_idx_write = spike_time_stamp->buff_idx_write;
 		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].peak_time = peak_time;
 		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].mwa_or_layer = mwa;
 		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].channel_or_neuron_group = chan;

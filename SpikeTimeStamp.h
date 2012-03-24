@@ -8,10 +8,10 @@
 
 typedef struct __SpikeTimeStampItem
 {
-	TimeStamp 	peak_time;				// spike peak time
-	int	 		mwa_or_layer;				// mwa from which spike sorted
-	int 			channel_or_neuron_group;		// channel from which spike sorted
-	int 			unit_or_neuron;				// channel from which spike sorted
+	TimeStamp 		peak_time;				// spike peak time
+	unsigned int		mwa_or_layer;				// mwa from which spike sorted
+	unsigned int		channel_or_neuron_group;		// channel from which spike sorted
+	unsigned int		unit_or_neuron;				// channel from which spike sorted
 } SpikeTimeStampItem;
 
 typedef SpikeTimeStampItem	SpikeTimeStampBuff[SPIKE_TIME_STAMP_BUFF_SIZE];
