@@ -19,7 +19,7 @@ typedef SpikeTimeStampItem	SpikeTimeStampBuff[SPIKE_TIME_STAMP_BUFF_SIZE];
 typedef struct __SpikeTimeStamp
 {
 	SpikeTimeStampBuff		spike_time_stamp_buff;
-	int					buff_idx_write;
+	unsigned int				buff_idx_write;
 } SpikeTimeStamp;
 
 
