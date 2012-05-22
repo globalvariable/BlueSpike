@@ -1,10 +1,14 @@
-#ifndef RTDATA_H
-#define RTDATA_H
+#ifndef RT_TASKS_DATA_H
+#define RT_TASKS_DATA_H
 
 #include "CpuInfo.h"
+#include "KernelTaskCtrl.h"
+#include "TimeStamp.h"
 
 #define MAX_NUM_RT_TAKS_PER_THREAD	10
 #define MAX_NUM_RT_TAKS_NAME_LENGTH	50
+
+#define RT_TASKS_DATA_SHM_NAME		"RTTASK"		
 
 typedef struct __CpuThreadRtTasksData
 {
@@ -32,6 +36,7 @@ typedef struct __RtTasksData
 	CpuRtTasksData 	cpu_rt_task_data[MAX_NUM_OF_CPUS];
 	TimeStamp		current_system_time;		// shared clocking set by kernelspike and others read it. kernel_spike detects exact spike times and other tasks adjusts themselves according to kernelspike
 	TimeStamp		previous_system_time;
+	KernelTaskCtrl	kernel_task_ctrl;
 } RtTasksData;
 
 

@@ -26,7 +26,10 @@ static int spike_time_stamp_buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
 static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 static int spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
 
-void rt_handler(int t)
+static BlueSpikeData *blue_spike_data = NULL; 
+static RtTasksData *rt_tasks_data = NULL; 
+
+void rt_handler(long int t)
 {
 	int i, j, k, m, return_value;
 	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], daq_chan_num[MAX_NUM_OF_DAQ_CARD] ;
@@ -54,20 +57,22 @@ void rt_handler(int t)
 
 	daq_cards_on = 0;
 
-	daq_mwa_map = &shared_memory->daq_mwa_map;
-	recording_data = &shared_memory->recording_data;
-	filtered_recording_data = &shared_memory->filtered_recording_data;
-	kernel_task_ctrl = &shared_memory->kernel_task_ctrl;
-		
-	highpass_150Hz_on = &kernel_task_ctrl->highpass_150Hz_on; 
-	highpass_400Hz_on = &kernel_task_ctrl->highpass_400Hz_on;
-	lowpass_8KHz_on = &kernel_task_ctrl->lowpass_8KHz_on;
+	daq_mwa_map = &blue_spike_data->daq_mwa_map;
+	recording_data = &blue_spike_data->recording_data;
+	filtered_recording_data = &blue_spike_data->filtered_recording_data;
+
+	highpass_150Hz_on = &(blue_spike_data->blue_spike_ctrl.highpass_150Hz_on); 
+	highpass_400Hz_on = &(blue_spike_data->blue_spike_ctrl.highpass_400Hz_on);
+ 	lowpass_8KHz_on = &(blue_spike_data->blue_spike_ctrl.lowpass_8KHz_on);
+	daq_card_mapped = &(blue_spike_data->blue_spike_ctrl.daq_card_mapped);
+
+	kernel_task_ctrl = &rt_tasks_data->kernel_task_ctrl;
 	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;
 	kill_all_rt_tasks = &kernel_task_ctrl->kill_all_rt_tasks;
-	daq_card_mapped = &kernel_task_ctrl->daq_card_mapped;
 
-	kern_curr_time = &shared_memory->rt_tasks_data.current_system_time;
-	kern_prev_time = &shared_memory->rt_tasks_data.previous_system_time;
+
+	kern_curr_time = &rt_tasks_data->current_system_time;
+	kern_prev_time = &rt_tasks_data->previous_system_time;
 	
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -209,7 +214,8 @@ void rt_handler(int t)
 	}	
 	stop_rt_timer();
 	rt_task_delete(&rt_task0);	
-    	rtai_kfree(nam2num(SHARED_MEM_NAME));	
+    	rtai_kfree(nam2num(BLUE_SPIKE_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
 }
 
 
@@ -220,19 +226,27 @@ int __init xinit_module(void)
 	RTIME tick_period;
 	
 	printk("KernelSpike: insmod KernelSpike\n");
-	shared_memory = (SharedMemStruct*)rtai_kmalloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
-	if (shared_memory == NULL)
+
+	rt_tasks_data = (RtTasksData*)rtai_kmalloc(nam2num(RT_TASKS_DATA_SHM_NAME), sizeof(RtTasksData));
+	if (rt_tasks_data == NULL)
 		return -ENOMEM;
-	memset(shared_memory, 0, SHARED_MEM_SIZE);
-        printk("KernelSpike: Shared Memory allocated.\n");
-        printk("KernelSpike: sizeof(SharedMemStruct) : %lu.\n", SHARED_MEM_SIZE);
+	memset(rt_tasks_data, 0, sizeof(RtTasksData));
+        printk("KernelSpike: RtTasksData Memory allocated.\n");
+        printk("KernelSpike: sizeof(RtTasksData) : %lu.\n", sizeof(RtTasksData));
+
+	blue_spike_data = (BlueSpikeData*)rtai_kmalloc(nam2num(BLUE_SPIKE_DATA_SHM_NAME), sizeof(BlueSpikeData));
+	if (blue_spike_data == NULL)
+		return -ENOMEM;
+	memset(blue_spike_data, 0, sizeof(BlueSpikeData));
+        printk("KernelSpike: BlueSpike Memory allocated.\n");
+        printk("KernelSpike: sizeof(BlueSpikeData) : %lu.\n", sizeof(BlueSpikeData));
         
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
 		{
-			shared_memory->daq_mwa_map[i][j].mwa = MAX_NUM_OF_MWA;
-			shared_memory->daq_mwa_map[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;
+			blue_spike_data->daq_mwa_map[i][j].mwa = MAX_NUM_OF_MWA;
+			blue_spike_data->daq_mwa_map[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;
 		}
 	}
 	
@@ -240,12 +254,12 @@ int __init xinit_module(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			shared_memory->mwa_daq_map[i][j].daq_card = MAX_NUM_OF_DAQ_CARD;
-			shared_memory->mwa_daq_map[i][j].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+			blue_spike_data->mwa_daq_map[i][j].daq_card = MAX_NUM_OF_DAQ_CARD;
+			blue_spike_data->mwa_daq_map[i][j].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
 		}
 	}
 
-	shared_memory->kernel_task_ctrl.kernel_task_idle = 1;
+	rt_tasks_data->kernel_task_ctrl.kernel_task_idle = 1;
 
 	rt_set_periodic_mode();
 	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, (KERNELSPIKE_CPU_ID*MAX_NUM_OF_THREADS_PER_CPU)+KERNELSPIKE_CPU_THREAD_ID);
@@ -254,12 +268,12 @@ int __init xinit_module(void)
 	tick_period = nano2count(KERNELSPIKE_PERIOD);
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
 
-	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].rt_task_period = KERNELSPIKE_PERIOD;
-	shared_memory->rt_tasks_data.num_of_total_rt_tasks++;
-	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].num_of_rt_tasks_at_cpu++;
-	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_rt_tasks_at_cpu_thread++;
-	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold = KERNELSPIKE_POSITIVE_JITTER_THRES;
-	shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold = KERNELSPIKE_NEGATIVE_JITTER_THRES;
+	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].rt_task_period = KERNELSPIKE_PERIOD;
+	rt_tasks_data->num_of_total_rt_tasks++;
+	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].num_of_rt_tasks_at_cpu++;
+	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_rt_tasks_at_cpu_thread++;
+	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold = KERNELSPIKE_POSITIVE_JITTER_THRES;
+	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold = KERNELSPIKE_NEGATIVE_JITTER_THRES;
 
 	printk("KernelSpike: rt task created with %d nanoseconds period.\n", KERNELSPIKE_PERIOD);
 	return 0;
@@ -269,11 +283,8 @@ void __exit xcleanup_module(void)
 {
 	int i;
 
-	if (shared_memory->rt_tasks_data.num_of_total_rt_tasks != 1)
-		printk("KernelSpike: BUG: KernelSpike is a task. Total num of rt_tasks cannot be zero!!!\n");			// Allow rmmod to run, otherwise it will lock
-
-	if (shared_memory->rt_tasks_data.num_of_total_rt_tasks == 0)
-		printk("KernelSpike: BUG: KernelSpike is a task. Total num of rt_tasks cannot be zero!!!\n");			// Allow rmmod to run.
+	if (rt_tasks_data->num_of_total_rt_tasks != 1)
+		printk("KernelSpike: BUG: There are other rt tasks !!!\n");			// Allow rmmod to run, otherwise it will lock
 
 	rt_task_delete(&rt_task0);	
 	stop_rt_timer();
@@ -286,7 +297,8 @@ void __exit xcleanup_module(void)
 			comedi_close(ni6070_comedi_dev[i]);
 		}
 	}
-    	rtai_kfree(nam2num(SHARED_MEM_NAME));
+    	rtai_kfree(nam2num(BLUE_SPIKE_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
     	printk("KernelSpike: rmmod KernelSpike\n");
 	return;
 }
@@ -772,7 +784,7 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 	SpikeEndHandlingBuff 	*spike_end_handling_buff;	
 	TimeStamp peak_time;			
 
-	amplitude_thres = shared_memory->spike_thresholding.amplitude_thres[mwa][mwa_chan];
+	amplitude_thres = blue_spike_data->spike_thresholding.amplitude_thres[mwa][mwa_chan];
 	if (amplitude_thres == 0.0)
 	{
 		return;
@@ -783,8 +795,8 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 	
 	start_idx = filtered_recording_data->buff_idx_prev[mwa][mwa_chan];
 	end_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
-	in_spike = &(shared_memory->spike_thresholding.in_spike[mwa][mwa_chan]);
-	in_spike_sample_cntr = &(shared_memory->spike_thresholding.in_spike_sample_cntr[mwa][mwa_chan]);
+	in_spike = &(blue_spike_data->spike_thresholding.in_spike[mwa][mwa_chan]);
+	in_spike_sample_cntr = &(blue_spike_data->spike_thresholding.in_spike_sample_cntr[mwa][mwa_chan]);
 	idx = start_idx;
 
 	while (idx != end_idx)
@@ -872,7 +884,7 @@ void handle_spike_end_handling_buffer(void)
 	
 	int idx, start_idx, end_idx;	
 	
-	filtered_recording_data = &shared_memory->filtered_recording_data;	
+	filtered_recording_data = &blue_spike_data->filtered_recording_data;	
 	spike_end_handling_buff = &(spike_end_handling.spike_end_handling_buff);
 
 	start_idx = spike_end_handling.buff_start_idx;
@@ -926,9 +938,9 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	int spike_time_stamp_buff_idx_write;
 	
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][chan]);
-	template_matching_data = &shared_memory->template_matching_data;
-	blue_spike_time_stamp = &shared_memory->blue_spike_time_stamp;
-	spike_time_stamp = &shared_memory->spike_time_stamp;
+	template_matching_data = &blue_spike_data->template_matching_data;
+	blue_spike_time_stamp = &blue_spike_data->blue_spike_time_stamp;
+	spike_time_stamp = &blue_spike_data->spike_time_stamp;
 
 	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
@@ -1012,7 +1024,7 @@ void print_warning_and_errors(void)
 	{
 		printk("KernelSpike: CRITICAL ERROR: KernelSpike reaches maximum time capacity limit\n");
 		printk("KernelSpike: CRITICAL ERROR: Current time is: %llu\n", ((long long unsigned int) current_time_ns));
-		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
+		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;
 	}
 	if ((spike_end_handling_buff_size - spike_end_handling_buff_control_cntr) < 100)
@@ -1034,7 +1046,7 @@ void print_warning_and_errors(void)
 		printk("KernelSpike: --Latest # of detected spikes is %d ---\n", spike_end_handling_buff_control_cntr);	
 		printk("KernelSpike: -------Spike End buffer size  is %d------\n", spike_end_handling_buff_size);
 		printk("KernelSpike: ------------------------------------------------------\n");
-		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
+		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}  
 	if ((blue_spike_time_stamp_buff_size - blue_spike_time_stamp_buff_control_cntr) < 100)
@@ -1056,7 +1068,7 @@ void print_warning_and_errors(void)
 		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", blue_spike_time_stamp_buff_control_cntr);	
 		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", blue_spike_time_stamp_buff_size);
 		printk("KernelSpike: --------------------------------------------------------\n");
-		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
+		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}	
 	spike_end_handling_buff_control_cntr = 0;
@@ -1110,7 +1122,7 @@ int open_daq_cards(void)
 			comedi_cancel(ni6070_comedi_dev[j], COMEDI_SUBDEVICE_AI);
 			comedi_close(ni6070_comedi_dev[j]);			
 		}
-		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
+		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return 0;
 	} 
 	
@@ -1135,7 +1147,7 @@ int open_daq_cards(void)
 			comedi_close(ni6070_comedi_dev[j]);			
 		}
 		return 0;
-		shared_memory->kernel_task_ctrl.kill_all_rt_tasks = 1;
+		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 	}
 	return 1; 		
 }
@@ -1152,21 +1164,21 @@ void close_daq_cards(void)
 
 int handle_daq_cards(void)
 {
-	if ((shared_memory->kernel_task_ctrl.turn_daq_card_on) && (daq_cards_on))
+	if ((blue_spike_data->blue_spike_ctrl.turn_daq_card_on) && (daq_cards_on))
 	{
 		return 0;
 	}
-	else if ((!(shared_memory->kernel_task_ctrl.turn_daq_card_on)) && (!daq_cards_on))
+	else if ((!(blue_spike_data->blue_spike_ctrl.turn_daq_card_on)) && (!daq_cards_on))
 	{
 		return 1;
 	}
-	else if ((shared_memory->kernel_task_ctrl.turn_daq_card_on) && (!daq_cards_on))
+	else if ((blue_spike_data->blue_spike_ctrl.turn_daq_card_on) && (!daq_cards_on))
 	{
 		if (open_daq_cards()) 
 			daq_cards_on = 1;
 		return 1;
 	}
-	else if ((!(shared_memory->kernel_task_ctrl.turn_daq_card_on)) && (daq_cards_on))
+	else if ((!(blue_spike_data->blue_spike_ctrl.turn_daq_card_on)) && (daq_cards_on))
 	{
 		close_daq_cards();
 		daq_cards_on = 0;
@@ -1184,7 +1196,7 @@ void evaluate_period_run_time(unsigned int curr_time)
 	if (period_run_time > max_period_run_time)
 	{
 		max_period_run_time = period_run_time;
-		shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_period_run_time = max_period_run_time;
+		rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_period_run_time = max_period_run_time;
 	}	
 }
 void evaluate_jitter(unsigned int period_occured)
@@ -1198,10 +1210,10 @@ void evaluate_jitter(unsigned int period_occured)
 		if (jitter > max_positive_jitter)
 		{
 			max_positive_jitter = jitter;
-			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_positive_jitter = max_positive_jitter;
+			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_positive_jitter = max_positive_jitter;
 		}
-		if (jitter > shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold)
-			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_positive_jitter_exceeding_threshold++;
+		if (jitter > rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold)
+			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_positive_jitter_exceeding_threshold++;
 	}
 	else
 	{
@@ -1209,9 +1221,9 @@ void evaluate_jitter(unsigned int period_occured)
 		if (jitter > max_negative_jitter)
 		{
 			max_negative_jitter = jitter;
-			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_negative_jitter = max_negative_jitter;
+			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_negative_jitter = max_negative_jitter;
 		}	
-		if (jitter > shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold)
-			shared_memory->rt_tasks_data.cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_negative_jitter_exceeding_threshold++;		
+		if (jitter > rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold)
+			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_negative_jitter_exceeding_threshold++;		
 	} 
 }

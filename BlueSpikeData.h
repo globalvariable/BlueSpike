@@ -1,5 +1,6 @@
-#ifndef SHAREDMEMORY_H
-#define SHAREDMEMORY_H
+#ifndef BLUE_SPIKE_DATA_H
+#define BLUE_SPIKE_DATA_H
+
 
 #include "MwaDaqMap.h"
 #include "DaqMwaMap.h"
@@ -8,22 +9,11 @@
 #include "BlueSpikeTimeStamp.h"
 #include "SpikeTimeStamp.h"
 #include "TemplateMatchingData.h"
-#include "KernelTaskCtrl.h"
-#include "RtTasksData.h"
+#include "BlueSpikeCtrl.h"
 
+#define BLUE_SPIKE_DATA_SHM_NAME		"BLUESP"		
 
-#define SHARED_MEM_NAME  "SHMEM"
-#ifdef KERNELSPIKE_H
-#define SHARED_MEM_SIZE sizeof(SharedMemStruct)
-#else
-#define SHARED_MEM_SIZE 0
-#endif
-
-
-
-
-
-typedef struct __SharedMemStruct
+typedef struct __BlueSpikeData
 {
 	DaqMwaMap				daq_mwa_map;
 	MwaDaqMap				mwa_daq_map;
@@ -33,11 +23,7 @@ typedef struct __SharedMemStruct
 	BlueSpikeTimeStamp 		blue_spike_time_stamp;
 	SpikeTimeStamp 			spike_time_stamp;
 	TemplateMatchingData		template_matching_data;
-	KernelTaskCtrl			kernel_task_ctrl;
-	RtTasksData				rt_tasks_data;
-} SharedMemStruct;
-
-SharedMemStruct *shared_memory;
-
+	BlueSpikeCtrl				blue_spike_ctrl;
+} BlueSpikeData;
 
 #endif

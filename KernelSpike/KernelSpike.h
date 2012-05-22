@@ -15,7 +15,8 @@
 #include <linux/comedi.h>
 #include <linux/comedilib.h>
 
-#include "../SharedMemory.h"
+#include "../BlueSpikeData.h"
+#include "../RtTasksData.h"
 #include "SpikeEndHandling.h"
 
 #define KERNELSPIKE_RUN_TIME_LIMIT 18446744000000000000ULL
@@ -44,7 +45,7 @@ RecordingData			highpass_filtered_recording_data;
 SpikeEndHandling		spike_end_handling;	
 	
 //	Functions
-void rt_handler(int t);
+void rt_handler(long int t);
 int ni6070_comedi_configure(int card_number);
 void print_cmd(int card_number);
 void filter_recording_data( RecordingData *recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on);
