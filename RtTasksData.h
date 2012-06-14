@@ -198,7 +198,7 @@ typedef struct __RtTasksData
 #define IZ_PS_NETWORK_SIM_POSITIVE_JITTER_THRES	 	200000		// 200 us
 #define IZ_PS_NETWORK_SIM_NEGATIVE_JITTER_THRES	 	200000
 
-#define IZ_PS_NETWORK_SIM_NUM_OF_DEDICATED_CPUS	2	
+#define IZ_PS_NETWORK_SIM_NUM_OF_DEDICATED_CPUS	2	// cpus startiing from IZ_PS_NETWORK_SIM_CPU_ID are dedicated to SNN simulations
 
 
 
