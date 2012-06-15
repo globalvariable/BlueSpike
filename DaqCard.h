@@ -1,8 +1,14 @@
 #ifndef DAQCARD_H
 #define DAQCARD_H
 
-#define MAX_NUM_OF_DAQ_CARD 1 					// Increase if there is an additional card
-#define MAX_NUM_OF_CHANNEL_PER_DAQ_CARD 16 		
+typedef unsigned int DaqCardNum;
+typedef unsigned int DaqCardChanNum;
+
+#define MAX_NUM_OF_DAQ_CARD					1 					// Increase if there is an additional card
+#define MAX_NUM_OF_CHANNEL_PER_DAQ_CARD	16 		
+
+#define NUM_OF_DAQ_CARD_NULL					MAX_NUM_OF_DAQ_CARD				
+#define NUM_OF_CHANNEL_PER_DAQ_CARD_NULL	MAX_NUM_OF_CHANNEL_PER_DAQ_CARD
 
 #define DAQ_0_MODEL 				"NI6070E"
 #define COMEDI_SUBDEVICE_AI 		0

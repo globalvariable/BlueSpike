@@ -1,20 +1,17 @@
 #ifndef CONFIGDAQ_H
 #define CONFIGDAQ_H
-#include "../SharedMemory.h"
-#include "../Library/DataHandling/DataHandling.h"
 
+#include <gtk/gtk.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 
-#include <rtai_comedi.h>
-
-#include <gtk/gtk.h>
-#include <gtkdatabox.h>
-#include <gtkdatabox_ruler.h>
-#include <gtkdatabox_lines.h>
-
+#include "../DaqMwaData.h"
+#include "../Library/Messages/DaqCon2KrnlSpk.h"
+#include "../KernelSpike/KernelSpikeSharedMem.h"
+#include "../Library/Misc/Misc.h"
+#include "Interrogate.h"
 
 GtkWidget *entry_daq_card_num;
 GtkWidget *entry_daq_card_chan_range_lower;

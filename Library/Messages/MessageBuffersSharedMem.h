@@ -1,0 +1,14 @@
+#ifndef MESSAGE_BUFFERS_SHARED_MEM_H
+#define MESSAGE_BUFFERS_SHARED_MEM_H
+
+#define DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME		"DQCN2KS"
+
+
+
+
+
+
+#endif
+
+
+

@@ -12,25 +12,19 @@ GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
 all: ConfigDaq
 
-ConfigDaq: ConfigDaq.c ../Library/DataHandling/DataHandling.o ../Library/DataHandling/v0/DataFormat_v0.o ../Library/DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Library/Interrogate/Interrogate.o
-	$(CC) $(LXRT_CFLAGS) -o $@ $< ../Library/DataHandling/DataHandling.o ../Library/DataHandling/v0/DataFormat_v0.o ../Library/DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Library/Interrogate/Interrogate.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
+ConfigDaq: ConfigDaq.c ../Library/Misc/Misc.o Interrogate.o ../Library/Messages/DaqCon2KrnlSpk.o
+	$(CC) $(LXRT_CFLAGS) $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS)  -o $@ $< ../Library/Misc/Misc.o Interrogate.o ../Library/Messages/DaqCon2KrnlSpk.o 
 
-../Library/DataHandling/DataHandling.o: ../Library/DataHandling/DataHandling.c 
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 
-	
-../Library/DataHandling/v0/Buffer_v0.o: ../Library/DataHandling/v0/Buffer_v0.c 
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 	
-
-../Library/DataHandling/v0/DataFormat_v0.o: ../Library/DataHandling/v0/DataFormat_v0.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
-	
 ../Library/Misc/Misc.o: ../Library/Misc/Misc.c
 	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 	
+
+../Library/Messages/DaqCon2KrnlSpk.o: ../Library/Messages/DaqCon2KrnlSpk.c
+	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 	
 	
-../Library/Interrogate/Interrogate.o: ../Library/Interrogate/Interrogate.c
+Interrogate.o: Interrogate.c
 	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 		
 
 clean:
-	rm -f *.o ConfigDaq ../Library/DataHandling/*.o ../Library/DataHandling/v0/*.o ../Library/Misc/*.o ../Library/Interrogate/*.o
+	rm -f *.o ConfigDaq ../Library/Misc/*.o ../Library/Messages/*.o
 
 .PHONY: clean

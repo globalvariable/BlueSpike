@@ -1,7 +1,7 @@
 #include "Interrogate.h"
 
 
-bool interrogate_mapping(void)
+bool interrogate_mapping(DaqMwaData *daq_mwa_data)
 {
 	int i, j, check = 0;
 	
@@ -9,13 +9,13 @@ bool interrogate_mapping(void)
 	{	
 		for (j = 0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
 		{	
-			if ((shared_memory->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
+			if ((daq_mwa_data->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (daq_mwa_data->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
 			{
 				printf ("DAQ: %d\tChannel: %d\t----> MWA: Idle\tChannel: Idle\n", i, j);
 			}
-			else if ((shared_memory->daq_mwa_map[i][j].mwa != MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
+			else if ((daq_mwa_data->daq_mwa_map[i][j].mwa != MAX_NUM_OF_MWA) && (daq_mwa_data->daq_mwa_map[i][j].channel == MAX_NUM_OF_CHAN_PER_MWA))
 			{
-				printf ("DAQ: %d\tChannel: %d\t----> MWA: %d\tChannel: Idle\n", i, j, shared_memory->daq_mwa_map[i][j].mwa);			
+				printf ("DAQ: %d\tChannel: %d\t----> MWA: %d\tChannel: Idle\n", i, j, daq_mwa_data->daq_mwa_map[i][j].mwa);			
 				printf ("****************************************************************\n");			
 				printf ("*************************BUG*********************************\n");
 				printf ("BUG: MWA was not mapped but its channel was mapped\n");
@@ -23,9 +23,9 @@ bool interrogate_mapping(void)
 				printf ("****************************************************************\n");	
 				return 0;					
 			}
-			else if ((shared_memory->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (shared_memory->daq_mwa_map[i][j].channel != MAX_NUM_OF_CHAN_PER_MWA))
+			else if ((daq_mwa_data->daq_mwa_map[i][j].mwa == MAX_NUM_OF_MWA) && (daq_mwa_data->daq_mwa_map[i][j].channel != MAX_NUM_OF_CHAN_PER_MWA))
 			{
-				printf ("DAQ: %d\tChannel: %d\t----> MWA: Idle\tChannel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].channel);			
+				printf ("DAQ: %d\tChannel: %d\t----> MWA: Idle\tChannel: %d\n", i, j, daq_mwa_data->daq_mwa_map[i][j].channel);			
 				printf ("*******************************************************************\n");			
 				printf ("*************************BUG************************************\n");
 				printf ("BUG: MWA was mapped but its channel was not mapped\n");
@@ -35,7 +35,7 @@ bool interrogate_mapping(void)
 			}			
 			else
 			{
-				printf ("DAQ: %d\tChannel: %d\t----> MWA: %d\tChannel: %d\n", i, j, shared_memory->daq_mwa_map[i][j].mwa, shared_memory->daq_mwa_map[i][j].channel);
+				printf ("DAQ: %d\tChannel: %d\t----> MWA: %d\tChannel: %d\n", i, j, daq_mwa_data->daq_mwa_map[i][j].mwa, daq_mwa_data->daq_mwa_map[i][j].channel);
 				check =1;
 			}
 		}
@@ -46,13 +46,13 @@ bool interrogate_mapping(void)
 	{	
 		for (j = 0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{	
-			if ((shared_memory->mwa_daq_map[i][j].daq_card == MAX_NUM_OF_DAQ_CARD) && (shared_memory->mwa_daq_map[i][j].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))
+			if ((daq_mwa_data->mwa_daq_map[i][j].daq_card == MAX_NUM_OF_DAQ_CARD) && (daq_mwa_data->mwa_daq_map[i][j].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))
 			{
 				printf ("MWA: %d\tChannel: %d\t----> DAQ: Idle\tChannel: Idle\n", i, j);
 			}
-			else if ((shared_memory->mwa_daq_map[i][j].daq_card != MAX_NUM_OF_DAQ_CARD) && (shared_memory->mwa_daq_map[i][j].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))
+			else if ((daq_mwa_data->mwa_daq_map[i][j].daq_card != MAX_NUM_OF_DAQ_CARD) && (daq_mwa_data->mwa_daq_map[i][j].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))
 			{
-				printf ("DAQ: %d\tChannel: %d\t----> DAQ: %d\tChannel: Idle\n", i, j,shared_memory->mwa_daq_map[i][j].daq_card);			
+				printf ("DAQ: %d\tChannel: %d\t----> DAQ: %d\tChannel: Idle\n", i, j,daq_mwa_data->mwa_daq_map[i][j].daq_card);			
 				printf ("****************************************************************\n");			
 				printf ("*************************BUG*********************************\n");
 				printf ("BUG: DAQ Card was not mapped but its channel was mapped\n");
@@ -60,9 +60,9 @@ bool interrogate_mapping(void)
 				printf ("****************************************************************\n");	
 				return 0;					
 			}
-			else if ((shared_memory->mwa_daq_map[i][j].daq_card == MAX_NUM_OF_DAQ_CARD) && (shared_memory->mwa_daq_map[i][j].daq_chan != MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))
+			else if ((daq_mwa_data->mwa_daq_map[i][j].daq_card == MAX_NUM_OF_DAQ_CARD) && (daq_mwa_data->mwa_daq_map[i][j].daq_chan != MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))
 			{
-				printf ("DAQ: %d\tChannel: %d\t----> DAQ: Idle\tChannel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_chan);			
+				printf ("DAQ: %d\tChannel: %d\t----> DAQ: Idle\tChannel: %d\n", i, j, daq_mwa_data->mwa_daq_map[i][j].daq_chan);			
 				printf ("*******************************************************************\n");			
 				printf ("*************************BUG************************************\n");
 				printf ("BUG: DAQ Card was mapped but its channel was not mapped\n");
@@ -72,7 +72,7 @@ bool interrogate_mapping(void)
 			}		
 			else
 			{
-				printf("MWA: %d\tChannel: %d\t----> DAQ: %d\tChannel: %d\n", i, j, shared_memory->mwa_daq_map[i][j].daq_card , shared_memory->mwa_daq_map[i][j].daq_chan );	
+				printf("MWA: %d\tChannel: %d\t----> DAQ: %d\tChannel: %d\n", i, j, daq_mwa_data->mwa_daq_map[i][j].daq_card , daq_mwa_data->mwa_daq_map[i][j].daq_chan );	
 			}
 		}
 	}

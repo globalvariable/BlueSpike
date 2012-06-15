@@ -22,30 +22,43 @@ static double template_matching_diff_temporary[MAX_NUM_OF_UNIT_PER_CHAN][NUM_OF_
 static double template_matching_exponent[MAX_NUM_OF_UNIT_PER_CHAN];	
 static double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
 
+// For spike thresholding
+static bool static_in_spike[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+static int static_in_spike_sample_cntr[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+
 static int spike_time_stamp_buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
 static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 static int spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
 
-static BlueSpikeData *blue_spike_data = NULL; 
-static RtTasksData *rt_tasks_data = NULL; 
+static DaqMwaData			*daq_mwa_data = NULL;
+static RecordingData			*recording_data = NULL;
+static RecordingData			*filtered_recording_data = NULL;
+static SpikeThresholding		*spike_thresholding = NULL;
+static BlueSpikeTimeStamp 		*blue_spike_time_stamp = NULL;
+static SpikeTimeStamp 			*spike_time_stamp = NULL;
+static TemplateMatchingData	*template_matching_data = NULL;
+static FilterCtrl				*filter_ctrl = NULL;
+static RtTasksData 			*rt_tasks_data = NULL; 
+static DaqCon2KrnlSpkMsg* daq_config_2_kernel_spike_msgs = NULL;
+
+
+static bool handle_daq_config_2_kernel_spike_msgs(DaqCon2KrnlSpkMsg* msg_buffer);	
+static bool get_next_daq_config_2_kernel_spike_msg_buffer_item(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgItem **msg_item);	// take care of static read_idx value //only request buffer handler uses
 
 void rt_handler(long int t)
 {
 	int i, j, k, m, return_value;
 	int front[MAX_NUM_OF_DAQ_CARD], back[MAX_NUM_OF_DAQ_CARD], num_byte[MAX_NUM_OF_DAQ_CARD], daq_chan_num[MAX_NUM_OF_DAQ_CARD] ;
-	DaqMwaMap			*daq_mwa_map;
-	RecordingData			*recording_data;
-	RecordingData			*filtered_recording_data;
-	KernelTaskCtrl			*kernel_task_ctrl;
 
 	int *recording_data_write_idx;
 	int mwa, mwa_chan;
-	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kernel_task_idle, *kill_all_rt_tasks, *daq_card_mapped; 
+	DaqMwaMap	*daq_mwa_map;
+	bool *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on, *kill_all_rt_tasks, *daq_cards_on; 
 	TimeStamp *kern_curr_time, *kern_prev_time;
 	unsigned int prev_time; // local_time  unsigned int
 	unsigned int curr_time;		// local_time  unsigned int
 	unsigned int period_occured;		
-	
+
 	int rt_task_kill_timer_cntr;
 
 	prev_time= rt_get_cpu_time_ns();	
@@ -55,21 +68,15 @@ void rt_handler(long int t)
 	current_time_ns = 0;		// global time  long long unsigned int  // TimeStamp	
 	previous_time_ns = 0;
 
-	daq_cards_on = 0;
 
-	daq_mwa_map = &blue_spike_data->daq_mwa_map;
-	recording_data = &blue_spike_data->recording_data;
-	filtered_recording_data = &blue_spike_data->filtered_recording_data;
+	highpass_150Hz_on = &(filter_ctrl->highpass_150Hz_on); 
+	highpass_400Hz_on = &(filter_ctrl->highpass_400Hz_on);
+ 	lowpass_8KHz_on = &(filter_ctrl->lowpass_8KHz_on);
 
-	highpass_150Hz_on = &(blue_spike_data->blue_spike_ctrl.highpass_150Hz_on); 
-	highpass_400Hz_on = &(blue_spike_data->blue_spike_ctrl.highpass_400Hz_on);
- 	lowpass_8KHz_on = &(blue_spike_data->blue_spike_ctrl.lowpass_8KHz_on);
-	daq_card_mapped = &(blue_spike_data->blue_spike_ctrl.daq_card_mapped);
+	daq_cards_on = &(daq_mwa_data->daq_cards_on);
+	daq_mwa_map = &(daq_mwa_data->daq_mwa_map);
 
-	kernel_task_ctrl = &rt_tasks_data->kernel_task_ctrl;
-	kernel_task_idle = &kernel_task_ctrl->kernel_task_idle;
-	kill_all_rt_tasks = &kernel_task_ctrl->kill_all_rt_tasks;
-
+	kill_all_rt_tasks = &(rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks);
 
 	kern_curr_time = &rt_tasks_data->current_system_time;
 	kern_prev_time = &rt_tasks_data->previous_system_time;
@@ -84,8 +91,7 @@ void rt_handler(long int t)
 	while (!(*kill_all_rt_tasks)) 
 	{
 		rt_task_wait_period();
-		
-		*kernel_task_idle = 0;	
+
 		curr_time = rt_get_cpu_time_ns();
 		period_occured = curr_time - prev_time;
 		current_time_ns += period_occured;
@@ -93,11 +99,14 @@ void rt_handler(long int t)
 		previous_time_ns = current_time_ns;		
 		prev_time = curr_time;
 
-		if ((handle_daq_cards()) || (!(*daq_card_mapped)))
+		if (! handle_daq_config_2_kernel_spike_msgs(daq_config_2_kernel_spike_msgs))
+			return;
+
+		if (!(*daq_cards_on))
 		{
 			*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
 			*kern_prev_time = previous_time_ns;		
-			*kernel_task_idle = 1;
+
 			for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 			{
 				front[i] = 0;
@@ -127,7 +136,7 @@ void rt_handler(long int t)
 			{
 				mwa = (*daq_mwa_map)[i][daq_chan_num[i]].mwa;
 				mwa_chan = (*daq_mwa_map)[i][daq_chan_num[i]].channel;	
-				if ((mwa != MAX_NUM_OF_MWA) && (mwa_chan != MAX_NUM_OF_CHAN_PER_MWA))	// No map for this channel
+				if ((mwa != NUM_OF_MWA_NULL) && (mwa_chan != NUM_OF_CHAN_PER_MWA_NULL))	// No map for this channel
 				{
 					recording_data_write_idx = &(recording_data->buff_idx_write[mwa][mwa_chan]);
 
@@ -145,7 +154,7 @@ void rt_handler(long int t)
 					else
 						(*recording_data_write_idx)++;
 				}
-				else if (((mwa == MAX_NUM_OF_MWA) && (mwa_chan != MAX_NUM_OF_CHAN_PER_MWA)) || ((mwa != MAX_NUM_OF_MWA) && (mwa_chan == MAX_NUM_OF_CHAN_PER_MWA)))
+				else if (((mwa == NUM_OF_MWA_NULL) && (mwa_chan != NUM_OF_CHAN_PER_MWA_NULL)) || ((mwa != NUM_OF_MWA_NULL) && (mwa_chan == NUM_OF_CHAN_PER_MWA_NULL)))
 				{
 					printk("KernelSpike: BUG: mwa or mwa_chan is problematic\n");
 					printk("KernelSpike: BUG: recording data might be corrupted\n");
@@ -175,8 +184,8 @@ void rt_handler(long int t)
 			{
 				for (m=0; m<MAX_NUM_OF_CHAN_PER_MWA; m++)
 				{
-					filter_recording_data(recording_data, filtered_recording_data, k, m, *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on);
-					find_spike_end(filtered_recording_data, k, m);
+					filter_recording_data(k, m, *highpass_150Hz_on, *highpass_400Hz_on, *lowpass_8KHz_on);
+					find_spike_end(k, m);
 				}
 			}
 			handle_spike_end_handling_buffer();
@@ -201,7 +210,6 @@ void rt_handler(long int t)
 
 		evaluate_period_run_time(curr_time);
 
-		*kernel_task_idle = 1;				
 	}
 	
 	if (daq_cards_on)
@@ -214,8 +222,17 @@ void rt_handler(long int t)
 	}	
 	stop_rt_timer();
 	rt_task_delete(&rt_task0);	
-    	rtai_kfree(nam2num(BLUE_SPIKE_DATA_SHM_NAME));	
+
+    	rtai_kfree(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
     	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));	
 }
 
 
@@ -227,6 +244,62 @@ int __init xinit_module(void)
 	
 	printk("KernelSpike: insmod KernelSpike\n");
 
+	daq_mwa_data = (DaqMwaData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME), sizeof(DaqMwaData));
+	if (daq_mwa_data == NULL)
+		return -ENOMEM;
+	memset(daq_mwa_data, 0, sizeof(DaqMwaData));
+        printk("KernelSpike: DaqMwaData Memory allocated.\n");
+        printk("KernelSpike: sizeof(DaqMwaData) : %lu.\n", sizeof(DaqMwaData));
+
+	recording_data = (RecordingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME), sizeof(RecordingData));
+	if (recording_data == NULL)
+		return -ENOMEM;
+	memset(recording_data, 0, sizeof(RecordingData));
+        printk("KernelSpike: RecordingData Memory allocated.\n");
+        printk("KernelSpike: sizeof(RecordingData) : %lu.\n", sizeof(RecordingData));
+
+	filtered_recording_data = (RecordingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME), sizeof(RecordingData));
+	if (filtered_recording_data == NULL)
+		return -ENOMEM;
+	memset(filtered_recording_data, 0, sizeof(RecordingData));
+        printk("KernelSpike: Filtered RecordingData Memory allocated.\n");
+        printk("KernelSpike: sizeof(RecordingData) : %lu.\n", sizeof(RecordingData));
+
+	spike_thresholding = (SpikeThresholding*)rtai_kmalloc(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME), sizeof(SpikeThresholding));
+	if (spike_thresholding == NULL)
+		return -ENOMEM;
+	memset(spike_thresholding, 0, sizeof(SpikeThresholding));
+        printk("KernelSpike: SpikeThresholding Memory allocated.\n");
+        printk("KernelSpike: sizeof(SpikeThresholding) : %lu.\n", sizeof(SpikeThresholding));
+
+	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_kmalloc(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME), sizeof(BlueSpikeTimeStamp));
+	if (blue_spike_time_stamp == NULL)
+		return -ENOMEM;
+	memset(blue_spike_time_stamp, 0, sizeof(BlueSpikeTimeStamp));
+        printk("KernelSpike: BlueSpikeTimeStamp Memory allocated.\n");
+        printk("KernelSpike: sizeof(BlueSpikeTimeStamp) : %lu.\n", sizeof(BlueSpikeTimeStamp));
+
+	spike_time_stamp = (SpikeTimeStamp*)rtai_kmalloc(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME), sizeof(SpikeTimeStamp));
+	if (spike_time_stamp == NULL)
+		return -ENOMEM;
+	memset(spike_time_stamp, 0, sizeof(SpikeTimeStamp));
+        printk("KernelSpike: SpikeTimeStamp Memory allocated.\n");
+        printk("KernelSpike: sizeof(SpikeTimeStamp) : %lu.\n", sizeof(SpikeTimeStamp));
+
+	template_matching_data = (TemplateMatchingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME), sizeof(TemplateMatchingData));
+	if (template_matching_data == NULL)
+		return -ENOMEM;
+	memset(template_matching_data, 0, sizeof(TemplateMatchingData));
+        printk("KernelSpike: TemplateMatchingData Memory allocated.\n");
+        printk("KernelSpike: sizeof(TemplateMatchingData) : %lu.\n", sizeof(TemplateMatchingData));
+
+	filter_ctrl = (FilterCtrl*)rtai_kmalloc(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME), sizeof(FilterCtrl));
+	if (filter_ctrl == NULL)
+		return -ENOMEM;
+	memset(filter_ctrl, 0, sizeof(FilterCtrl));
+        printk("KernelSpike: FilterCtrl Memory allocated.\n");
+        printk("KernelSpike: sizeof(FilterCtrl) : %lu.\n", sizeof(FilterCtrl));
+
 	rt_tasks_data = (RtTasksData*)rtai_kmalloc(nam2num(RT_TASKS_DATA_SHM_NAME), sizeof(RtTasksData));
 	if (rt_tasks_data == NULL)
 		return -ENOMEM;
@@ -234,19 +307,19 @@ int __init xinit_module(void)
         printk("KernelSpike: RtTasksData Memory allocated.\n");
         printk("KernelSpike: sizeof(RtTasksData) : %lu.\n", sizeof(RtTasksData));
 
-	blue_spike_data = (BlueSpikeData*)rtai_kmalloc(nam2num(BLUE_SPIKE_DATA_SHM_NAME), sizeof(BlueSpikeData));
-	if (blue_spike_data == NULL)
+	daq_config_2_kernel_spike_msgs = (DaqCon2KrnlSpkMsg*)rtai_kmalloc(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME), sizeof(DaqCon2KrnlSpkMsg));
+	if (daq_config_2_kernel_spike_msgs == NULL)
 		return -ENOMEM;
-	memset(blue_spike_data, 0, sizeof(BlueSpikeData));
-        printk("KernelSpike: BlueSpike Memory allocated.\n");
-        printk("KernelSpike: sizeof(BlueSpikeData) : %lu.\n", sizeof(BlueSpikeData));
-        
+	memset(daq_config_2_kernel_spike_msgs, 0, sizeof(DaqCon2KrnlSpkMsg));
+        printk("KernelSpike: DaqCon2KrnlSpkMsg Memory allocated.\n");
+        printk("KernelSpike: sizeof(DaqCon2KrnlSpkMsg) : %lu.\n", sizeof(DaqCon2KrnlSpkMsg));
+       
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
 		{
-			blue_spike_data->daq_mwa_map[i][j].mwa = MAX_NUM_OF_MWA;
-			blue_spike_data->daq_mwa_map[i][j].channel = MAX_NUM_OF_CHAN_PER_MWA;
+			daq_mwa_data->daq_mwa_map[i][j].mwa = NUM_OF_MWA_NULL;
+			daq_mwa_data->daq_mwa_map[i][j].channel = NUM_OF_CHAN_PER_MWA_NULL;
 		}
 	}
 	
@@ -254,12 +327,10 @@ int __init xinit_module(void)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			blue_spike_data->mwa_daq_map[i][j].daq_card = MAX_NUM_OF_DAQ_CARD;
-			blue_spike_data->mwa_daq_map[i][j].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;
+			daq_mwa_data->mwa_daq_map[i][j].daq_card = NUM_OF_DAQ_CARD_NULL;
+			daq_mwa_data->mwa_daq_map[i][j].daq_chan = NUM_OF_CHANNEL_PER_DAQ_CARD_NULL;
 		}
 	}
-
-	rt_tasks_data->kernel_task_ctrl.kernel_task_idle = 1;
 
 	rt_set_periodic_mode();
 	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, (KERNELSPIKE_CPU_ID*MAX_NUM_OF_THREADS_PER_CPU)+KERNELSPIKE_CPU_THREAD_ID);
@@ -297,8 +368,16 @@ void __exit xcleanup_module(void)
 			comedi_close(ni6070_comedi_dev[i]);
 		}
 	}
-    	rtai_kfree(nam2num(BLUE_SPIKE_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
     	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
+    	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
     	printk("KernelSpike: rmmod KernelSpike\n");
 	return;
 }
@@ -375,7 +454,7 @@ void print_cmd(int card_number)
 }
 
 
-void filter_recording_data( RecordingData *recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on)
+void filter_recording_data(int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on)
 {
 	int idx, start_idx, end_idx;
 	
@@ -773,7 +852,7 @@ void filter_recording_data( RecordingData *recording_data, RecordingData *filter
 	filtered_recording_data->buff_idx_prev[mwa][mwa_chan] = start_idx;   	
 }
 
-void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_chan)
+void find_spike_end(int mwa, int mwa_chan)
 {
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
 	int previous_acquisition_time_cntr =0; 
@@ -784,7 +863,7 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 	SpikeEndHandlingBuff 	*spike_end_handling_buff;	
 	TimeStamp peak_time;			
 
-	amplitude_thres = blue_spike_data->spike_thresholding.amplitude_thres[mwa][mwa_chan];
+	amplitude_thres = spike_thresholding->amplitude_thres[mwa][mwa_chan];
 	if (amplitude_thres == 0.0)
 	{
 		return;
@@ -795,8 +874,8 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 	
 	start_idx = filtered_recording_data->buff_idx_prev[mwa][mwa_chan];
 	end_idx = filtered_recording_data->buff_idx_write[mwa][mwa_chan];
-	in_spike = &(blue_spike_data->spike_thresholding.in_spike[mwa][mwa_chan]);
-	in_spike_sample_cntr = &(blue_spike_data->spike_thresholding.in_spike_sample_cntr[mwa][mwa_chan]);
+	in_spike = &(static_in_spike[mwa][mwa_chan]);
+	in_spike_sample_cntr = &(static_in_spike_sample_cntr[mwa][mwa_chan]);
 	idx = start_idx;
 
 	while (idx != end_idx)
@@ -845,7 +924,7 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 				
 			if (is_index_between_indexes(filtered_recording_data->buff_idx_prev[mwa][mwa_chan], filtered_recording_data->buff_idx_write[mwa][mwa_chan], spike_end_idx))
 			{
-				run_template_matching(filtered_recording_data, mwa, mwa_chan, spike_end_idx, peak_time);  // SAMPLING_INTERVAL = 25000 nanoseconds;
+				run_template_matching(mwa, mwa_chan, spike_end_idx, peak_time);  // SAMPLING_INTERVAL = 25000 nanoseconds;
 			}			
 			else 	//   Write spike end into shared_memory->spike_end_handing
 			{
@@ -876,7 +955,6 @@ void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_cha
 }
 void handle_spike_end_handling_buffer(void)
 {
-	RecordingData		*filtered_recording_data;
 	SpikeEndHandlingBuff 	*spike_end_handling_buff;			
 
 	int mwa, chan, filtered_recording_data_buff_idx;	
@@ -884,7 +962,6 @@ void handle_spike_end_handling_buffer(void)
 	
 	int idx, start_idx, end_idx;	
 	
-	filtered_recording_data = &blue_spike_data->filtered_recording_data;	
 	spike_end_handling_buff = &(spike_end_handling.spike_end_handling_buff);
 
 	start_idx = spike_end_handling.buff_start_idx;
@@ -900,7 +977,7 @@ void handle_spike_end_handling_buffer(void)
 		
 		if (is_index_between_indexes(filtered_recording_data->buff_idx_prev[mwa][chan], filtered_recording_data->buff_idx_write[mwa][chan], filtered_recording_data_buff_idx))
 		{
-			run_template_matching(filtered_recording_data, mwa, chan, filtered_recording_data_buff_idx, peak_time);
+			run_template_matching(mwa, chan, filtered_recording_data_buff_idx, peak_time);
 		}	
 		else
 		{
@@ -922,15 +999,13 @@ void handle_spike_end_handling_buffer(void)
 }
 
 
-void run_template_matching(RecordingData *filtered_recording_data, int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time)
+void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time)
 {
 
-	TemplateMatchingData	*template_matching_data;
 	TemplateMatchingUnitData *unit_template_data;	
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
-	BlueSpikeTimeStamp 	*blue_spike_time_stamp;
-	SpikeTimeStamp 		*spike_time_stamp;
-		
+	BlueSpikeTimeStampItem *blue_spike_time_stamp_item;
+	SpikeTimeStampItem *spike_time_stamp_item;		
 	double greatest;	
 	int i, j, unit, greatest_idx;
 	int blue_spike_time_stamp_buff_idx_write;
@@ -938,9 +1013,6 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	int spike_time_stamp_buff_idx_write;
 	
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][chan]);
-	template_matching_data = &blue_spike_data->template_matching_data;
-	blue_spike_time_stamp = &blue_spike_data->blue_spike_time_stamp;
-	spike_time_stamp = &blue_spike_data->spike_time_stamp;
 
 	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
@@ -992,12 +1064,13 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	//   Write spike time stamp into shared_memory->spike_time_stamp
 	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
 	include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].peak_time = peak_time;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].mwa = mwa;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].channel = chan;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].unit = greatest_idx;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
-	blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write].include_unit = include_unit;
+	blue_spike_time_stamp_item = &(blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write]);
+	blue_spike_time_stamp_item->peak_time = peak_time;
+	blue_spike_time_stamp_item->mwa = mwa;
+	blue_spike_time_stamp_item->channel = chan;
+	blue_spike_time_stamp_item->unit = greatest_idx;
+	blue_spike_time_stamp_item->recording_data_buff_idx = filtered_recording_data_buff_idx;
+	blue_spike_time_stamp_item->include_unit = include_unit;
 	if ((blue_spike_time_stamp_buff_idx_write +1) ==  blue_spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		blue_spike_time_stamp->buff_idx_write = 0;
 	else
@@ -1007,10 +1080,11 @@ void run_template_matching(RecordingData *filtered_recording_data, int mwa, int 
 	if (include_unit)	// fill in spike time stamp buff
 	{
 		spike_time_stamp_buff_idx_write = spike_time_stamp->buff_idx_write;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].peak_time = peak_time;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].mwa_or_layer = mwa;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].channel_or_neuron_group = chan;
-		spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write].unit_or_neuron = greatest_idx;	
+		spike_time_stamp_item = &(spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write]);
+		spike_time_stamp_item->peak_time = peak_time;
+		spike_time_stamp_item->mwa_or_layer = mwa;
+		spike_time_stamp_item->channel_or_neuron_group = chan;
+		spike_time_stamp_item->unit_or_neuron = greatest_idx;	
 		if ((spike_time_stamp_buff_idx_write +1) ==  spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 			spike_time_stamp->buff_idx_write = 0;
 		else
@@ -1117,6 +1191,7 @@ int open_daq_cards(void)
 	}
 	if (i != MAX_NUM_OF_DAQ_CARD)   // Couldn' t open all daq cards. Close the open ones & cancel out openning process. 
 	{
+		printk("KernelSpike: ERROR: Couldn' t comedi_open all devices.\n");
 		for (j = 0; j < i ; j++)
 		{
 			comedi_cancel(ni6070_comedi_dev[j], COMEDI_SUBDEVICE_AI);
@@ -1141,6 +1216,7 @@ int open_daq_cards(void)
 	
 	if (i != MAX_NUM_OF_DAQ_CARD)   // Couldn' t comedi_map all daq cards. Close all daq cards & cancel out process. 
 	{
+		printk("KernelSpike: ERROR: Couldn' t comedi_map all devices.\n");
 		for (j = 0; j < MAX_NUM_OF_DAQ_CARD ; j++)
 		{
 			comedi_cancel(ni6070_comedi_dev[j], COMEDI_SUBDEVICE_AI);
@@ -1162,30 +1238,6 @@ void close_daq_cards(void)
 	}
 }
 
-int handle_daq_cards(void)
-{
-	if ((blue_spike_data->blue_spike_ctrl.turn_daq_card_on) && (daq_cards_on))
-	{
-		return 0;
-	}
-	else if ((!(blue_spike_data->blue_spike_ctrl.turn_daq_card_on)) && (!daq_cards_on))
-	{
-		return 1;
-	}
-	else if ((blue_spike_data->blue_spike_ctrl.turn_daq_card_on) && (!daq_cards_on))
-	{
-		if (open_daq_cards()) 
-			daq_cards_on = 1;
-		return 1;
-	}
-	else if ((!(blue_spike_data->blue_spike_ctrl.turn_daq_card_on)) && (daq_cards_on))
-	{
-		close_daq_cards();
-		daq_cards_on = 0;
-		return 1;
-	}
-	return 1;		// to get rid of warning, unnecessary	
-}
 void evaluate_period_run_time(unsigned int curr_time)
 {
 	static unsigned int max_period_run_time = 0;		
@@ -1226,4 +1278,76 @@ void evaluate_jitter(unsigned int period_occured)
 		if (jitter > rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold)
 			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_negative_jitter_exceeding_threshold++;		
 	} 
+}
+
+static bool handle_daq_config_2_kernel_spike_msgs(DaqCon2KrnlSpkMsg* msg_buffer)
+{
+	unsigned int i, j;
+	DaqCon2KrnlSpkMsgItem *msg_item;
+	while (get_next_daq_config_2_kernel_spike_msg_buffer_item(msg_buffer, &msg_item))
+	{
+		switch (msg_item->msg_type)
+		{
+			case DAQ_CONFIG_2_KERNEL_SPIKE_MSG_TURN_CARDS_ON:
+				if (! open_daq_cards())
+				{
+					printk("KernelSpike: ERROR: Couldn' t activate all daq cards.\n");
+					return false;
+				}					 
+				daq_mwa_data->daq_cards_on = 1;	
+				break;
+			case DAQ_CONFIG_2_KERNEL_SPIKE_MSG_TURN_CARDS_OFF:	
+				close_daq_cards();
+				daq_mwa_data->daq_cards_on = 0;
+				break;
+			case DAQ_CONFIG_2_KERNEL_SPIKE_MSG_MAP_MWA_CHAN:	
+				// First delete ex mwa_daq_map
+				daq_mwa_data->mwa_daq_map[daq_mwa_data->daq_mwa_map[msg_item->daq_card_num][msg_item->daq_card_chan_num].mwa][daq_mwa_data->daq_mwa_map[msg_item->daq_card_num][msg_item->daq_card_chan_num].channel].daq_card = MAX_NUM_OF_DAQ_CARD;
+				daq_mwa_data->mwa_daq_map[daq_mwa_data->daq_mwa_map[msg_item->daq_card_num][msg_item->daq_card_chan_num].mwa][daq_mwa_data->daq_mwa_map[msg_item->daq_card_num][msg_item->daq_card_chan_num].channel].daq_chan = MAX_NUM_OF_CHANNEL_PER_DAQ_CARD;	
+				// Now map daq to mwa	
+				daq_mwa_data->daq_mwa_map[msg_item->daq_card_num][msg_item->daq_card_chan_num].mwa = msg_item->mwa_num;
+				daq_mwa_data->daq_mwa_map[msg_item->daq_card_num][msg_item->daq_card_chan_num].channel = msg_item->mwa_chan_num;
+				// Now map mwa to daq
+				daq_mwa_data->mwa_daq_map[msg_item->mwa_num][msg_item->mwa_chan_num].daq_card = msg_item->daq_card_num;
+				daq_mwa_data->mwa_daq_map[msg_item->mwa_num][msg_item->mwa_chan_num].daq_chan = msg_item->daq_card_chan_num;	
+				break;
+
+			case DAQ_CONFIG_2_KERNEL_SPIKE_MSG_CANCEL_ALL_MAPPING:	
+				for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
+				{
+					for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
+					{
+						daq_mwa_data->daq_mwa_map[i][j].mwa = NUM_OF_MWA_NULL;
+						daq_mwa_data->daq_mwa_map[i][j].channel = NUM_OF_CHAN_PER_MWA_NULL;
+					}
+				}
+				for (i=0; i < MAX_NUM_OF_MWA; i++)
+				{
+					for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
+					{
+						daq_mwa_data->mwa_daq_map[i][j].daq_card = NUM_OF_DAQ_CARD_NULL;
+						daq_mwa_data->mwa_daq_map[i][j].daq_chan = NUM_OF_CHANNEL_PER_DAQ_CARD_NULL;
+					}
+				}
+				break;
+			default:
+				printk("KernelSpike: ERROR: Unknown daq_config_2_kernel_spike_msg %un\n", msg_item->msg_type);
+				return false;
+		}
+	}
+	return true;
+}
+
+static bool get_next_daq_config_2_kernel_spike_msg_buffer_item( DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgItem **msg_item)
+{
+	unsigned int *idx;
+	idx = &(msg_buffer->buff_read_idx);
+	if (*idx == msg_buffer->buff_write_idx)
+		return false;
+	*msg_item = &(msg_buffer->buff[*idx]);	
+	if ((*idx + 1) == DAQ_CONFIG_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
+		*idx = 0;
+	else
+		(*idx)++;
+	return true;
 }

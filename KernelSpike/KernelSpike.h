@@ -15,9 +15,17 @@
 #include <linux/comedi.h>
 #include <linux/comedilib.h>
 
-#include "../BlueSpikeData.h"
+#include "../DaqMwaData.h"
+#include "../RecordingData.h"
+#include "../SpikeThresholding.h"
+#include "../BlueSpikeTimeStamp.h"
+#include "../SpikeTimeStamp.h"
+#include "../TemplateMatchingData.h"
+#include "../FilterCtrl.h"
 #include "../RtTasksData.h"
 #include "SpikeEndHandling.h"
+#include "../Library/Messages/DaqCon2KrnlSpk.h"
+#include "KernelSpikeSharedMem.h"
 
 #define KERNELSPIKE_RUN_TIME_LIMIT 18446744000000000000ULL
 
@@ -48,10 +56,10 @@ SpikeEndHandling		spike_end_handling;
 void rt_handler(long int t);
 int ni6070_comedi_configure(int card_number);
 void print_cmd(int card_number);
-void filter_recording_data( RecordingData *recording_data, RecordingData *filtered_recording_data, int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on);
-void find_spike_end(RecordingData *filtered_recording_data, int mwa, int mwa_chan);
+void filter_recording_data(int mwa, int mwa_chan, bool highpass_150Hz_on, bool highpass_400Hz_on, bool lowpass_8KHz_on);
+void find_spike_end(int mwa, int mwa_chan);
 void handle_spike_end_handling_buffer(void);
-void run_template_matching(RecordingData *filtered_recording_data, int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time);
+void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time);
 void print_warning_and_errors(void);
 bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
 int open_daq_cards(void);

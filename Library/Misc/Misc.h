@@ -4,7 +4,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <gtk/gtk.h>
 
 #define ALLOCATION_FAILED 		0
 #define ALLOCATION_WARNING 	1
