@@ -29,6 +29,7 @@ bool write_to_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer
 	buff[*idx]. mwa_chan_num =  mwa_chan_num;
 	buff[*idx].daq_card_num = daq_card_num;
 	buff[*idx]. daq_card_chan_num =  daq_card_chan_num;
+	buff[*idx].additional_data = additional_data;
 	if ((*idx + 1) == DAQ_CONFIG_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
 		*idx = 0;
 	else

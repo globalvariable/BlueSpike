@@ -1,6 +1,7 @@
 #ifndef BLUESPIKETIMESTAMP_H
 #define BLUESPIKETIMESTAMP_H
 
+#include <stdbool.h>
 #include "TimeStamp.h"
 #include "MicroWireArray.h"
 

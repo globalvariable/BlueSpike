@@ -16,16 +16,39 @@
 
 #include "SpikeViewer.h"
 
+static RecordingData			*recording_data = NULL;
+static RecordingData			*filtered_recording_data = NULL;
+static SpikeThresholding		*spike_thresholding = NULL;
+static BlueSpikeTimeStamp 		*blue_spike_time_stamp = NULL;
+static FilterCtrl				*filter_ctrl = NULL;
+static FiltCtrl2KrnlSpkMsg		*filter_ctrl_2_kernel_spike_msgs = NULL;
+static SpkThres2KrnlSpkMsg	*spike_thres_2_kernel_spike_msgs = NULL;
+
 static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 
 int main( int argc, char *argv[])
 {
-   	shared_memory = (SharedMemStruct*)rtai_malloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
-	if (shared_memory == NULL)
-	{
-		printf("rtai_malloc() failed (maybe /dev/rtai_shm is missing)!\n");
-		return -1;
-   	}
+	recording_data = (RecordingData*)rtai_malloc(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME), 0);
+	if (recording_data == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "recording_data == NULL.");
+	filtered_recording_data = (RecordingData*)rtai_malloc(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME), 0);
+	if (filtered_recording_data == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "filtered_recording_data == NULL.");
+	spike_thresholding = (SpikeThresholding*)rtai_malloc(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME), 0);
+	if (spike_thresholding == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "spike_thresholding == NULL.");
+	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_malloc(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME), 0);
+	if (blue_spike_time_stamp == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "blue_spike_time_stamp == NULL.");
+	filter_ctrl = (FilterCtrl*)rtai_malloc(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME), 0);
+	if (filter_ctrl == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "filter_ctrl == NULL.");
+	filter_ctrl_2_kernel_spike_msgs = allocate_shm_client_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs);
+	if (filter_ctrl_2_kernel_spike_msgs == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "filter_ctrl_2_kernel_spike_msgs == NULL.");
+	spike_thres_2_kernel_spike_msgs = allocate_shm_client_spike_thres_2_kernel_spike_msg_buffer(spike_thres_2_kernel_spike_msgs);
+	if (spike_thres_2_kernel_spike_msgs == NULL) 
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "spike_thres_2_kernel_spike_msgs == NULL.");
 	gtk_init(&argc, &argv);
 	create_gui(); 	
 	gtk_main();
@@ -147,7 +170,7 @@ void create_gui(void)
         gtk_box_pack_start(GTK_BOX(hbox),entryThreshold, FALSE,FALSE,0);
 
 	char thres[20];
-	sprintf(thres, "%.2f" , shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
+	sprintf(thres, "%.2f" , spike_thresholding->amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);
 
     	hbox = gtk_hbox_new(FALSE, 0);
@@ -206,15 +229,15 @@ void create_gui(void)
  	btn_filter_lowpass_8KHz = gtk_button_new_with_label("Turn LP 8KHz ON");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_filter_lowpass_8KHz, TRUE, TRUE, 0); 	
 	
-	if (shared_memory->kernel_task_ctrl.highpass_150Hz_on)
+	if (filter_ctrl->highpass_150Hz_on)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz OFF");
 	}
-	if (shared_memory->kernel_task_ctrl.highpass_400Hz_on)
+	if (filter_ctrl->highpass_400Hz_on)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz OFF");
 	}
-	if (shared_memory->kernel_task_ctrl.lowpass_8KHz_on)
+	if (filter_ctrl->lowpass_8KHz_on)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz OFF");
 	}	
@@ -243,9 +266,7 @@ void create_gui(void)
 
  	gtk_widget_show_all(window);
  	
- 	initialize_data_read_write_handlers();	
- 	
-	blue_spike_time_stamp_buff_read_idx = shared_memory->blue_spike_time_stamp.buff_idx_write;
+	blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp->buff_idx_write;
 
   	g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (gtk_main_quit), NULL);
 	g_signal_connect(G_OBJECT(btn_filter_highpass_150Hz), "clicked", G_CALLBACK(filter_highpass_150Hz_button_func), NULL);
@@ -270,27 +291,22 @@ gboolean timeout_callback(gpointer user_data)
 	int start_idx, i;
 	int blue_spike_time_stamp_buff_end_idx, idx;
 	int blue_spike_time_stamp_buff_mwa, blue_spike_time_stamp_buff_chan, blue_spike_time_stamp_buff_recording_data_idx; 
-	long long unsigned int blue_spike_time_stamp_buff_peak_time;
+	TimeStamp blue_spike_time_stamp_buff_peak_time;
 	int spike_idx;
 	float *Y_temp_spike;
 	RecordingData	*handling_data;
 	RecordingDataChanBuff	*handling_data_chan_buff;
-	BlueSpikeTimeStamp *blue_spike_time_stamp;
 	
-	if ((shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
-		return TRUE;
-	
-	if (shared_memory->kernel_task_ctrl.highpass_150Hz_on || shared_memory->kernel_task_ctrl.highpass_400Hz_on)
+	if (filter_ctrl->highpass_150Hz_on || filter_ctrl->highpass_400Hz_on)
 	{
-		handling_data = &shared_memory->filtered_recording_data;
+		handling_data = filtered_recording_data;
 	}
 	else
 	{
-		handling_data = &shared_memory->recording_data;
+		handling_data = recording_data;
 	}
 	handling_data_chan_buff = &(handling_data->recording_data_buff[display_mwa][display_mwa_chan]);
-	blue_spike_time_stamp = &shared_memory->blue_spike_time_stamp;	
-			
+		
 	start_idx = handling_data->buff_idx_write[display_mwa][display_mwa_chan] / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
 
 	if (start_idx == 0)
@@ -309,7 +325,7 @@ gboolean timeout_callback(gpointer user_data)
 	}
 	
 	idx = blue_spike_time_stamp_buff_read_idx;
-	blue_spike_time_stamp_buff_end_idx = shared_memory->blue_spike_time_stamp.buff_idx_write;
+	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp->buff_idx_write;
 	if (!disp_paused)
 	{
 		while (idx != blue_spike_time_stamp_buff_end_idx)
@@ -348,17 +364,16 @@ gboolean timeout_callback(gpointer user_data)
 
 gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 {
-	if (shared_memory->kernel_task_ctrl.highpass_150Hz_on)
+	if (filter_ctrl->highpass_150Hz_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
-		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 0;	
+		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_150HZ_OFF, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_150Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz ON");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }								
-		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 1;	
-		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 0;		
+		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_150HZ_ON, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_150Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz OFF");
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz ON");		
 	}
@@ -367,17 +382,16 @@ gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 
 gboolean filter_highpass_400Hz_button_func (GtkDatabox * box)
 {
-	if (shared_memory->kernel_task_ctrl.highpass_400Hz_on)
+	if (filter_ctrl->highpass_400Hz_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
-		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 0;		
+		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_400HZ_OFF, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_400Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz ON");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }																					
-		shared_memory->kernel_task_ctrl.highpass_400Hz_on = 1;		
-		shared_memory->kernel_task_ctrl.highpass_150Hz_on = 0;	
+		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_400HZ_ON, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_400Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");	
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz OFF");		
 		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz ON");
 	}
@@ -386,18 +400,18 @@ gboolean filter_highpass_400Hz_button_func (GtkDatabox * box)
 
 gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box)
 {
-	if (shared_memory->kernel_task_ctrl.lowpass_8KHz_on)
+	if (filter_ctrl->lowpass_8KHz_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
-		shared_memory->kernel_task_ctrl.lowpass_8KHz_on = 0;
+		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_LOW_PASS_8KHZ_OFF, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_lowpass_8KHz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");	
 		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz ON");
 	}
 	else
 	{
-		if ((shared_memory->kernel_task_ctrl.highpass_150Hz_on) || (shared_memory->kernel_task_ctrl.highpass_400Hz_on))
+		if ((filter_ctrl->highpass_150Hz_on) || (filter_ctrl->highpass_400Hz_on))
 		{
-			while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }															
-			shared_memory->kernel_task_ctrl.lowpass_8KHz_on = 1;
+			if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_LOW_PASS_8KHZ_ON, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+				return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_lowpass_8KHz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");	
 			gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz OFF");
 		}
 		else
@@ -423,14 +437,8 @@ gboolean combo_mwa_func (GtkDatabox * box)
 		idx = 0;
 	}
 	display_mwa = idx;
-	if ((shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
-	{
-		printf("SpikeViewer:\n");	
-		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
-		printf("ERROR: No data will be plotted.\n");
-	}
 
-	sprintf(thres, "%.2f" , shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
+	sprintf(thres, "%.2f" , spike_thresholding->amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
 	clear_spike_screen();
 	clear_raw_data_screen();		
@@ -449,13 +457,8 @@ gboolean combo_chan_func (GtkDatabox * box)
 		idx = 0;
 	}
 	display_mwa_chan = idx;	
-	if ((shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[display_mwa][display_mwa_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
-	{
-		printf("SpikeViewer:\n");	
-		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
-		printf("ERROR: No data will be plotted.\n");
-	}	
-	sprintf(thres, "%.2f" , shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
+
+	sprintf(thres, "%.2f" , spike_thresholding->amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
 	clear_spike_screen();
 	clear_raw_data_screen();		
@@ -500,8 +503,8 @@ gboolean threshold_but_func (GtkDatabox * box)
 	float threshold = atof(gtk_entry_get_text(GTK_ENTRY(entryThreshold)));
 	if (threshold <= 0.0)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
-		shared_memory->spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]=threshold;
+		if (! write_to_spike_thres_2_kernel_spike_msg_buffer(spike_thres_2_kernel_spike_msgs, SPIKE_THRES_2_KERNEL_SPIKE_MSG_SET_THRESHOLD, display_mwa, display_mwa_chan, threshold, SPIKE_THRES_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "threshold_but_func", "! write_to_spike_thres_2_kernel_spike_msg_buffer().");		
 		if (threshold == 0.0)
 		{
 			printf("Spike detection is disable for this channel by applying 0.0 Volts as threshold\n");		
@@ -589,7 +592,7 @@ gboolean load_spike_thresholds_file_button_func (GtkDatabox * box)
 	strcpy(path_temp, path_thres);
 	path_temp[(strlen(path_thres)-12)] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/spike_thres)
 
-	if (!get_format_version(&version, path_temp))
+/*	if (!get_format_version(&version, path_temp))
 	{
 		printf("Couldn't retrieve spike thresholds.\n");		
 		return TRUE;
@@ -600,7 +603,7 @@ gboolean load_spike_thresholds_file_button_func (GtkDatabox * box)
 		printf("Couldn't retrieve thresholds.\n");	
 		return TRUE;
 	}
-
+*/
 
 	return TRUE;	
 }

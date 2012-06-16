@@ -7,30 +7,24 @@ endif
 CC = $(shell rtai-config --cc)
 LXRT_CFLAGS = $(shell rtai-config --lxrt-cflags)
 LXRT_LDFLAGS = $(shell rtai-config --lxrt-ldflags)
-COMEDI_FLAGS = -lcomedi -lm 
+MATH_FLAGS = -lm
 GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
 all: SpikeViewer
 
-SpikeViewer: SpikeViewer.c ../Library/DataHandling/DataHandling.o ../Library/DataHandling/v0/DataFormat_v0.o ../Library/DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Library/Interrogate/Interrogate.o
-	$(CC) $(LXRT_CFLAGS) -o $@ $< ../Library/DataHandling/DataHandling.o ../Library/DataHandling/v0/DataFormat_v0.o ../Library/DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Library/Interrogate/Interrogate.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
+SpikeViewer: SpikeViewer.c ../Library/Misc/Misc.o ../Library/Messages/FiltCtrl2KrnlSpk.o ../Library/Messages/SpkThres2KrnlSpk.o
+	$(CC) $(LXRT_CFLAGS) $(LXRT_LDFLAGS) $(MATH_FLAGS) $(GTK_FLAGS) -o $@ $< ../Library/Misc/Misc.o ../Library/Messages/FiltCtrl2KrnlSpk.o ../Library/Messages/SpkThres2KrnlSpk.o
 
-../Library/DataHandling/DataHandling.o: ../Library/DataHandling/DataHandling.c 
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 
-	
-../Library/DataHandling/v0/Buffer_v0.o: ../Library/DataHandling/v0/Buffer_v0.c 
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 	
-
-../Library/DataHandling/v0/DataFormat_v0.o: ../Library/DataHandling/v0/DataFormat_v0.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
-	
 ../Library/Misc/Misc.o: ../Library/Misc/Misc.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
+	$(CC) $(LXRT_CFLAGS) -c -o $@ $< $(LXRT_LDFLAGS) $(GTK_FLAGS)			### ../Library/Misc/Misc
 
-../Library/Interrogate/Interrogate.o: ../Library/Interrogate/Interrogate.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 	
+../Library/Messages/FiltCtrl2KrnlSpk.o: ../Library/Messages/FiltCtrl2KrnlSpk.c
+	$(CC) $(LXRT_CFLAGS) -c -o $@ $< $(LXRT_LDFLAGS) $(GTK_FLAGS)			### ../Library/Messages/FiltCtrl2KrnlSpk
+
+../Library/Messages/SpkThres2KrnlSpk.o: ../Library/Messages/SpkThres2KrnlSpk.c
+	$(CC) $(LXRT_CFLAGS) -c -o $@ $< $(LXRT_LDFLAGS) $(GTK_FLAGS)			### ../Library/Messages/SpkThres2KrnlSpk
 
 clean:
-	rm -f *.o SpikeViewer ../Library/DataHandling/*.o ../Library/DataHandling/v0/*.o ../Misc/Misc.o ../Library/Interrogate/*.o
+	rm -f *.o SpikeViewer ../Library/Misc/*.o ../Library/Messages/*.o
 
 .PHONY: clean

@@ -39,11 +39,16 @@ static SpikeTimeStamp 			*spike_time_stamp = NULL;
 static TemplateMatchingData	*template_matching_data = NULL;
 static FilterCtrl				*filter_ctrl = NULL;
 static RtTasksData 			*rt_tasks_data = NULL; 
-static DaqCon2KrnlSpkMsg* daq_config_2_kernel_spike_msgs = NULL;
-
+static DaqCon2KrnlSpkMsg		*daq_config_2_kernel_spike_msgs = NULL;
+static FiltCtrl2KrnlSpkMsg		*filter_ctrl_2_kernel_spike_msgs = NULL;
+static SpkThres2KrnlSpkMsg	*spike_thres_2_kernel_spike_msgs = NULL;
 
 static bool handle_daq_config_2_kernel_spike_msgs(DaqCon2KrnlSpkMsg* msg_buffer);	
 static bool get_next_daq_config_2_kernel_spike_msg_buffer_item(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgItem **msg_item);	// take care of static read_idx value //only request buffer handler uses
+static bool handle_filter_ctrl_2_kernel_spike_msgs(FiltCtrl2KrnlSpkMsg* msg_buffer);
+static bool get_next_filter_ctrl_2_kernel_spike_msg_buffer_item(FiltCtrl2KrnlSpkMsg* msg_buffer, FiltCtrl2KrnlSpkMsgItem **msg_item);
+static bool handle_spike_thres_2_kernel_spike_msgs(SpkThres2KrnlSpkMsg* msg_buffer);
+static bool get_next_spike_thres_2_kernel_spike_msg_buffer_item(SpkThres2KrnlSpkMsg* msg_buffer, SpkThres2KrnlSpkMsgItem **msg_item);
 
 void rt_handler(long int t)
 {
@@ -101,7 +106,10 @@ void rt_handler(long int t)
 
 		if (! handle_daq_config_2_kernel_spike_msgs(daq_config_2_kernel_spike_msgs))
 			return;
-
+		if (! handle_filter_ctrl_2_kernel_spike_msgs(filter_ctrl_2_kernel_spike_msgs))
+			return;
+		if (! handle_spike_thres_2_kernel_spike_msgs(spike_thres_2_kernel_spike_msgs))
+			return;
 		if (!(*daq_cards_on))
 		{
 			*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
@@ -232,7 +240,9 @@ void rt_handler(long int t)
     	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
     	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));	
+    	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
+	rtai_kfree(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME));
+	rtai_kfree(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME));
 }
 
 
@@ -313,6 +323,20 @@ int __init xinit_module(void)
 	memset(daq_config_2_kernel_spike_msgs, 0, sizeof(DaqCon2KrnlSpkMsg));
         printk("KernelSpike: DaqCon2KrnlSpkMsg Memory allocated.\n");
         printk("KernelSpike: sizeof(DaqCon2KrnlSpkMsg) : %lu.\n", sizeof(DaqCon2KrnlSpkMsg));
+
+	filter_ctrl_2_kernel_spike_msgs = (FiltCtrl2KrnlSpkMsg*)rtai_kmalloc(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME), sizeof(FiltCtrl2KrnlSpkMsg));
+	if (filter_ctrl_2_kernel_spike_msgs == NULL)
+		return -ENOMEM;
+	memset(filter_ctrl_2_kernel_spike_msgs, 0, sizeof(FiltCtrl2KrnlSpkMsg));
+        printk("KernelSpike: FiltCtrl2KrnlSpkMsg Memory allocated.\n");
+        printk("KernelSpike: sizeof(FiltCtrl2KrnlSpkMsg) : %lu.\n", sizeof(FiltCtrl2KrnlSpkMsg));
+
+	spike_thres_2_kernel_spike_msgs = (SpkThres2KrnlSpkMsg*)rtai_kmalloc(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME), sizeof(SpkThres2KrnlSpkMsg));
+	if (spike_thres_2_kernel_spike_msgs == NULL)
+		return -ENOMEM;
+	memset(spike_thres_2_kernel_spike_msgs, 0, sizeof(SpkThres2KrnlSpkMsg));
+        printk("KernelSpike: SpkThres2KrnlSpkMsg Memory allocated.\n");
+        printk("KernelSpike: sizeof(SpkThres2KrnlSpkMsg) : %lu.\n", sizeof(SpkThres2KrnlSpkMsg));
        
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
@@ -378,6 +402,8 @@ void __exit xcleanup_module(void)
     	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
     	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
     	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
+	rtai_kfree(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME));
+	rtai_kfree(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME));
     	printk("KernelSpike: rmmod KernelSpike\n");
 	return;
 }
@@ -1331,7 +1357,7 @@ static bool handle_daq_config_2_kernel_spike_msgs(DaqCon2KrnlSpkMsg* msg_buffer)
 				}
 				break;
 			default:
-				printk("KernelSpike: ERROR: Unknown daq_config_2_kernel_spike_msg %un\n", msg_item->msg_type);
+				printk("KernelSpike: ERROR: Unknown daq_config_2_kernel_spike_msg %u.\n", msg_item->msg_type);
 				return false;
 		}
 	}
@@ -1346,6 +1372,95 @@ static bool get_next_daq_config_2_kernel_spike_msg_buffer_item( DaqCon2KrnlSpkMs
 		return false;
 	*msg_item = &(msg_buffer->buff[*idx]);	
 	if ((*idx + 1) == DAQ_CONFIG_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
+		*idx = 0;
+	else
+		(*idx)++;
+	return true;
+}
+
+static bool handle_filter_ctrl_2_kernel_spike_msgs(FiltCtrl2KrnlSpkMsg* msg_buffer)
+{
+	FiltCtrl2KrnlSpkMsgItem *msg_item;
+	while (get_next_filter_ctrl_2_kernel_spike_msg_buffer_item(msg_buffer, &msg_item))
+	{
+		switch (msg_item->msg_type)
+		{
+			case FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_150HZ_ON:
+				filter_ctrl->highpass_400Hz_on = 0;
+				filter_ctrl->highpass_150Hz_on = 1;
+				break;
+			case FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_150HZ_OFF:
+				filter_ctrl->highpass_150Hz_on = 0;	
+				break;
+			case FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_400HZ_ON:
+				filter_ctrl->highpass_150Hz_on = 0;
+				filter_ctrl->highpass_400Hz_on = 1;	
+				break;
+			case FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_400HZ_OFF:	
+				filter_ctrl->highpass_400Hz_on = 0;	
+				break;
+			case FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_LOW_PASS_8KHZ_ON:	
+				filter_ctrl->lowpass_8KHz_on = 1;
+				break;
+			case FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_LOW_PASS_8KHZ_OFF:	
+				filter_ctrl->lowpass_8KHz_on = 0;
+				break;
+			default:
+				printk("KernelSpike: ERROR: Unknown filter_ctrl_2_kernel_spike_msg %u.\n", msg_item->msg_type);
+				return false;
+		}
+	}
+	return true;
+}
+
+static bool get_next_filter_ctrl_2_kernel_spike_msg_buffer_item(FiltCtrl2KrnlSpkMsg* msg_buffer, FiltCtrl2KrnlSpkMsgItem **msg_item)
+{
+	unsigned int *idx;
+	idx = &(msg_buffer->buff_read_idx);
+	if (*idx == msg_buffer->buff_write_idx)
+		return false;
+	*msg_item = &(msg_buffer->buff[*idx]);	
+	if ((*idx + 1) == FILTER_CTRL_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
+		*idx = 0;
+	else
+		(*idx)++;
+	return true;
+}
+
+static bool handle_spike_thres_2_kernel_spike_msgs(SpkThres2KrnlSpkMsg* msg_buffer)
+{
+	SpkThres2KrnlSpkMsgItem *msg_item;
+	while (get_next_spike_thres_2_kernel_spike_msg_buffer_item(msg_buffer, &msg_item))
+	{
+		switch (msg_item->msg_type)
+		{
+			case SPIKE_THRES_2_KERNEL_SPIKE_MSG_SET_THRESHOLD:
+				if (msg_item->threshold > 0.0)
+				{
+					printk("KernelSpike: WARNING: submitted spike_threshold is higher than zero.\n");
+					spike_thresholding->amplitude_thres[msg_item->mwa][msg_item->mwa_chan_num] = 0;
+				}
+				else
+				{
+					spike_thresholding->amplitude_thres[msg_item->mwa][msg_item->mwa_chan_num] = msg_item->threshold;
+				}
+				break;
+			default:
+				printk("KernelSpike: ERROR: Unknown spike_thres_2_kernel_spike_msg %u.\n", msg_item->msg_type);
+				return false;
+		}
+	}
+	return true;
+}
+
+static bool get_next_spike_thres_2_kernel_spike_msg_buffer_item(SpkThres2KrnlSpkMsg* msg_buffer, SpkThres2KrnlSpkMsgItem **msg_item)
+{
+	unsigned int *idx;
+	idx = &(msg_buffer->buff_read_idx);
+	if (*idx == msg_buffer->buff_write_idx)
+		return false;
+	*msg_item = &(msg_buffer->buff[*idx]);	
+	if ((*idx + 1) == SPIKE_THRES_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
 		*idx = 0;
 	else
 		(*idx)++;

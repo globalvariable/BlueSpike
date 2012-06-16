@@ -16,9 +16,6 @@
 #ifndef SPIKEVIEWER_H
 #define  SPIKEVIEWER_H
  
-#include "../SharedMemory.h"
-#include "../Library/DataHandling/DataHandling.h"
-
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 
@@ -27,6 +24,17 @@
 #include <gtkdatabox_ruler.h>
 #include <gtkdatabox_lines.h>
 #include <gtkdatabox_grid.h>
+
+#include "../RecordingData.h"
+#include "../SpikeThresholding.h"
+#include "../BlueSpikeTimeStamp.h"
+#include "../FilterCtrl.h"
+#include "../KernelSpike/KernelSpikeSharedMem.h"
+#include "../TemplateMatchingData.h"
+#include "../Library/Misc/Misc.h"
+#include "../Library/Messages/FiltCtrl2KrnlSpk.h"
+#include "../Library/Messages/SpkThres2KrnlSpk.h"
+#include "../DaqCard.h"
 
 #define SPIKE_MEM_TO_DISPLAY 30 
 

@@ -25,6 +25,8 @@
 #include "../RtTasksData.h"
 #include "SpikeEndHandling.h"
 #include "../Library/Messages/DaqCon2KrnlSpk.h"
+#include "../Library/Messages/FiltCtrl2KrnlSpk.h"
+#include "../Library/Messages/SpkThres2KrnlSpk.h"
 #include "KernelSpikeSharedMem.h"
 
 #define KERNELSPIKE_RUN_TIME_LIMIT 18446744000000000000ULL
@@ -49,7 +51,7 @@ unsigned ni6070_comedi_chanlist[MAX_NUM_OF_DAQ_CARD][MAX_NUM_OF_CHANNEL_PER_DAQ_
 void *comedi_map_ptr[MAX_NUM_OF_DAQ_CARD];
 int comedi_buff_size[MAX_NUM_OF_DAQ_CARD];
 
-RecordingData			highpass_filtered_recording_data;
+RecordingData		highpass_filtered_recording_data;
 SpikeEndHandling		spike_end_handling;	
 	
 //	Functions

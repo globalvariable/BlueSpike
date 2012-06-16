@@ -3,9 +3,11 @@
 
 #include <stdbool.h>
 
+typedef float SpikeThreshold;
+
 typedef struct __SpikeThresholding
 {
-	float 			amplitude_thres[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+	SpikeThreshold 	amplitude_thres[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 } SpikeThresholding;
 
 
