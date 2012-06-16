@@ -1,8 +1,5 @@
 #include "DaqCon2KrnlSpk.h"
 
-#define TRUE 1
-#define FALSE 0
-
 DaqCon2KrnlSpkMsg* allocate_shm_client_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer)
 {
 	if (msg_buffer != NULL)

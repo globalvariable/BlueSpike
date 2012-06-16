@@ -19,15 +19,18 @@ typedef unsigned int DaqCon2KrnlSpkMsgAdditional;
 #define DAQ_CONFIG_2_KERNEL_SPIKE_MSG_MAP_MWA_CHAN		3
 #define DAQ_CONFIG_2_KERNEL_SPIKE_MSG_CANCEL_ALL_MAPPING	4
 
-#include <stdbool.h>
-#include <stdio.h>
+
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 #include "MessageBuffersConfig.h"
 #include "MessageBuffersSharedMem.h"
 #include "../../DaqCard.h"
 #include "../../MicroWireArray.h"
+#ifndef KERNELSPIKE_H		/// insmod KernelSpike errors:  Unknown symbol __strcat_chk, Unknown symbol __sprintf_chk
+#include <stdbool.h>
+#include <stdio.h>
 #include "../Misc/Misc.h"
+#endif
 
 struct __DaqCon2KrnlSpkMsgItem
 {
@@ -46,9 +49,11 @@ struct __DaqCon2KrnlSpkMsg		// Requests to KernelSpike
 	unsigned int				buff_read_idx;	// only one request handler can edit this read index
 };
 
+#ifndef KERNELSPIKE_H    /// not necessary for KernelSpike
 DaqCon2KrnlSpkMsg* allocate_shm_client_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer);
 DaqCon2KrnlSpkMsg* deallocate_shm_client_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer);
 bool write_to_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgType msg_type, MwaNum	mwa_num, MwaChanNum mwa_chan_num, DaqCardNum	daq_card_num,  DaqCardChanNum daq_card_chan_num, DaqCon2KrnlSpkMsgAdditional	additional_data);
+#endif
 
 #endif
 

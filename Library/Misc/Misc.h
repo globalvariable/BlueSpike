@@ -1,9 +1,11 @@
 #ifndef MISC_H
 #define MISC_H
 
+#include <gtk/gtk.h>
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
+
 
 #define ALLOCATION_FAILED 		0
 #define ALLOCATION_WARNING 	1
