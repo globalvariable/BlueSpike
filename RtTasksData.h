@@ -5,35 +5,41 @@
 #include "KernelTaskCtrl.h"
 #include "TimeStamp.h"
 
-#define MAX_NUM_RT_TAKS_PER_THREAD	10
-#define MAX_NUM_RT_TAKS_NAME_LENGTH	50
+#define MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD	10
+#define MAX_NUM_OF_RT_TASKS_NAME_LENGTH		40
 
-#define RT_TASKS_DATA_SHM_NAME		"RTTASK"		
+#define RT_TASKS_DATA_SHM_NAME		"RTTSKDT"		
 
-typedef struct __CpuThreadRtTasksData
+typedef struct __CpuThreadTasksRtData
 {
-	unsigned int	num_of_rt_tasks_at_cpu_thread;
-	unsigned int	max_period_run_time;			// each task checks its max run time in a task period and writes here if exceeds
+	char		task_name[MAX_NUM_OF_RT_TASKS_NAME_LENGTH];
+	unsigned int	max_task_run_time;			// each task checks its max run time in a task period and writes here if exceeds
 	unsigned int	max_positive_jitter;				// period appeared longer than submitted period. 
 	unsigned int	max_negative_jitter;				// period appeared shorter than submitted period. 
 	unsigned int	positive_jitter_threshold;					// determine a jitter threshold and write here.  
 	unsigned int	negative_jitter_threshold;					// determine a jitter threshold and write here.  
 	unsigned int	num_of_positive_jitter_exceeding_threshold;	// determine a threshold and writes threshold-exceeding jitters here.  
 	unsigned int	num_of_negative_jitter_exceeding_threshold;	// determine a threshold and writes threshold-exceeding jitters here.  
-} CpuThreadRtTasksData;
+} CpuThreadTasksRtData;
 
-
-typedef struct __CpuRtTasksData
+typedef struct __CpuThreadsRtData
 {
-	CpuThreadRtTasksData	cpu_thread_rt_task_data[MAX_NUM_OF_THREADS_PER_CPU];		// this cpu has an rt_task assiged.
-	unsigned int			num_of_rt_tasks_at_cpu;	
+	unsigned int				num_of_rt_tasks_at_cpu_thread;
+	CpuThreadTasksRtData	cpu_thread_tasks_rt_data[MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD];		
+} CpuThreadsRtData;
+
+
+typedef struct __CpusRtData
+{
+	unsigned int			num_of_rt_tasks_at_cpu;
+	CpuThreadsRtData	cpu_threads_rt_data[MAX_NUM_OF_CPU_THREADS_PER_CPU];		
 	TimeStamp			rt_task_period;
-} CpuRtTasksData;
+} CpusRtData;
 
 typedef struct __RtTasksData
 {
 	unsigned int		num_of_total_rt_tasks;	
-	CpuRtTasksData 	cpu_rt_task_data[MAX_NUM_OF_CPUS];
+	CpusRtData 		cpus_rt_task_data[MAX_NUM_OF_CPUS];
 	TimeStamp		current_system_time;		// shared clocking set by kernelspike and others read it. kernel_spike detects exact spike times and other tasks adjusts themselves according to kernelspike
 	TimeStamp		previous_system_time;
 	KernelTaskCtrl	kernel_task_ctrl;
@@ -48,6 +54,7 @@ typedef struct __RtTasksData
 #define KERNELSPIKE_STACK_SIZE 						10000
 #define KERNELSPIKE_CPU_ID 							1
 #define KERNELSPIKE_CPU_THREAD_ID					0
+#define KERNELSPIKE_CPU_THREAD_TASK_ID				0
 #define KERNELSPIKE_PASS_DATA 						0
 #define KERNELSPIKE_SIGNAL 							0
 #define KERNELSPIKE_USES_FLOATING_POINT 				1
@@ -63,6 +70,7 @@ typedef struct __RtTasksData
 #define BLUE_SPIKE_BUFF_HANDLER_POLICY			 			SCHED_FIFO
 #define BLUE_SPIKE_BUFF_HANDLER_CPU_ID						KERNELSPIKE_CPU_ID
 #define BLUE_SPIKE_BUFF_HANDLER_CPU_THREAD_ID				KERNELSPIKE_CPU_THREAD_ID + 1
+#define BLUE_SPIKE_BUFF_HANDLER_CPU_THREAD_TASK_ID		0
 #define BLUE_SPIKE_BUFF_HANDLER_POSITIVE_JITTER_THRES	 	KERNELSPIKE_POSITIVE_JITTER_THRES		// 100 us
 #define BLUE_SPIKE_BUFF_HANDLER_NEGATIVE_JITTER_THRES	 	KERNELSPIKE_POSITIVE_JITTER_THRES
 
@@ -75,6 +83,7 @@ typedef struct __RtTasksData
 #define TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_POLICY			 		SCHED_FIFO
 #define TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_ID					KERNELSPIKE_CPU_ID
 #define TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_THREAD_ID			KERNELSPIKE_CPU_THREAD_ID + 1
+#define TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_THREAD_TASK_ID	BLUE_SPIKE_BUFF_HANDLER_CPU_THREAD_TASK_ID + 1
 #define TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_POSITIVE_JITTER_THRES 	KERNELSPIKE_POSITIVE_JITTER_THRES		// 100 us
 #define TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_NEGATIVE_JITTER_THRES 	KERNELSPIKE_POSITIVE_JITTER_THRES
 
@@ -87,6 +96,7 @@ typedef struct __RtTasksData
 #define TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_POLICY			 		SCHED_FIFO
 #define TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_CPU_ID					KERNELSPIKE_CPU_ID
 #define TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_CPU_THREAD_ID			KERNELSPIKE_CPU_THREAD_ID + 1
+#define TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_CPU_THREAD_TASK_ID		TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_THREAD_TASK_ID + 1
 #define TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_POSITIVE_JITTER_THRES 	KERNELSPIKE_POSITIVE_JITTER_THRES		// 100 us
 #define TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_NEGATIVE_JITTER_THRES 	KERNELSPIKE_POSITIVE_JITTER_THRES
 
@@ -99,6 +109,7 @@ typedef struct __RtTasksData
 #define TRIAL_HANDLER_POLICY 						SCHED_FIFO
 #define TRIAL_HANDLER_CPU_ID						0
 #define TRIAL_HANDLER_CPU_THREAD_ID				0
+#define TRIAL_HANDLER_CPU_THREAD_TASK_ID		0
 #define TRIAL_HANDLER_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define TRIAL_HANDLER_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -111,6 +122,7 @@ typedef struct __RtTasksData
 #define TRIAL_DURATION_HANDLER_POLICY 						SCHED_FIFO
 #define TRIAL_DURATION_HANDLER_CPU_ID						0
 #define TRIAL_DURATION_HANDLER_CPU_THREAD_ID				0
+#define TRIAL_DURATION_HANDLER_CPU_THREAD_TASK_ID			TRIAL_HANDLER_CPU_THREAD_TASK_ID + 1
 #define TRIAL_DURATION_HANDLER_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define TRIAL_DURATION_HANDLER_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -123,6 +135,7 @@ typedef struct __RtTasksData
 #define EXP_ENVI_HANDLER_POLICY 						SCHED_FIFO
 #define EXP_ENVI_HANDLER_CPU_ID						0
 #define EXP_ENVI_HANDLER_CPU_THREAD_ID				0
+#define EXP_ENVI_HANDLER_CPU_THREAD_TASK_ID		TRIAL_DURATION_HANDLER_CPU_THREAD_TASK_ID + 1
 #define EXP_ENVI_HANDLER_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define EXP_ENVI_HANDLER_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -135,6 +148,7 @@ typedef struct __RtTasksData
 #define EXP_ENVI_DURATION_HANDLER_POLICY 						SCHED_FIFO
 #define EXP_ENVI_DURATION_HANDLER_CPU_ID						0
 #define EXP_ENVI_DURATION_HANDLER_CPU_THREAD_ID				0
+#define EXP_ENVI_DURATION_HANDLER_CPU_THREAD_TASK_ID			EXP_ENVI_HANDLER_CPU_THREAD_TASK_ID + 1 
 #define EXP_ENVI_DURATION_HANDLER_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define EXP_ENVI_DURATION_HANDLER_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -147,6 +161,7 @@ typedef struct __RtTasksData
 #define MOV_OBJ_HANDLER_POLICY 						SCHED_FIFO
 #define MOV_OBJ_HANDLER_CPU_ID						0
 #define MOV_OBJ_HANDLER_CPU_THREAD_ID				0
+#define MOV_OBJ_HANDLER_CPU_THREAD_TASK_ID			EXP_ENVI_DURATION_HANDLER_CPU_THREAD_TASK_ID + 1
 #define MOV_OBJ_HANDLER_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define MOV_OBJ_HANDLER_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -159,6 +174,7 @@ typedef struct __RtTasksData
 #define MOV_OBJ_DURATION_HANDLER_POLICY 						SCHED_FIFO
 #define MOV_OBJ_DURATION_HANDLER_CPU_ID						0
 #define MOV_OBJ_DURATION_HANDLER_CPU_THREAD_ID				0
+#define MOV_OBJ_DURATION_HANDLER_CPU_THREAD_TASK_ID			MOV_OBJ_HANDLER_CPU_THREAD_TASK_ID + 1
 #define MOV_OBJ_DURATION_HANDLER_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define MOV_OBJ_DURATION_HANDLER_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -171,6 +187,7 @@ typedef struct __RtTasksData
 #define FIRST_BMI_CAGE_INTERF_POLICY 						SCHED_FIFO
 #define FIRST_BMI_CAGE_INTERF_CPU_ID						0
 #define FIRST_BMI_CAGE_INTERF_CPU_THREAD_ID				0
+#define FIRST_BMI_CAGE_INTERF_CPU_THREAD_TASK_ID		MOV_OBJ_DURATION_HANDLER_CPU_THREAD_TASK_ID + 1
 #define FIRST_BMI_CAGE_INTERF_POSITIVE_JITTER_THRES	 	1000000		//1 ms
 #define FIRST_BMI_CAGE_INTERF_NEGATIVE_JITTER_THRES	 	1000000
 
@@ -183,12 +200,13 @@ typedef struct __RtTasksData
 #define SPIKE_GENERATOR_POLICY 						SCHED_FIFO
 #define SPIKE_GENERATOR_CPU_ID						KERNELSPIKE_CPU_ID
 #define SPIKE_GENERATOR_CPU_THREAD_ID				KERNELSPIKE_CPU_THREAD_ID + 1
+#define SPIKE_GENERATOR_CPU_THREAD_TASK_ID			TRIAL_HAND_2_SPIKE_GEN_MSGS_HANDLER_CPU_THREAD_TASK_ID + 1
 #define SPIKE_GENERATOR_POSITIVE_JITTER_THRES	 	KERNELSPIKE_POSITIVE_JITTER_THRES		// 100 us
 #define SPIKE_GENERATOR_NEGATIVE_JITTER_THRES	 	KERNELSPIKE_POSITIVE_JITTER_THRES
 
 // InSilicoSimulators
 #define IZ_PS_NETWORK_SIM_PERIOD						1000000		//1 ms
-#define IZ_PS_NETWORK_SIM_TASK_NAME					nam2num("IZPSSIM")
+#define IZ_PS_NETWORK_SIM_TASK_NAME					"IZPS"
 #define IZ_PS_NETWORK_SIM_TASK_PRIORITY				202
 #define IZ_PS_NETWORK_SIM_STACK_SIZE 					10000
 #define IZ_PS_NETWORK_SIM_MSG_SIZE 					1000

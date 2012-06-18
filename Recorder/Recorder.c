@@ -3,6 +3,8 @@
 
 int main( int argc, char *argv[])
 {
+	NOT: RECORDER ın içine Applications ve Library folderleri ekle. ConfigDaq taki gibi configuration filelerı experiment folderında check et. eger yoklarsa trial saving i başlatma. 
+
    	shared_memory = (SharedMemStruct*)rtai_malloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
 	if (shared_memory == NULL)
 	{

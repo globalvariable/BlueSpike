@@ -32,7 +32,6 @@ static void load_config_daq_file_button_func(void);
 static void save_config_daq_file_button_func(void); 
 
 static bool set_directory_btn_select_directory_to_load(void);
-static bool load_config_daq_file_from_path_file(void);
 static void set_directory_btn_select_directory_to_save(void);
 
 int main( int argc, char *argv[])
@@ -200,10 +199,7 @@ void create_gui(void)
 	
 	btn_select_config_daq_file_to_load = gtk_file_chooser_button_new ("Select Maps File", GTK_FILE_CHOOSER_ACTION_OPEN);
         gtk_box_pack_start(GTK_BOX(hbox),btn_select_config_daq_file_to_load, TRUE,TRUE,0);
-	if (set_directory_btn_select_directory_to_load())
-	{
-		 load_config_daq_file_from_path_file();
-	}
+	set_directory_btn_select_directory_to_load();
 
 	btn_load_config_daq_file = gtk_button_new_with_label("Load ConfigDaq File");
         gtk_box_pack_start(GTK_BOX(hbox),btn_load_config_daq_file,TRUE,TRUE, 0);		
@@ -390,36 +386,6 @@ void load_config_daq_file_button_func(void)
 		return (void)print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file_button_func", "! *read_config_daq_data[version]()."); 
 
 	return (void)print_message(INFO_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file", "Succesuflly loaded ConfigDaq data file.");
-}
-
-static bool load_config_daq_file_from_path_file(void)
-{
-	char line[600];
-	FILE *fp = NULL;
-	int version;
-       	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
-       	{ 
-       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
-		return FALSE;
-       	}
-       	else
-       	{
-		if (fgets(line, sizeof line, fp ) == NULL) 
-		{ 
-			printf("ERROR: Recorder: Couldn' t read ./path_initial_directory\n"); 
-			fclose(fp); 		
-			return FALSE;				
-		}
-		else
-		{
-			if (!get_format_version(&version, line))
-				return print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file_from_path_file", "! get_format_version()."); 
-			if (!((*read_config_daq_data[version])(2, line, daq_config_2_kernel_spike_msgs)))
-				return print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file_from_path_file", "! *read_config_daq_data[version]()."); 
-			fclose(fp); 		
-			return TRUE;
-		}
-	}  
 }
 
 static void save_config_daq_file_button_func(void)

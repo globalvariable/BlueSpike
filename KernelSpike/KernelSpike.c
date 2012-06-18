@@ -42,6 +42,7 @@ static RtTasksData 			*rt_tasks_data = NULL;
 static DaqCon2KrnlSpkMsg		*daq_config_2_kernel_spike_msgs = NULL;
 static FiltCtrl2KrnlSpkMsg		*filter_ctrl_2_kernel_spike_msgs = NULL;
 static SpkThres2KrnlSpkMsg	*spike_thres_2_kernel_spike_msgs = NULL;
+static TempMat2KrnlSpkMsg	*template_matching_2_kernel_spike_msgs = NULL;
 
 static bool handle_daq_config_2_kernel_spike_msgs(DaqCon2KrnlSpkMsg* msg_buffer);	
 static bool get_next_daq_config_2_kernel_spike_msg_buffer_item(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgItem **msg_item);	// take care of static read_idx value //only request buffer handler uses
@@ -49,6 +50,12 @@ static bool handle_filter_ctrl_2_kernel_spike_msgs(FiltCtrl2KrnlSpkMsg* msg_buff
 static bool get_next_filter_ctrl_2_kernel_spike_msg_buffer_item(FiltCtrl2KrnlSpkMsg* msg_buffer, FiltCtrl2KrnlSpkMsgItem **msg_item);
 static bool handle_spike_thres_2_kernel_spike_msgs(SpkThres2KrnlSpkMsg* msg_buffer);
 static bool get_next_spike_thres_2_kernel_spike_msg_buffer_item(SpkThres2KrnlSpkMsg* msg_buffer, SpkThres2KrnlSpkMsgItem **msg_item);
+static bool handle_template_matching_2_kernel_spike_msgs(TempMat2KrnlSpkMsg* msg_buffer);
+static bool get_next_template_matching_2_kernel_spike_msg_buffer_item(TempMat2KrnlSpkMsg* msg_buffer, TempMat2KrnlSpkMsgItem **msg_item);
+
+static unsigned int *max_task_run_time;
+static unsigned int *max_positive_jitter;
+static unsigned int *max_negative_jitter;
 
 void rt_handler(long int t)
 {
@@ -110,6 +117,8 @@ void rt_handler(long int t)
 			return;
 		if (! handle_spike_thres_2_kernel_spike_msgs(spike_thres_2_kernel_spike_msgs))
 			return;
+		if (! handle_template_matching_2_kernel_spike_msgs(template_matching_2_kernel_spike_msgs))
+			return;
 		if (!(*daq_cards_on))
 		{
 			*kern_curr_time = current_time_ns;			// Recorder reaches current time after KernelSpike completes processing of all buffers. 
@@ -136,7 +145,8 @@ void rt_handler(long int t)
 			if(num_byte[i] == 0)
 			{
 				printk("KernelSpike: CRITICAL ERROR: Must be exceeding rt_task_wait_period, num_byte[%d] = 0\n", i);
-				printk("KernelSpike: CRITICAL ERROR: Task lsted too long > TICK_PERIOD.\n");
+				printk("KernelSpike: CRITICAL ERROR: Task lasted too long > TICK_PERIOD.\n");
+				printk("KernelSpike: CRITICAL ERROR: Ignore it if daq cards recently turned on. Just after activation it cannot receive samples\n");
 				continue;
 			}
 				
@@ -237,12 +247,13 @@ void rt_handler(long int t)
     	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
     	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
     	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
 	rtai_kfree(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME));
 	rtai_kfree(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME));
+	rtai_kfree(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME));
 }
 
 
@@ -296,7 +307,7 @@ int __init xinit_module(void)
         printk("KernelSpike: SpikeTimeStamp Memory allocated.\n");
         printk("KernelSpike: sizeof(SpikeTimeStamp) : %lu.\n", sizeof(SpikeTimeStamp));
 
-	template_matching_data = (TemplateMatchingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME), sizeof(TemplateMatchingData));
+	template_matching_data = (TemplateMatchingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME), sizeof(TemplateMatchingData));
 	if (template_matching_data == NULL)
 		return -ENOMEM;
 	memset(template_matching_data, 0, sizeof(TemplateMatchingData));
@@ -337,7 +348,14 @@ int __init xinit_module(void)
 	memset(spike_thres_2_kernel_spike_msgs, 0, sizeof(SpkThres2KrnlSpkMsg));
         printk("KernelSpike: SpkThres2KrnlSpkMsg Memory allocated.\n");
         printk("KernelSpike: sizeof(SpkThres2KrnlSpkMsg) : %lu.\n", sizeof(SpkThres2KrnlSpkMsg));
-       
+
+	template_matching_2_kernel_spike_msgs = (TempMat2KrnlSpkMsg*)rtai_kmalloc(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME), sizeof(TempMat2KrnlSpkMsg));
+	if (template_matching_2_kernel_spike_msgs == NULL)
+		return -ENOMEM;
+	memset(template_matching_2_kernel_spike_msgs, 0, sizeof(TempMat2KrnlSpkMsg));
+        printk("KernelSpike: TempMat2KrnlSpkMsg Memory allocated.\n");
+        printk("KernelSpike: sizeof(TempMat2KrnlSpkMsg) : %lu.\n", sizeof(TempMat2KrnlSpkMsg));
+
 	for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 	{
 		for (j=0; j<MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; j++)
@@ -357,19 +375,32 @@ int __init xinit_module(void)
 	}
 
 	rt_set_periodic_mode();
-	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, (KERNELSPIKE_CPU_ID*MAX_NUM_OF_THREADS_PER_CPU)+KERNELSPIKE_CPU_THREAD_ID);
+	rt_task_init_cpuid(&rt_task0, rt_handler, KERNELSPIKE_PASS_DATA, KERNELSPIKE_STACK_SIZE, KERNELSPIKE_TASK_PRIORITY, KERNELSPIKE_USES_FLOATING_POINT, KERNELSPIKE_SIGNAL, (KERNELSPIKE_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU)+KERNELSPIKE_CPU_THREAD_ID);
 
 	start_rt_timer(nano2count(START_RT_TIMER_PERIOD));
 	tick_period = nano2count(KERNELSPIKE_PERIOD);
 	rt_task_make_periodic(&rt_task0, rt_get_time() + tick_period, tick_period);
 
-	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].rt_task_period = KERNELSPIKE_PERIOD;
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].rt_task_period = KERNELSPIKE_PERIOD;
 	rt_tasks_data->num_of_total_rt_tasks++;
-	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].num_of_rt_tasks_at_cpu++;
-	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_rt_tasks_at_cpu_thread++;
-	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold = KERNELSPIKE_POSITIVE_JITTER_THRES;
-	rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold = KERNELSPIKE_NEGATIVE_JITTER_THRES;
-
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].num_of_rt_tasks_at_cpu++;
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].num_of_rt_tasks_at_cpu_thread++;
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[0] = 'K'; 
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[1] = 'e'; 
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[2] = 'r';
+ 	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[3] = 'n'; 
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[4] = 'e'; 
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[5] = 'l';
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[6] = 'S';
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[7] = 'p';
+ 	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[8] = 'i'; 
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[9] = 'k'; 
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].task_name[10] = 'e';
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].positive_jitter_threshold = KERNELSPIKE_POSITIVE_JITTER_THRES;
+	rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].negative_jitter_threshold = KERNELSPIKE_NEGATIVE_JITTER_THRES;
+	max_task_run_time = &(rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].max_task_run_time);
+	max_positive_jitter = &(rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].max_positive_jitter);
+	max_negative_jitter = &(rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].max_negative_jitter);
 	printk("KernelSpike: rt task created with %d nanoseconds period.\n", KERNELSPIKE_PERIOD);
 	return 0;
 }
@@ -398,12 +429,13 @@ void __exit xcleanup_module(void)
     	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATHCHING_SHM_NAME));	
+    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME));	
     	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
     	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
     	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
 	rtai_kfree(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME));
 	rtai_kfree(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME));
+	rtai_kfree(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME));
     	printk("KernelSpike: rmmod KernelSpike\n");
 	return;
 }
@@ -1266,43 +1298,35 @@ void close_daq_cards(void)
 
 void evaluate_period_run_time(unsigned int curr_time)
 {
-	static unsigned int max_period_run_time = 0;		
 	unsigned int period_run_time, period_end_time;
 
 	period_end_time = rt_get_cpu_time_ns();
 	period_run_time = period_end_time - curr_time;
-	if (period_run_time > max_period_run_time)
+	if (period_run_time > *max_task_run_time)
 	{
-		max_period_run_time = period_run_time;
-		rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_period_run_time = max_period_run_time;
+		*max_task_run_time = period_run_time;
 	}	
 }
 void evaluate_jitter(unsigned int period_occured)
 {
-	static unsigned int max_positive_jitter = 0;
-	static unsigned int max_negative_jitter = 0;
 	unsigned int jitter;	
 	if (period_occured > KERNELSPIKE_PERIOD)
 	{
 		jitter = period_occured - KERNELSPIKE_PERIOD;
-		if (jitter > max_positive_jitter)
-		{
-			max_positive_jitter = jitter;
-			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_positive_jitter = max_positive_jitter;
-		}
-		if (jitter > rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].positive_jitter_threshold)
-			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_positive_jitter_exceeding_threshold++;
+		if (jitter > (*max_positive_jitter))
+			*max_positive_jitter = jitter;
+		if (jitter > KERNELSPIKE_POSITIVE_JITTER_THRES)
+			rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].num_of_positive_jitter_exceeding_threshold++;
 	}
 	else
 	{
 		jitter = KERNELSPIKE_PERIOD - period_occured;
-		if (jitter > max_negative_jitter)
+		if (jitter > *max_negative_jitter)
 		{
-			max_negative_jitter = jitter;
-			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].max_negative_jitter = max_negative_jitter;
+			*max_negative_jitter = jitter;
 		}	
-		if (jitter > rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].negative_jitter_threshold)
-			rt_tasks_data->cpu_rt_task_data[KERNELSPIKE_CPU_ID].cpu_thread_rt_task_data[KERNELSPIKE_CPU_THREAD_ID].num_of_negative_jitter_exceeding_threshold++;		
+		if (jitter > KERNELSPIKE_NEGATIVE_JITTER_THRES)
+			rt_tasks_data->cpus_rt_task_data[KERNELSPIKE_CPU_ID].cpu_threads_rt_data[KERNELSPIKE_CPU_THREAD_ID].cpu_thread_tasks_rt_data[KERNELSPIKE_CPU_THREAD_TASK_ID].num_of_negative_jitter_exceeding_threshold++;
 	} 
 }
 
@@ -1461,6 +1485,58 @@ static bool get_next_spike_thres_2_kernel_spike_msg_buffer_item(SpkThres2KrnlSpk
 		return false;
 	*msg_item = &(msg_buffer->buff[*idx]);	
 	if ((*idx + 1) == SPIKE_THRES_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
+		*idx = 0;
+	else
+		(*idx)++;
+	return true;
+}
+
+static bool handle_template_matching_2_kernel_spike_msgs(TempMat2KrnlSpkMsg* msg_buffer)
+{
+	TempMat2KrnlSpkMsgItem *msg_item;
+	while (get_next_template_matching_2_kernel_spike_msg_buffer_item(msg_buffer, &msg_item))
+	{
+		switch (msg_item->msg_type)
+		{
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_SORTING_ON:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].sorting_on = 1;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_SORTING_OFF:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].sorting_on = 0;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_INCLUDE_UNIT:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].include_unit = 1;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_EXCLUDE_UNIT:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].include_unit = 0;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_PROBAB_THRES:
+				if (msg_item->threshold < 0)
+				{
+					printk("KernelSpike: WARNING: submitted template_matching_probability_threshold is lower than zero.\n");
+					(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].probability_thres = 0; 
+				}
+				else
+				{
+					(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].probability_thres = msg_item->threshold;
+				}
+				break;
+			default:
+				printk("KernelSpike: ERROR: Unknown template_matching_2_kernel_spike_msg %u.\n", msg_item->msg_type);
+				return false;
+		}
+	}
+	return true;
+}
+
+static bool get_next_template_matching_2_kernel_spike_msg_buffer_item(TempMat2KrnlSpkMsg* msg_buffer, TempMat2KrnlSpkMsgItem **msg_item)
+{
+	unsigned int *idx;
+	idx = &(msg_buffer->buff_read_idx);
+	if (*idx == msg_buffer->buff_write_idx)
+		return false;
+	*msg_item = &(msg_buffer->buff[*idx]);	
+	if ((*idx + 1) == TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
 		*idx = 0;
 	else
 		(*idx)++;

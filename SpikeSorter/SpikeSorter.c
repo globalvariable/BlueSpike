@@ -16,16 +16,27 @@
 
 #include "SpikeSorter.h"
 
+static RecordingData			*filtered_recording_data = NULL;
+static TemplateMatchingData	*template_matching_data = NULL;
+static BlueSpikeTimeStamp 		*blue_spike_time_stamp = NULL;
+static TempMat2KrnlSpkMsg	*template_matching_2_kernel_spike_msgs = NULL;
 static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 
 int main( int argc, char *argv[])
 {
-   	shared_memory = (SharedMemStruct*)rtai_malloc(nam2num(SHARED_MEM_NAME), SHARED_MEM_SIZE);
-	if (shared_memory == NULL)
-	{
-		printf("rtai_malloc() failed (maybe /dev/rtai_shm is missing)!\n");
-		return -1;
-   	}
+	filtered_recording_data = (RecordingData*)rtai_malloc(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME), 0);
+	if (filtered_recording_data == NULL) 
+		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "filtered_recording_data == NULL.");
+	template_matching_data = (TemplateMatchingData*)rtai_malloc(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME), 0);
+	if (template_matching_data == NULL) 
+		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "template_matching_data == NULL.");
+	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_malloc(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME), 0);
+	if (blue_spike_time_stamp == NULL) 
+		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "blue_spike_time_stamp == NULL.");
+	template_matching_2_kernel_spike_msgs = allocate_shm_client_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs);
+	if (template_matching_2_kernel_spike_msgs == NULL) 
+		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "template_matching_2_kernel_spike_msgs == NULL.");
+
 	gtk_init(&argc, &argv);
 	create_gui(); 	
 	gtk_main();
@@ -64,7 +75,7 @@ void create_gui(void)
 	color_spike[3].green = 65535;		// green
 	color_spike[3].blue = 0;	
 
-	color_spike[4].red = 65535;
+/*	color_spike[4].red = 65535;
 	color_spike[4].green = 32768;		// orange
 	color_spike[4].blue = 0;
 	
@@ -72,7 +83,7 @@ void create_gui(void)
 	color_spike[5].green = 0;
 	color_spike[5].blue = 32768;
 
-	color_spike_non_sorted.red = 65535;      // non-sorted
+*/	color_spike_non_sorted.red = 65535;      // non-sorted
 	color_spike_non_sorted.green = 65535;
 	color_spike_non_sorted.blue = 65535;
 	
@@ -184,7 +195,7 @@ void create_gui(void)
 		{  		
 			for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 			{	
-				Y_templates[i][j] = shared_memory->template_matching_data[disp_mwa][disp_chan][i].template[j];
+				Y_templates[i][j] = (*template_matching_data)[disp_mwa][disp_chan][i].template[j];
 			}
 			gtk_databox_graph_add (GTK_DATABOX (box_units[i]), gtk_databox_lines_new (NUM_OF_SAMP_PER_SPIKE, X_axis, Y_templates[i], &color_spike_template, 0));	
 		}
@@ -266,7 +277,7 @@ void create_gui(void)
   	btn_unit_sorting_on_off = gtk_button_new_with_label("Unit Sorting: OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_unit_sorting_on_off, TRUE, TRUE, 0);
 
-	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	}	
@@ -274,7 +285,7 @@ void create_gui(void)
   	btn_include_unit_on_off = gtk_button_new_with_label("Include Unit: OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_include_unit_on_off, TRUE, TRUE, 0);	
 	
-	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].include_unit)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	}		
@@ -307,7 +318,7 @@ void create_gui(void)
         gtk_box_pack_start(GTK_BOX(hbox),entry_probability_thres , FALSE,FALSE,0);
 
 	char thres[40];
-	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres); 	
  	
   	btn_submit_probability_thres = gtk_button_new_with_label("Submit Probabilty");
@@ -369,9 +380,7 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_load_template_file ), "clicked", G_CALLBACK(load_template_file_button_func), NULL);
 	g_signal_connect(G_OBJECT(box_nonsorted_all_spike), "selection-finalized", G_CALLBACK(spike_selection_rectangle_func), NULL);
 	
-	blue_spike_time_stamp_buff_read_idx = shared_memory->blue_spike_time_stamp.buff_idx_write;
-	
-	initialize_data_read_write_handlers();
+	blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp->buff_idx_write;
 	
 	g_timeout_add(50, timeout_callback, NULL);
 	
@@ -390,20 +399,14 @@ void combo_mwa_func (void)
 		idx = 0;
 	}
 	disp_mwa = idx;
-	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
-	{
-		printf("SpikeSorter:\n");	
-		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
-		printf("ERROR: No data will be plotted.\n");
-	}
 
-	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
-	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
-	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+	 if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].include_unit)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
@@ -424,19 +427,14 @@ void combo_chan_func (void)
 		idx = 0;
 	}
 	disp_chan = idx;	
-	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
-	{
-		printf("SpikeSorter:\n");	
-		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
-		printf("ERROR: No data will be plotted.\n");
-	}	
-	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
+	
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
-	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
-	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+	 if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].include_unit)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");	
@@ -457,19 +455,14 @@ void combo_unit_func (void)
 		idx = 0;
 	}
 	disp_unit = idx;	
-	if ((shared_memory->mwa_daq_map[disp_mwa][disp_mwa].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel.
-	{
-		printf("SpikeSorter:\n");	
-		printf("ERROR: The selected mwa-channel was not mapped to any DAQ Card Channel\n");
-		printf("ERROR: No data will be plotted.\n");
-	}	
-	sprintf(thres, "%E" , shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres);
+	
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
-	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
-	 if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+	 if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].include_unit)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");	
@@ -542,22 +535,22 @@ void clear_unit_template_button_func(void)
 	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 	{	
 		Y_templates[disp_unit][i] = 0;
-		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].template[i] = 0;
+		(*template_matching_data)[disp_mwa][disp_chan][disp_unit].template[i] = 0;
 	}
 }
 
 void unit_sorting_on_off_button_func(void)
 {
-	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on)
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
-		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on = 0;
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_SORTING_OFF, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "unit_sorting_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: OFF");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }															
-		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].sorting_on = 1;
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_SORTING_ON, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "unit_sorting_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	}
 	return;
@@ -565,16 +558,16 @@ void unit_sorting_on_off_button_func(void)
 
 void include_unit_on_off_button_func(void)
 {
- 	if (shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit)
+ 	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].include_unit)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }										
-		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit = 0;
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_EXCLUDE_UNIT, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "include_unit_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	}
 	else
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }															
-		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].include_unit = 1;
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_INCLUDE_UNIT, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "include_unit_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");	
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	}
 	return;
@@ -596,12 +589,12 @@ void spike_filter_on_off_button_func(void)
 
 void submit_probability_thres_button_func(void)
 {
-	double threshold = atof(gtk_entry_get_text(GTK_ENTRY(entry_probability_thres)));
+	TemplateProbabilityThres threshold = atof(gtk_entry_get_text(GTK_ENTRY(entry_probability_thres)));
 	if (threshold >= 0.0)
 	{
-		while (!(shared_memory->kernel_task_ctrl.kernel_task_idle)) { usleep(100); }
-		shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit].probability_thres=threshold;
-		printf("Spike detection is disable for this channel by applying 0.0 Volts as threshold\n");		
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_PROBAB_THRES, disp_mwa, disp_chan, disp_unit, threshold, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "submit_probability_thres_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
+		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	}
 	else
 	{
@@ -635,7 +628,7 @@ void load_template_file_button_func(void)
 	strcpy(path_temp, path_template);
 	path_temp[strlen(path_template)-10] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/templates)
 
-
+/*
 	if (!get_format_version(&version, path_temp))
 	{
 		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");		
@@ -647,9 +640,7 @@ void load_template_file_button_func(void)
 		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");	
 		return;
 	}
-	
-	
-	
+*/
 
 }
 
@@ -682,7 +673,7 @@ void clear_spikes_screen(void)
 	{
 		for (j=0; j<NUM_OF_SAMP_PER_SPIKE; j++)
 		{	
-			Y_templates[i][j] = shared_memory->template_matching_data[disp_mwa][disp_chan][i].template[j];
+			Y_templates[i][j] = (*template_matching_data)[disp_mwa][disp_chan][i].template[j];
 		}
 	}	
 
@@ -717,7 +708,6 @@ void clear_spikes_screen(void)
 gboolean timeout_callback(gpointer user_data) 
 {
 	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
-	BlueSpikeTimeStamp 	*blue_spike_time_stamp;	
 	int idx, blue_spike_time_stamp_buff_end_idx;
 	int blue_spike_time_stamp_buff_mwa, blue_spike_time_stamp_buff_chan, blue_spike_time_stamp_buff_unit, blue_spike_time_stamp_buff_recording_data_idx;	
 	int spike_idx;	
@@ -726,8 +716,6 @@ gboolean timeout_callback(gpointer user_data)
 	int i, j;
 	bool spike_in_range;
 	
-	blue_spike_time_stamp = &shared_memory->blue_spike_time_stamp;
-
 	if (disp_paused)
 	{
 		blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp->buff_idx_write;
@@ -735,10 +723,12 @@ gboolean timeout_callback(gpointer user_data)
 	}
 
 	plotting_in_progress = 1;
+
+/*	REMOVED to remove THE NECESSITY FOR  mwa_daq_data shared memory allocation. It will not display anything is channel not mapped because template matching in KernelSpike will not find any spike for this chan.
 	if ((shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_card == MAX_NUM_OF_DAQ_CARD) || (shared_memory->mwa_daq_map[disp_mwa][disp_chan].daq_chan == MAX_NUM_OF_CHANNEL_PER_DAQ_CARD))  // non-cinfigured channel. Do not plot
 		return TRUE; 
-	
-	filtered_recording_data_chan_buff = &shared_memory->filtered_recording_data.recording_data_buff[disp_mwa][disp_chan];
+*/ 	
+	filtered_recording_data_chan_buff = &filtered_recording_data->recording_data_buff[disp_mwa][disp_chan];
 		
 	idx = blue_spike_time_stamp_buff_read_idx;			// spike_time_stamp_buff_read_idx first initialized in create_gui() to be shared_memory->spike_time_stamp.buff_idx_write
 	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp->buff_idx_write;
@@ -994,7 +984,7 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 		}
 	}
 	
-	TemplateMatchingUnitData *template_matching_unit_data = &shared_memory->template_matching_data[disp_mwa][disp_chan][disp_unit];
+	TemplateMatchingUnitData *template_matching_unit_data = &((*template_matching_data)[disp_mwa][disp_chan][disp_unit]);
 
 	for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
 	{

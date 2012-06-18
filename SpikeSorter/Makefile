@@ -7,30 +7,21 @@ endif
 CC = $(shell rtai-config --cc)
 LXRT_CFLAGS = $(shell rtai-config --lxrt-cflags)
 LXRT_LDFLAGS = $(shell rtai-config --lxrt-ldflags)
-COMEDI_FLAGS = -lcomedi -lm -lmeschach
+MATH_FLAGS = -lm -lmeschach
 GTK_FLAGS = $(shell pkg-config --cflags --libs gtk+-2.0 gtkdatabox)
 
 all: SpikeSorter
 
-SpikeSorter: SpikeSorter.c ../Library/DataHandling/DataHandling.o ../Library/DataHandling/v0/DataFormat_v0.o ../Library/DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Library/Interrogate/Interrogate.o
-	$(CC) $(LXRT_CFLAGS) -o $@ $< ../Library/DataHandling/DataHandling.o ../Library/DataHandling/v0/DataFormat_v0.o ../Library/DataHandling/v0/Buffer_v0.o ../Library/Misc/Misc.o ../Library/Interrogate/Interrogate.o $(LXRT_LDFLAGS) $(COMEDI_FLAGS) $(GTK_FLAGS) 
+SpikeSorter: SpikeSorter.c ../Library/Misc/Misc.o ../Library/Messages/TempMat2KrnlSpk.o
+	$(CC) $(LXRT_CFLAGS) $(LXRT_LDFLAGS) $(MATH_FLAGS) $(GTK_FLAGS) -o $@ $< ../Library/Misc/Misc.o ../Library/Messages/TempMat2KrnlSpk.o
 
-../Library/DataHandling/DataHandling.o: ../Library/DataHandling/DataHandling.c 
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 
-	
-../Library/DataHandling/v0/Buffer_v0.o: ../Library/DataHandling/v0/Buffer_v0.c 
-	$(CC)  $(LXRT_CFLAGS) -c -o $@ $<   $(GTK_FLAGS) 	
-
-../Library/DataHandling/v0/DataFormat_v0.o: ../Library/DataHandling/v0/DataFormat_v0.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
-	
 ../Library/Misc/Misc.o: ../Library/Misc/Misc.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 
+	$(CC) $(LXRT_CFLAGS) -c -o $@ $< $(LXRT_LDFLAGS) $(GTK_FLAGS)			### ../Library/Misc/Misc	
 
-../Library/Interrogate/Interrogate.o: ../Library/Interrogate/Interrogate.c
-	$(CC)  $(LXRT_CFLAGS)  -c -o $@ $< $(GTK_FLAGS) 	
+../Library/Messages/TempMat2KrnlSpk.o: ../Library/Messages/TempMat2KrnlSpk.c
+	$(CC) $(LXRT_CFLAGS) -c -o $@ $< $(LXRT_LDFLAGS) $(GTK_FLAGS)			### ../Library/Messages/TempMat2KrnlSpk
 
 clean:
-	rm -f *.o SpikeSorter ../Library/DataHandling/*.o ../Library/DataHandling/v0/*.o ../Library/Misc/*.o ../Library/Interrogate/*.o
+	rm -f *.o SpikeSorter ../Library/Misc/*.o ../Library/Messages/*.o
 
 .PHONY: clean

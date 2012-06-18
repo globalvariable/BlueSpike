@@ -112,7 +112,7 @@ void create_gui(void)
 
  	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
-  	gtk_window_set_default_size(GTK_WINDOW(window), 1600, 900);
+  	gtk_window_set_default_size(GTK_WINDOW(window), 1920, 1020);
   	gtk_window_set_title(GTK_WINDOW(window), "SpikeViewer");
   	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 
@@ -217,29 +217,29 @@ void create_gui(void)
    	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
   		
-	btn_filter_highpass_150Hz = gtk_button_new_with_label("Turn HP 150Hz ON");
+	btn_filter_highpass_150Hz = gtk_button_new_with_label("HP 150Hz : OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_filter_highpass_150Hz, TRUE, TRUE, 0);
 
-	btn_filter_highpass_400Hz = gtk_button_new_with_label("Turn HP 400Hz LP ON");
+	btn_filter_highpass_400Hz = gtk_button_new_with_label("HP 400Hz LP : OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_filter_highpass_400Hz, TRUE, TRUE, 0);	
 	
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);	
   	
- 	btn_filter_lowpass_8KHz = gtk_button_new_with_label("Turn LP 8KHz ON");
+ 	btn_filter_lowpass_8KHz = gtk_button_new_with_label("LP 8KHz : OFF");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_filter_lowpass_8KHz, TRUE, TRUE, 0); 	
 	
 	if (filter_ctrl->highpass_150Hz_on)
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz OFF");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"HP 150Hz : ON");
 	}
 	if (filter_ctrl->highpass_400Hz_on)
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz OFF");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"HP 400Hz : ON");
 	}
 	if (filter_ctrl->lowpass_8KHz_on)
 	{
-		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz OFF");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"LP 8KHz : OFF");
 	}	
   	
 	// Raw Data Plot 
@@ -368,14 +368,14 @@ gboolean filter_highpass_150Hz_button_func (GtkDatabox * box)
 	{
 		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_150HZ_OFF, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_150Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz ON");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"HP 150Hz : OFF");
 	}
 	else
 	{
 		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_150HZ_ON, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_150Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz OFF");
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz ON");		
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"HP 150Hz : ON");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"HP 400Hz : OFF");		
 	}
 	return TRUE;	
 }
@@ -386,14 +386,14 @@ gboolean filter_highpass_400Hz_button_func (GtkDatabox * box)
 	{
 		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_400HZ_OFF, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_400Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz ON");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"HP 400Hz : OFF");
 	}
 	else
 	{
 		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_HIGH_PASS_400HZ_ON, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_highpass_400Hz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");	
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"Turn HP 400Hz OFF");		
-		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"Turn HP 150Hz ON");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_400Hz),"HP 400Hz : ON");		
+		gtk_button_set_label (GTK_BUTTON(btn_filter_highpass_150Hz),"HP 150Hz : OFF");
 	}
 	return TRUE;		
 }
@@ -404,7 +404,7 @@ gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box)
 	{
 		if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_LOW_PASS_8KHZ_OFF, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_lowpass_8KHz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");	
-		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz ON");
+		gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"LP 8KHz : OFF");
 	}
 	else
 	{
@@ -412,7 +412,7 @@ gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box)
 		{
 			if (! write_to_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs, FILTER_CTRL_2_KERNEL_SPIKE_MSG_TURN_LOW_PASS_8KHZ_ON, FILTER_CTRL_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 				return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "filter_lowpass_8KHz_button_func", "! write_to_filter_ctrl_2_kernel_spike_msg_buffer().");	
-			gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"Turn LP 8KHz OFF");
+			gtk_button_set_label (GTK_BUTTON(btn_filter_lowpass_8KHz),"LP 8KHz : ON");
 		}
 		else
 		{

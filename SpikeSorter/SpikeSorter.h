@@ -16,9 +16,6 @@
 #ifndef SPIKESORTER_H
 #define SPIKESORTER_H
  
-#include "../SharedMemory.h"
-#include "../Library/DataHandling/DataHandling.h"
-
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 
@@ -32,6 +29,13 @@
 #include <meschach/matrix2.h>
 
 #include <math.h>
+
+#include "../TemplateMatchingData.h"
+#include "../BlueSpikeTimeStamp.h"
+#include "../KernelSpike/KernelSpikeSharedMem.h"
+#include "../Library/Misc/Misc.h"
+#include "../DaqCard.h"
+#include "../Library/Messages/TempMat2KrnlSpk.h"
 
 #define SPIKE_MEM_TO_DISPLAY_UNIT 30
 #define SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE 150
