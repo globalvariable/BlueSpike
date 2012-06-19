@@ -35,7 +35,7 @@
 #include "../Library/Messages/FiltCtrl2KrnlSpk.h"
 #include "../Library/Messages/SpkThres2KrnlSpk.h"
 #include "../DaqCard.h"
-
+#include "FileHandler.h"
 #define SPIKE_MEM_TO_DISPLAY 30 
 
 #define NUM_OF_RAW_SAMPLE_TO_DISPLAY 4000		// Adjusted for 40000KHz sampling rate 
@@ -65,6 +65,9 @@ GtkWidget *btn_print_spike_end_buff;
 
 GtkWidget *btn_select_spike_thresholds_file_to_load;
 GtkWidget *btn_load_spike_thresholds_file; 
+
+GtkWidget *btn_select_folder_to_save_spike_thresholds_file;
+GtkWidget *btn_save_spike_thresholds_file; 
 
 int blue_spike_time_stamp_buff_read_idx;
 
@@ -104,7 +107,9 @@ gboolean print_spike_end_buff_button_func (GtkDatabox * box);
 gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
 gboolean load_spike_thresholds_file_button_func (GtkDatabox * box);
+gboolean save_spike_thresholds_file_button_func (GtkDatabox * box);
 void clear_spike_screen(void);
 void clear_raw_data_screen(void);
-void set_directory_btn_select_directory_to_load(void);
+bool set_directory_btn_select_directory_to_load(void);
+void set_directory_btn_select_directory_to_save(void);
 #endif

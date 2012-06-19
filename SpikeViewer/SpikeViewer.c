@@ -58,6 +58,7 @@ int main( int argc, char *argv[])
 
 void create_gui(void)
 {
+	initialize_data_read_write_handlers();
 
 	color_bg_signal.red = 65535;
 	color_bg_signal.green = 65535;
@@ -158,7 +159,7 @@ void create_gui(void)
  
  
     	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5);
   	
     	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE,0);
@@ -189,9 +190,19 @@ void create_gui(void)
 	        
         btn_load_spike_thresholds_file = gtk_button_new_with_label("Load Thresholds");
         gtk_box_pack_start(GTK_BOX(hbox),btn_load_spike_thresholds_file,TRUE,TRUE, 0);	
+
+	hbox = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,0);	
+
+  	btn_select_folder_to_save_spike_thresholds_file = gtk_file_chooser_button_new ("Select Directory", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
+        gtk_box_pack_start(GTK_BOX(hbox), btn_select_folder_to_save_spike_thresholds_file, FALSE,FALSE,0);
+	set_directory_btn_select_directory_to_save();
+
+	btn_save_spike_thresholds_file = gtk_button_new_with_label("Save Thresholds File");
+        gtk_box_pack_start(GTK_BOX(hbox),btn_save_spike_thresholds_file,TRUE,TRUE, 0);
           	
    	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5);
   	
    	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE,0);
@@ -203,7 +214,7 @@ void create_gui(void)
 	gtk_box_pack_start (GTK_BOX (hbox), clear_button, TRUE, TRUE, 0);
 
    	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
   	
     	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0); 
@@ -212,7 +223,7 @@ void create_gui(void)
 	gtk_box_pack_start (GTK_BOX (hbox), btn_print_spike_end_buff, TRUE, TRUE, 0); 		
 
   	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5);
 
    	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);
@@ -279,7 +290,8 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(clear_button), "clicked", G_CALLBACK(clear_screen_but_func), NULL);
 	g_signal_connect(G_OBJECT(btn_print_spike_end_buff), "clicked", G_CALLBACK(print_spike_end_buff_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_load_spike_thresholds_file), "clicked", G_CALLBACK(load_spike_thresholds_file_button_func), NULL);	
-	
+	g_signal_connect(G_OBJECT(btn_save_spike_thresholds_file), "clicked", G_CALLBACK(save_spike_thresholds_file_button_func), NULL);	
+
 	g_timeout_add(50, timeout_callback, box_signal);
 
 
@@ -552,58 +564,91 @@ void clear_raw_data_screen(void)
 	gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 }
 
-void set_directory_btn_select_directory_to_load(void)
+bool set_directory_btn_select_directory_to_load(void)
 {
 	char line[600];
 	FILE *fp = NULL;
 	GFile *gfile_path; 
        	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
        	{ 
-       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
-       		printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+       		printf ("ERROR: SpikeViewer: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: SpikeViewer: /home is loaded as initial directory.\n");
 		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),"/home");
+		return FALSE;
        	}
        	else
        	{
 		if (fgets(line, sizeof line, fp ) == NULL) 
 		{ 
-			printf("ERROR: Recorder: Couldn' t read ./path_initial_directory\n"); 
-       			printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
+			printf("ERROR: SpikeViewer: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: SpikeViewer: /home is loaded as initial directory.\n");
 			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load),"/home");
+			fclose(fp); 		
+			return FALSE;
 		}
 		else
 		{
 			gfile_path = g_file_new_for_path (line); 
 			gtk_file_chooser_set_file (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load), gfile_path, NULL);
-			g_object_unref(gfile_path);			
+			g_object_unref(gfile_path);
+			fclose(fp); 		
+			return TRUE;
 		}
-		fclose(fp); 		
 	}  	 
 }
 
 gboolean load_spike_thresholds_file_button_func (GtkDatabox * box)
 {
 
-	char *path_thres = NULL, path_temp[600];
+	char *path = NULL;
 
 	int version;
-	path_thres = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load));
-	path_thres = &path_thres[7];                  ///     file:///path
-	strcpy(path_temp, path_thres);
-	path_temp[(strlen(path_thres)-12)] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/spike_thres)
+	path = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_spike_thresholds_file_to_load));
+	path = &(path[7]);                  ///     file:///path
 
-/*	if (!get_format_version(&version, path_temp))
-	{
-		printf("Couldn't retrieve spike thresholds.\n");		
-		return TRUE;
-	}
+	if (!get_format_version(&version, path))
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "load_spike_thresholds_file_button_func", "! get_format_version()."); 
 	
-	if (!((*read_spike_detection_files[version])(1, path_thres)))
-	{
-		printf("Couldn't retrieve thresholds.\n");	
-		return TRUE;
-	}
-*/
+	if (!((*read_spike_thresholds_data[version])(2, path, spike_thres_2_kernel_spike_msgs)))
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "load_spike_thresholds_file_button_func", "! *read_spike_thresholds_data[version]()."); 
 
-	return TRUE;	
+	return print_message(INFO_MSG ,"SpikeViewer", "SpikeViewer", "load_spike_thresholds_file_button_func", "Succesuflly loaded SpikeThresholds data file.");
+
+}
+
+void set_directory_btn_select_directory_to_save(void)
+{
+	char line[600];
+	FILE *fp = NULL;
+       	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
+       	{ 
+       		printf ("ERROR: SpikeViewer: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: SpikeViewer: /home is loaded as initial direcoty to create data folder\n");
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_folder_to_save_spike_thresholds_file),"/home");
+       	}
+       	else
+       	{
+		if (fgets(line, sizeof line, fp ) == NULL) 
+		{ 
+			printf("ERROR: SpikeViewer: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: SpikeViewer: /home is loaded as initial direcoty to create data folder\n");
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_folder_to_save_spike_thresholds_file),"/home");
+		}
+		else
+		{
+			line[strlen(line)-16] = 0;   /// to get the folder instead of ../../DaqConfig file
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_folder_to_save_spike_thresholds_file),line);
+		}
+		fclose(fp); 		
+	}  	 
+}
+
+gboolean save_spike_thresholds_file_button_func (GtkDatabox * box)
+{
+	char *path_temp = NULL, *path = NULL;
+	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_folder_to_save_spike_thresholds_file));
+	path = &path_temp[7];   // since     uri returns file:///home/....	
+	if (! (*write_spike_thresholds_data[DATA_FORMAT_VERSION])(2, path, spike_thresholding))
+		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "save_spike_thresholds_file_button_func", "! *write_spike_thresholds_data()."); 		
+	return print_message(INFO_MSG ,"SpikeViewer", "SpikeViewer", "save_spike_thresholds_file_button_func", "Succesuflly saved SpikeThresholds data file.");
 }

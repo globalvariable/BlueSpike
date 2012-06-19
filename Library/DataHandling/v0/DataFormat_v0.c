@@ -1422,16 +1422,16 @@ int read_spike_templates_v0(int num, ...)
 				if(!get_word_in_line('\t', 0, word, line, TRUE))
 					return 0;			
 				shared_memory->template_matching_data[i][j][k].sqrt_det_S = atof(word);	
-				if(!get_word_in_line('\t', 0, word, line, TRUE))
+				if(!get_word_in_line('\t', 1, word, line, TRUE))
 					return 0;			
 				shared_memory->template_matching_data[i][j][k].log_det_S = atof(word);	
-				if(!get_word_in_line('\t', 0, word, line, TRUE))
+				if(!get_word_in_line('\t', 2, word, line, TRUE))
 					return 0;			
 				shared_memory->template_matching_data[i][j][k].probability_thres = atof(word);
-				if(!get_word_in_line('\t', 0, word, line, TRUE))
+				if(!get_word_in_line('\t', 3, word, line, TRUE))
 					return 0;			
 				shared_memory->template_matching_data[i][j][k].sorting_on = (bool)atof(word);
-				if(!get_word_in_line('\t', 0, word, line, TRUE))
+				if(!get_word_in_line('\t', 4, word, line, TRUE))
 					return 0;			
 				shared_memory->template_matching_data[i][j][k].include_unit = (bool)atof(word);
 			}

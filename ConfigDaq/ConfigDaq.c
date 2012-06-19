@@ -385,7 +385,7 @@ void load_config_daq_file_button_func(void)
 	if (!((*read_config_daq_data[version])(2, path, daq_config_2_kernel_spike_msgs)))
 		return (void)print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file_button_func", "! *read_config_daq_data[version]()."); 
 
-	return (void)print_message(INFO_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file", "Succesuflly loaded ConfigDaq data file.");
+	return (void)print_message(INFO_MSG ,"ConfigDaq", "ConfigDaq", "load_config_daq_file_button_func", "Succesuflly loaded ConfigDaq data file.");
 }
 
 static void save_config_daq_file_button_func(void)

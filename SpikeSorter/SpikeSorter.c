@@ -46,6 +46,7 @@ int main( int argc, char *argv[])
 
 void create_gui(void)
 {
+	initialize_data_read_write_handlers();
 
 	color_bg.red = 0;
 	color_bg.green = 0;
@@ -354,13 +355,23 @@ void create_gui(void)
 	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0); 	
 	
-	btn_select_template_file_to_load = gtk_file_chooser_button_new ("Select Template File", GTK_FILE_CHOOSER_ACTION_OPEN);
-        gtk_box_pack_start(GTK_BOX(hbox),btn_select_template_file_to_load, TRUE,TRUE,0);
-	gtk_widget_set_size_request(btn_select_template_file_to_load, 130, 25) ;
+	btn_select_template_matching_file_to_load = gtk_file_chooser_button_new ("Select Template File", GTK_FILE_CHOOSER_ACTION_OPEN);
+        gtk_box_pack_start(GTK_BOX(hbox),btn_select_template_matching_file_to_load, TRUE,TRUE,0);
+	gtk_widget_set_size_request(btn_select_template_matching_file_to_load, 130, 25) ;
 	set_directory_btn_select_directory_to_load();
 	
-	btn_load_template_file = gtk_button_new_with_label("Load Template File");
-        gtk_box_pack_start(GTK_BOX(hbox),btn_load_template_file,TRUE,TRUE, 0);	
+	btn_load_template_matching_file = gtk_button_new_with_label("Load Template File");
+        gtk_box_pack_start(GTK_BOX(hbox),btn_load_template_matching_file,TRUE,TRUE, 0);
+
+	hbox = gtk_hbox_new(FALSE, 0);
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE,FALSE,0);	
+
+  	btn_select_folder_to_save_template_matching_file = gtk_file_chooser_button_new ("Select Directory", GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER);
+        gtk_box_pack_start(GTK_BOX(hbox), btn_select_folder_to_save_template_matching_file, FALSE,FALSE,0);
+	set_directory_btn_select_directory_to_save();
+
+	btn_save_template_matching_file = gtk_button_new_with_label("Save Template File");
+        gtk_box_pack_start(GTK_BOX(hbox),btn_save_template_matching_file,TRUE,TRUE, 0);	
         
 	gtk_widget_show_all(window);
 	
@@ -377,7 +388,8 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_spike_filter_on_off), "clicked", G_CALLBACK(spike_filter_on_off_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_submit_probability_thres), "clicked", G_CALLBACK(submit_probability_thres_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_pause), "clicked", G_CALLBACK(pause_button_func), NULL);	
-	g_signal_connect(G_OBJECT(btn_load_template_file ), "clicked", G_CALLBACK(load_template_file_button_func), NULL);
+	g_signal_connect(G_OBJECT(btn_load_template_matching_file ), "clicked", G_CALLBACK(load_template_matching_file_button_func), NULL);
+	g_signal_connect(G_OBJECT(btn_save_template_matching_file ), "clicked", G_CALLBACK(save_template_matching_file_button_func), NULL);
 	g_signal_connect(G_OBJECT(box_nonsorted_all_spike), "selection-finalized", G_CALLBACK(spike_selection_rectangle_func), NULL);
 	
 	blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp->buff_idx_write;
@@ -617,30 +629,21 @@ void pause_button_func(void)
 	}	
 }
 
-void load_template_file_button_func(void)
+void load_template_matching_file_button_func(void)
 {
-
-	char *path_template = NULL, path_temp[600];
+	char *path = NULL;
 
 	int version;
-	path_template = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_file_to_load));
-	path_template = &path_template[7];                  ///     file:///path	
-	strcpy(path_temp, path_template);
-	path_temp[strlen(path_template)-10] = 0;    // to get the main BlueSpikeData directory path    (BlueSpikeData/templates)
+	path = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_template_matching_file_to_load));
+	path = &(path[7]);                  ///     file:///path
 
-/*
-	if (!get_format_version(&version, path_temp))
-	{
-		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");		
-		return;
-	}
+	if (!get_format_version(&version, path))
+		return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "load_template_matching_file_button_func", "! get_format_version()."); 
+	
+	if (!((*read_template_matching_data[version])(3, path, template_matching_2_kernel_spike_msgs, template_matching_data)))
+		return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "load_template_matching_file_button_func", "! *read_spike_thresholds_data[version]()."); 
 
-	if (!((*read_spike_sorting_files[version])(1, path_template)))
-	{
-		printf("SpikeSorter: ERROR:Couldn't retrieve templates.\n");	
-		return;
-	}
-*/
+	return (void)print_message(INFO_MSG ,"SpikeSorter", "SpikeSorter", "load_template_matching_file_button_func", "Succesuflly loaded TemplateMatching data file.");
 
 }
 
@@ -1079,31 +1082,72 @@ void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle *
 	return;		
 }
 
-void set_directory_btn_select_directory_to_load(void)
+bool set_directory_btn_select_directory_to_load(void)
 {
 	char line[600];
 	FILE *fp = NULL;
-	GFile *gfile_path; 	
+	GFile *gfile_path; 
        	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
        	{ 
-       		printf ("ERROR: Recorder: Couldn't find file: ./path_initial_directory\n"); 
-       		printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
-		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");
+       		printf ("ERROR: SpikeSorter: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: SpikeSorter: /home is loaded as initial directory.\n");
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_matching_file_to_load),"/home");
+		return FALSE;
        	}
        	else
        	{
 		if (fgets(line, sizeof line, fp ) == NULL) 
 		{ 
-			printf("ERROR: Recorder: Couldn' t read ./path_initial_directory\n"); 
-       			printf ("ERROR: Recorder: /home is loaded as initial directory.\n");
-			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_file_to_load),"/home");
+			printf("ERROR: SpikeSorter: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: SpikeSorter: /home is loaded as initial directory.\n");
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_template_matching_file_to_load),"/home");
+			fclose(fp); 		
+			return FALSE;
 		}
 		else
 		{
 			gfile_path = g_file_new_for_path (line); 
-			gtk_file_chooser_set_file (GTK_FILE_CHOOSER (btn_select_template_file_to_load), gfile_path, NULL);
+			gtk_file_chooser_set_file (GTK_FILE_CHOOSER (btn_select_template_matching_file_to_load), gfile_path, NULL);
 			g_object_unref(gfile_path);
+			fclose(fp); 		
+			return TRUE;
+		}
+	}  	 
+}
+
+void set_directory_btn_select_directory_to_save(void)
+{
+	char line[600];
+	FILE *fp = NULL;
+       	if ((fp = fopen("./path_initial_directory", "r")) == NULL)  
+       	{ 
+       		printf ("ERROR: SpikeSorter: Couldn't find file: ./path_initial_directory\n"); 
+       		printf ("ERROR: SpikeSorter: /home is loaded as initial direcoty to create data folder\n");
+		gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_folder_to_save_template_matching_file),"/home");
+       	}
+       	else
+       	{
+		if (fgets(line, sizeof line, fp ) == NULL) 
+		{ 
+			printf("ERROR: SpikeSorter: Couldn' t read ./path_initial_directory\n"); 
+       			printf ("ERROR: SpikeSorter: /home is loaded as initial direcoty to create data folder\n");
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_folder_to_save_template_matching_file),"/home");
+		}
+		else
+		{
+			line[strlen(line)-16] = 0;   /// to get the folder instead of ../../DaqConfig file
+			gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (btn_select_folder_to_save_template_matching_file),line);
 		}
 		fclose(fp); 		
 	}  	 
+}
+
+void save_template_matching_file_button_func (void)
+{
+	char *path_temp = NULL, *path = NULL;
+	path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_folder_to_save_template_matching_file));
+	path = &path_temp[7];   // since     uri returns file:///home/....	
+	if (! (*write_template_matching_data[DATA_FORMAT_VERSION])(2, path, template_matching_data))
+		return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "save_template_matching_file_button_func", "! *write_template_matching_data()."); 		
+	return (void)print_message(INFO_MSG ,"SpikeSorter", "SpikeSorter", "save_template_matching_file_button_func", "Succesuflly saved TemplateMatching data file."); 
 }

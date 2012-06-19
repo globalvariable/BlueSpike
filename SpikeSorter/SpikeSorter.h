@@ -36,7 +36,7 @@
 #include "../Library/Misc/Misc.h"
 #include "../DaqCard.h"
 #include "../Library/Messages/TempMat2KrnlSpk.h"
-
+#include "FileHandler.h"
 #define SPIKE_MEM_TO_DISPLAY_UNIT 30
 #define SPIKE_MEM_TO_DISPLAY_ALL_NONSORTED_SPIKE 150
 
@@ -98,8 +98,11 @@ GtkWidget *btn_submit_probability_thres;
 
 GtkWidget *btn_pause;
 
-GtkWidget *btn_select_template_file_to_load;
-GtkWidget *btn_load_template_file; 
+GtkWidget *btn_select_template_matching_file_to_load;
+GtkWidget *btn_load_template_matching_file; 
+
+GtkWidget *btn_select_folder_to_save_template_matching_file;
+GtkWidget *btn_save_template_matching_file; 
 
 int disp_mwa;
 int disp_chan;
@@ -129,10 +132,11 @@ void include_unit_on_off_button_func(void);
 void spike_filter_on_off_button_func(void);
 void submit_probability_thres_button_func(void);
 void pause_button_func(void);
-void load_template_file_button_func(void);
+void load_template_matching_file_button_func(void);
+void save_template_matching_file_button_func (void);
 void clear_spikes_screen(void);
 void spike_selection_rectangle_func(GtkDatabox * box, GtkDataboxValueRectangle * selectionValues);
 gboolean timeout_callback(gpointer user_data);
-void set_directory_btn_select_directory_to_load(void);
-
+bool set_directory_btn_select_directory_to_load(void);
+void set_directory_btn_select_directory_to_save(void);
 #endif

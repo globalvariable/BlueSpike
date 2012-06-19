@@ -73,70 +73,46 @@ int read_config_daq_data_v0(int num, ...)
 	if (fgets(line, sizeof line, fp ) == NULL)   { sprintf(message, "Couldn' t read %d th line of %s.", line_cntr, path); print_message(ERROR_MSG ,"ConfigDaq", "FileHandler_v0", "read_config_daq_data_v0", message);  fclose(fp); return 0; } else {line_cntr++;}   //  MAX_NUM_OF_DAQ_CARD	XX
 	if (!(get_word_in_line('\t', 1, word, line, TRUE))) {	fclose(fp); return 0; }
 	max_num_of_daq_card = (int)atof(word);	
-	if (MAX_NUM_OF_DAQ_CARD	< max_num_of_daq_card )
+	if (MAX_NUM_OF_DAQ_CARD != max_num_of_daq_card )
 	{
 		printf("ERROR: ConfigDaq file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);	
 		fclose(fp);
 		return 0;
 	}
-	else if (MAX_NUM_OF_DAQ_CARD	> max_num_of_daq_card )
-	{
-		printf("WARNING: ConfigDaq file was saved when MAX_NUM_OF_DAQ_CARD = %d\n",max_num_of_daq_card);
-		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_DAQ_CARD);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}
-	
+
 	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;} 
 	if (!(get_word_in_line('\t', 1, word, line, TRUE))) {	fclose(fp); return 0; }
 	max_num_of_channel_per_daq_card = (int)atof(word);
-	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD < max_num_of_channel_per_daq_card)
+	if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD != max_num_of_channel_per_daq_card)
 	{
 		printf("ERROR: ConfigDaq file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
 		printf("ERROR: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);	
 		fclose(fp);
 		return 0; 
 	}
-	else if (MAX_NUM_OF_CHANNEL_PER_DAQ_CARD > max_num_of_channel_per_daq_card)
-	{
-		printf("WARNING: ConfigDaq file was saved when MAX_NUM_OF_DAQ_CARD = %d\n", max_num_of_channel_per_daq_card);
-		printf("WARNING: Now it is MAX_NUM_OF_DAQ_CARD = %d\n", MAX_NUM_OF_CHANNEL_PER_DAQ_CARD);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}	
-	
+
 	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;}   
 	if (!(get_word_in_line('\t', 1, word, line, TRUE))) {	fclose(fp); return 0; }
 	max_num_of_mwa = (int)atof(word);
-	if (MAX_NUM_OF_MWA < max_num_of_mwa)
+	if (MAX_NUM_OF_MWA != max_num_of_mwa)
 	{
 		printf("ERROR: ConfigDaq file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_MWA = %d\n", MAX_NUM_OF_MWA);	
 		fclose(fp);
 		return 0;
 	}
-	else if (MAX_NUM_OF_MWA > max_num_of_mwa)
-	{
-		printf("WARNING: ConfigDaq file was saved when MAX_NUM_OF_MWA = %d\n", max_num_of_mwa);
-		printf("WARNING: Now it is MAX_NUM_OF_MWA= %d\n", MAX_NUM_OF_MWA);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}
-	
+
 	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;}   
 	if (!(get_word_in_line('\t', 1, word, line, TRUE))) {	fclose(fp); return 0; }
 	max_num_of_channel_per_mwa = (int)atof(word);	
-	if (MAX_NUM_OF_CHAN_PER_MWA < max_num_of_channel_per_mwa)
+	if (MAX_NUM_OF_CHAN_PER_MWA != max_num_of_channel_per_mwa)
 	{
 		printf("ERROR: ConfigDaq file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
 		printf("ERROR: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);	
 		fclose(fp);
 		return 0;
 	}
-	else if (MAX_NUM_OF_CHAN_PER_MWA > max_num_of_channel_per_mwa)
-	{
-		printf("WARNING: ConfigDaq file was saved when MAX_NUM_OF_CHAN_PER_MWA = %d\n", max_num_of_channel_per_mwa);
-		printf("WARNING: Now it is MAX_NUM_OF_CHAN_PER_MWA = %d\n", MAX_NUM_OF_CHAN_PER_MWA);		
-		printf("WARNING: Configuration was done but you should check validity\n");	
-	}	
 
 	if (! write_to_daq_config_2_kernel_spike_msg_buffer(daq_config_2_kernel_spike_msgs, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_CANCEL_ALL_MAPPING, NUM_OF_MWA_NULL, NUM_OF_CHAN_PER_MWA_NULL, NUM_OF_DAQ_CARD_NULL, NUM_OF_CHANNEL_PER_DAQ_CARD_NULL, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 		return print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "cancel_all_mapping_button_func", "! write_to_daq_config_2_kernel_spike_msg_buffer().");
@@ -154,13 +130,17 @@ int read_config_daq_data_v0(int num, ...)
 			if ((mwa_channel > MAX_NUM_OF_CHAN_PER_MWA) || (mwa_channel < 0))  { printf("ERROR: Incompatible value at %d th line of maps file\n", line_cntr);  fclose(fp); return 0;} 
 
 			if (! write_to_daq_config_2_kernel_spike_msg_buffer(daq_config_2_kernel_spike_msgs, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_MAP_MWA_CHAN, mwa, mwa_channel, i, j, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			{
+				fclose(fp);
 				return print_message(ERROR_MSG ,"ConfigDaq", "FileHandler_v0", "read_config_daq_data_v0", "! write_to_daq_config_2_kernel_spike_msg_buffer().");
+			}
 			
 		}
 	}
 	if (fgets(line, sizeof line, fp ) == NULL)   {  printf("ERROR: Couldn' t read %d th line of %s\n", line_cntr, path);  fclose(fp); return 0; } else {line_cntr++;} 
 	if (strcmp(line, "----------End of ConfigDaq Data----------\n") != 0)
 	{
+		print_message(ERROR_MSG ,"ConfigDaq", "FileHandler_v0", "read_config_daq_data_v0", "strcmp(line, ----------End of ConfigDaq Data----------) != 0.");	
 		fclose(fp);
 		if (! write_to_daq_config_2_kernel_spike_msg_buffer(daq_config_2_kernel_spike_msgs, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_CANCEL_ALL_MAPPING, NUM_OF_MWA_NULL, NUM_OF_CHAN_PER_MWA_NULL, NUM_OF_DAQ_CARD_NULL, NUM_OF_CHANNEL_PER_DAQ_CARD_NULL, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "cancel_all_mapping_button_func", "! write_to_daq_config_2_kernel_spike_msg_buffer().");
