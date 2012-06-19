@@ -89,8 +89,6 @@ int main( int argc, char *argv[])
 				 		printf("JITTER - NEGATIVE_THRES:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].negative_jitter_threshold);	
 			       		 	printf("JITTER - POSITIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_positive_jitter_exceeding_threshold);		
 				 		printf("JITTER - NEGATIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_negative_jitter_exceeding_threshold);
-						rtai_free(nam2num(RT_TASKS_DATA_SHM_NAME), rt_tasks_data);
-						return 0;
 					}			
 				}		
 			}
