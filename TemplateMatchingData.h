@@ -25,7 +25,7 @@ typedef struct __TemplateMatchingData
 } TemplateMatchingUnitData;
 
 
-typedef TemplateMatchingUnitData TemplateMatchingData[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA][MAX_NUM_OF_UNIT_PER_CHAN];
+typedef TemplateMatchingUnitData TemplateMatchingData[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA][MAX_NUM_OF_UNIT_PER_CHAN+1]; // +1 for not sorted
 
 
 #endif

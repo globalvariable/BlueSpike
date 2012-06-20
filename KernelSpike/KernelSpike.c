@@ -1069,7 +1069,7 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 	int blue_spike_time_stamp_buff_idx_write;
 	int include_unit;
 	int spike_time_stamp_buff_idx_write;
-	
+
 	filtered_recording_data_chan_buff = &(filtered_recording_data->recording_data_buff[mwa][chan]);
 
 	greatest = -DBL_MAX;
@@ -1121,7 +1121,7 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 
 	//   Write spike time stamp into shared_memory->spike_time_stamp
 	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;
-	include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;
+	include_unit = (*template_matching_data)[mwa][chan][greatest_idx].include_unit;   /// cannot include non_sorted unit. so no problem for spike_time_stamp_buff
 	blue_spike_time_stamp_item = &(blue_spike_time_stamp->blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write]);
 	blue_spike_time_stamp_item->peak_time = peak_time;
 	blue_spike_time_stamp_item->mwa = mwa;
