@@ -144,6 +144,7 @@ int read_config_daq_data_v0(int num, ...)
 		fclose(fp);
 		if (! write_to_daq_config_2_kernel_spike_msg_buffer(daq_config_2_kernel_spike_msgs, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_CANCEL_ALL_MAPPING, NUM_OF_MWA_NULL, NUM_OF_CHAN_PER_MWA_NULL, NUM_OF_DAQ_CARD_NULL, NUM_OF_CHANNEL_PER_DAQ_CARD_NULL, DAQ_CONFIG_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "cancel_all_mapping_button_func", "! write_to_daq_config_2_kernel_spike_msg_buffer().");
+		return FALSE;
 	}  		
 
 	fclose(fp);
