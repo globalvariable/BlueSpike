@@ -29,13 +29,14 @@
 #include "../SpikeThresholding.h"
 #include "../BlueSpikeTimeStamp.h"
 #include "../FilterCtrl.h"
-#include "../KernelSpike/KernelSpikeSharedMem.h"
 #include "../TemplateMatchingData.h"
+#include "../System/ShmSemNum/ShmSemNum.h"
 #include "../Library/Misc/Misc.h"
 #include "../Library/Messages/FiltCtrl2KrnlSpk.h"
 #include "../Library/Messages/SpkThres2KrnlSpk.h"
 #include "../DaqCard.h"
 #include "FileHandler.h"
+
 #define SPIKE_MEM_TO_DISPLAY 30 
 
 #define NUM_OF_RAW_SAMPLE_TO_DISPLAY 4000		// Adjusted for 40000KHz sampling rate 

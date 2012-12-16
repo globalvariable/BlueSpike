@@ -24,13 +24,13 @@ static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 
 int main( int argc, char *argv[])
 {
-	filtered_recording_data = (RecordingData*)rtai_malloc(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME), 0);
+	filtered_recording_data = (RecordingData*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_FILTERED_RECORDING_DATA, 0);
 	if (filtered_recording_data == NULL) 
 		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "filtered_recording_data == NULL.");
-	template_matching_data = (TemplateMatchingData*)rtai_malloc(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME), 0);
+	template_matching_data = (TemplateMatchingData*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_TEMPLATE_MATCHING, 0);
 	if (template_matching_data == NULL) 
 		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "template_matching_data == NULL.");
-	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_malloc(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME), 0);
+	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP, 0);
 	if (blue_spike_time_stamp == NULL) 
 		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "blue_spike_time_stamp == NULL.");
 	template_matching_2_kernel_spike_msgs = allocate_shm_client_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs);

@@ -28,19 +28,19 @@ static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 
 int main( int argc, char *argv[])
 {
-	recording_data = (RecordingData*)rtai_malloc(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME), 0);
+	recording_data = (RecordingData*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_RECORDING_DATA, 0);
 	if (recording_data == NULL) 
 		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "recording_data == NULL.");
-	filtered_recording_data = (RecordingData*)rtai_malloc(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME), 0);
+	filtered_recording_data = (RecordingData*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_FILTERED_RECORDING_DATA, 0);
 	if (filtered_recording_data == NULL) 
 		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "filtered_recording_data == NULL.");
-	spike_thresholding = (SpikeThresholding*)rtai_malloc(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME), 0);
+	spike_thresholding = (SpikeThresholding*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_SPIKE_THRESHOLDING, 0);
 	if (spike_thresholding == NULL) 
 		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "spike_thresholding == NULL.");
-	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_malloc(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME), 0);
+	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP, 0);
 	if (blue_spike_time_stamp == NULL) 
 		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "blue_spike_time_stamp == NULL.");
-	filter_ctrl = (FilterCtrl*)rtai_malloc(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME), 0);
+	filter_ctrl = (FilterCtrl*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_FILTER_CTRL, 0);
 	if (filter_ctrl == NULL) 
 		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "filter_ctrl == NULL.");
 	filter_ctrl_2_kernel_spike_msgs = allocate_shm_client_filter_ctrl_2_kernel_spike_msg_buffer(filter_ctrl_2_kernel_spike_msgs);

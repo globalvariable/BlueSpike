@@ -9,7 +9,6 @@
 
 #include "../DaqMwaData.h"
 #include "../Library/Messages/DaqCon2KrnlSpk.h"
-#include "../KernelSpike/KernelSpikeSharedMem.h"
 #include "../Library/Misc/Misc.h"
 #include "Interrogate.h"
 #include "FileHandler.h"

@@ -8,7 +8,7 @@ SpkThres2KrnlSpkMsg* allocate_shm_client_spike_thres_2_kernel_spike_msg_buffer(S
 		msg_buffer = allocate_shm_client_spike_thres_2_kernel_spike_msg_buffer(msg_buffer);
 		return msg_buffer;
 	}  
-	msg_buffer = rtai_malloc(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME), 0);
+	msg_buffer = rtai_malloc(SHM_NUM_SPIKE_THRES_2_KERNEL_SPIKE, 0);
 	print_message(INFO_MSG ,"BlueSpike", "SpkThres2KrnlSpk", "allocate_shm_client_spike_thres_2_kernel_spike_msg_buffer", "Created shm_client_spike_thres_2_kernel_spike_msg_buffer.");
 	return msg_buffer;	
 }
@@ -16,7 +16,7 @@ SpkThres2KrnlSpkMsg* deallocate_shm_client_spike_thres_2_kernel_spike_msg_buffer
 {
 	if (msg_buffer == NULL)
 		return (SpkThres2KrnlSpkMsg*)print_message(INFO_MSG ,"BlueSpike", "SpkThres2KrnlSpk", "deallocate_shm_client_spike_thres_2_kernel_spike_msg_buffer", "msg_buffer == NULL.");
-	rtai_free(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME), msg_buffer);	
+	rtai_free(SHM_NUM_SPIKE_THRES_2_KERNEL_SPIKE, msg_buffer);	
 	return NULL;
 }
 bool write_to_spike_thres_2_kernel_spike_msg_buffer(SpkThres2KrnlSpkMsg* msg_buffer, SpkThres2KrnlSpkMsgType msg_type, MwaNum mwa, MwaChanNum mwa_chan_num, SpikeThreshold threshold, SpkThres2KrnlSpkMsgAdditional additional_data)

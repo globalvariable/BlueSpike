@@ -8,7 +8,7 @@ TempMat2KrnlSpkMsg* allocate_shm_client_template_matching_2_kernel_spike_msg_buf
 		msg_buffer = allocate_shm_client_template_matching_2_kernel_spike_msg_buffer(msg_buffer);
 		return msg_buffer;
 	}  
-	msg_buffer = rtai_malloc(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME), 0);
+	msg_buffer = rtai_malloc(SHM_NUM_TEMPLATE_MATCHING_2_KERNEL_SPIKE, 0);
 	print_message(INFO_MSG ,"BlueSpike", "TempMat2KrnlSpk", "allocate_shm_client_template_matching_2_kernel_spike_msg_buffer", "Created shm_client_template_matching_2_kernel_spike_msg_buffer.");
 	return msg_buffer;	
 }
@@ -16,7 +16,7 @@ TempMat2KrnlSpkMsg* deallocate_shm_client_template_matching_2_kernel_spike_msg_b
 {
 	if (msg_buffer == NULL)
 		return (TempMat2KrnlSpkMsg*)print_message(INFO_MSG ,"BlueSpike", "TempMat2KrnlSpk", "deallocate_shm_client_template_matching_2_kernel_spike_msg_buffer", "msg_buffer == NULL.");
-	rtai_free(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME), msg_buffer);	
+	rtai_free(SHM_NUM_TEMPLATE_MATCHING_2_KERNEL_SPIKE, msg_buffer);	
 	return NULL;
 }
 bool write_to_template_matching_2_kernel_spike_msg_buffer(TempMat2KrnlSpkMsg* msg_buffer, TempMat2KrnlSpkMsgType msg_type, MwaNum mwa, MwaChanNum mwa_chan_num, UnitNum unit_num, TemplateProbabilityThres threshold, TempMat2KrnlSpkMsgAdditional additional_data)

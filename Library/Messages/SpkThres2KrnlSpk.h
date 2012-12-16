@@ -22,13 +22,13 @@ typedef unsigned int SpkThres2KrnlSpkMsgAdditional;
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
 #include "MessageBuffersConfig.h"
-#include "MessageBuffersSharedMem.h"
 #include "../../MicroWireArray.h"
 #include "../../SpikeThresholding.h"
 #ifndef KERNELSPIKE_H		/// insmod KernelSpike errors:  Unknown symbol __strcat_chk, Unknown symbol __sprintf_chk
 #include <stdbool.h>
 #include <stdio.h>
 #include "../Misc/Misc.h"
+#include "../../System/ShmSemNum/ShmSemNum.h"
 #endif
 
 struct __SpkThres2KrnlSpkMsgItem

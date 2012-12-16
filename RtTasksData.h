@@ -8,8 +8,6 @@
 #define MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD	10
 #define MAX_NUM_OF_RT_TASKS_NAME_LENGTH		40
 
-#define RT_TASKS_DATA_SHM_NAME		"RTTSKDT"		
-
 typedef struct __CpuThreadTasksRtData
 {
 	char		task_name[MAX_NUM_OF_RT_TASKS_NAME_LENGTH];

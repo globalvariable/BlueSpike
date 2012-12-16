@@ -36,7 +36,7 @@ static void set_directory_btn_select_directory_to_save(void);
 
 int main( int argc, char *argv[])
 {
-	daq_mwa_data = (DaqMwaData*)rtai_malloc(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME), 0);
+	daq_mwa_data = (DaqMwaData*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_DAQ_MWA_DATA, 0);
 	if (daq_mwa_data == NULL) 
 		return print_message(ERROR_MSG ,"ConfigDaq", "ConfigDaq", "main", "daq_mwa_data == NULL.");
 	daq_config_2_kernel_spike_msgs = allocate_shm_client_daq_config_2_kernel_spike_msg_buffer(daq_config_2_kernel_spike_msgs);

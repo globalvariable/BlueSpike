@@ -241,19 +241,19 @@ void rt_handler(long int t)
 	stop_rt_timer();
 	rt_task_delete(&rt_task0);	
 
-    	rtai_kfree(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
-    	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
-	rtai_kfree(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME));
-	rtai_kfree(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME));
-	rtai_kfree(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME));
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_DAQ_MWA_DATA);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_RECORDING_DATA);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_FILTERED_RECORDING_DATA);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_SPIKE_THRESHOLDING);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_SPIKE_TIME_STAMP);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_TEMPLATE_MATCHING);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_FILTER_CTRL);	
+    	rtai_kfree(SHM_NUM_RT_TASKS_DATA);	
+    	rtai_kfree(SHM_NUM_DAQ_CONFIG_2_KERNEL_SPIKE);
+	rtai_kfree(SHM_NUM_FILTER_CTRL_2_KERNEL_SPIKE);
+	rtai_kfree(SHM_NUM_SPIKE_THRES_2_KERNEL_SPIKE);
+	rtai_kfree(SHM_NUM_TEMPLATE_MATCHING_2_KERNEL_SPIKE);
 }
 
 
@@ -265,91 +265,91 @@ int __init xinit_module(void)
 	
 	printk("KernelSpike: insmod KernelSpike\n");
 
-	daq_mwa_data = (DaqMwaData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME), sizeof(DaqMwaData));
+	daq_mwa_data = (DaqMwaData*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_DAQ_MWA_DATA, sizeof(DaqMwaData));
 	if (daq_mwa_data == NULL)
 		return -ENOMEM;
 	memset(daq_mwa_data, 0, sizeof(DaqMwaData));
         printk("KernelSpike: DaqMwaData Memory allocated.\n");
         printk("KernelSpike: sizeof(DaqMwaData) : %lu.\n", sizeof(DaqMwaData));
 
-	recording_data = (RecordingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME), sizeof(RecordingData));
+	recording_data = (RecordingData*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_RECORDING_DATA, sizeof(RecordingData));
 	if (recording_data == NULL)
 		return -ENOMEM;
 	memset(recording_data, 0, sizeof(RecordingData));
         printk("KernelSpike: RecordingData Memory allocated.\n");
         printk("KernelSpike: sizeof(RecordingData) : %lu.\n", sizeof(RecordingData));
 
-	filtered_recording_data = (RecordingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME), sizeof(RecordingData));
+	filtered_recording_data = (RecordingData*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_FILTERED_RECORDING_DATA, sizeof(RecordingData));
 	if (filtered_recording_data == NULL)
 		return -ENOMEM;
 	memset(filtered_recording_data, 0, sizeof(RecordingData));
         printk("KernelSpike: Filtered RecordingData Memory allocated.\n");
         printk("KernelSpike: sizeof(RecordingData) : %lu.\n", sizeof(RecordingData));
 
-	spike_thresholding = (SpikeThresholding*)rtai_kmalloc(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME), sizeof(SpikeThresholding));
+	spike_thresholding = (SpikeThresholding*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_SPIKE_THRESHOLDING, sizeof(SpikeThresholding));
 	if (spike_thresholding == NULL)
 		return -ENOMEM;
 	memset(spike_thresholding, 0, sizeof(SpikeThresholding));
         printk("KernelSpike: SpikeThresholding Memory allocated.\n");
         printk("KernelSpike: sizeof(SpikeThresholding) : %lu.\n", sizeof(SpikeThresholding));
 
-	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_kmalloc(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME), sizeof(BlueSpikeTimeStamp));
+	blue_spike_time_stamp = (BlueSpikeTimeStamp*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP, sizeof(BlueSpikeTimeStamp));
 	if (blue_spike_time_stamp == NULL)
 		return -ENOMEM;
 	memset(blue_spike_time_stamp, 0, sizeof(BlueSpikeTimeStamp));
         printk("KernelSpike: BlueSpikeTimeStamp Memory allocated.\n");
         printk("KernelSpike: sizeof(BlueSpikeTimeStamp) : %lu.\n", sizeof(BlueSpikeTimeStamp));
 
-	spike_time_stamp = (SpikeTimeStamp*)rtai_kmalloc(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME), sizeof(SpikeTimeStamp));
+	spike_time_stamp = (SpikeTimeStamp*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_SPIKE_TIME_STAMP, sizeof(SpikeTimeStamp));
 	if (spike_time_stamp == NULL)
 		return -ENOMEM;
 	memset(spike_time_stamp, 0, sizeof(SpikeTimeStamp));
         printk("KernelSpike: SpikeTimeStamp Memory allocated.\n");
         printk("KernelSpike: sizeof(SpikeTimeStamp) : %lu.\n", sizeof(SpikeTimeStamp));
 
-	template_matching_data = (TemplateMatchingData*)rtai_kmalloc(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME), sizeof(TemplateMatchingData));
+	template_matching_data = (TemplateMatchingData*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_TEMPLATE_MATCHING, sizeof(TemplateMatchingData));
 	if (template_matching_data == NULL)
 		return -ENOMEM;
 	memset(template_matching_data, 0, sizeof(TemplateMatchingData));
         printk("KernelSpike: TemplateMatchingData Memory allocated.\n");
         printk("KernelSpike: sizeof(TemplateMatchingData) : %lu.\n", sizeof(TemplateMatchingData));
 
-	filter_ctrl = (FilterCtrl*)rtai_kmalloc(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME), sizeof(FilterCtrl));
+	filter_ctrl = (FilterCtrl*)rtai_kmalloc(SHM_NUM_KERNEL_SPIKE_FILTER_CTRL, sizeof(FilterCtrl));
 	if (filter_ctrl == NULL)
 		return -ENOMEM;
 	memset(filter_ctrl, 0, sizeof(FilterCtrl));
         printk("KernelSpike: FilterCtrl Memory allocated.\n");
         printk("KernelSpike: sizeof(FilterCtrl) : %lu.\n", sizeof(FilterCtrl));
 
-	rt_tasks_data = (RtTasksData*)rtai_kmalloc(nam2num(RT_TASKS_DATA_SHM_NAME), sizeof(RtTasksData));
+	rt_tasks_data = (RtTasksData*)rtai_kmalloc(SHM_NUM_RT_TASKS_DATA, sizeof(RtTasksData));
 	if (rt_tasks_data == NULL)
 		return -ENOMEM;
 	memset(rt_tasks_data, 0, sizeof(RtTasksData));
         printk("KernelSpike: RtTasksData Memory allocated.\n");
         printk("KernelSpike: sizeof(RtTasksData) : %lu.\n", sizeof(RtTasksData));
 
-	daq_config_2_kernel_spike_msgs = (DaqCon2KrnlSpkMsg*)rtai_kmalloc(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME), sizeof(DaqCon2KrnlSpkMsg));
+	daq_config_2_kernel_spike_msgs = (DaqCon2KrnlSpkMsg*)rtai_kmalloc(SHM_NUM_DAQ_CONFIG_2_KERNEL_SPIKE, sizeof(DaqCon2KrnlSpkMsg));
 	if (daq_config_2_kernel_spike_msgs == NULL)
 		return -ENOMEM;
 	memset(daq_config_2_kernel_spike_msgs, 0, sizeof(DaqCon2KrnlSpkMsg));
         printk("KernelSpike: DaqCon2KrnlSpkMsg Memory allocated.\n");
         printk("KernelSpike: sizeof(DaqCon2KrnlSpkMsg) : %lu.\n", sizeof(DaqCon2KrnlSpkMsg));
 
-	filter_ctrl_2_kernel_spike_msgs = (FiltCtrl2KrnlSpkMsg*)rtai_kmalloc(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME), sizeof(FiltCtrl2KrnlSpkMsg));
+	filter_ctrl_2_kernel_spike_msgs = (FiltCtrl2KrnlSpkMsg*)rtai_kmalloc(SHM_NUM_FILTER_CTRL_2_KERNEL_SPIKE, sizeof(FiltCtrl2KrnlSpkMsg));
 	if (filter_ctrl_2_kernel_spike_msgs == NULL)
 		return -ENOMEM;
 	memset(filter_ctrl_2_kernel_spike_msgs, 0, sizeof(FiltCtrl2KrnlSpkMsg));
         printk("KernelSpike: FiltCtrl2KrnlSpkMsg Memory allocated.\n");
         printk("KernelSpike: sizeof(FiltCtrl2KrnlSpkMsg) : %lu.\n", sizeof(FiltCtrl2KrnlSpkMsg));
 
-	spike_thres_2_kernel_spike_msgs = (SpkThres2KrnlSpkMsg*)rtai_kmalloc(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME), sizeof(SpkThres2KrnlSpkMsg));
+	spike_thres_2_kernel_spike_msgs = (SpkThres2KrnlSpkMsg*)rtai_kmalloc(SHM_NUM_SPIKE_THRES_2_KERNEL_SPIKE, sizeof(SpkThres2KrnlSpkMsg));
 	if (spike_thres_2_kernel_spike_msgs == NULL)
 		return -ENOMEM;
 	memset(spike_thres_2_kernel_spike_msgs, 0, sizeof(SpkThres2KrnlSpkMsg));
         printk("KernelSpike: SpkThres2KrnlSpkMsg Memory allocated.\n");
         printk("KernelSpike: sizeof(SpkThres2KrnlSpkMsg) : %lu.\n", sizeof(SpkThres2KrnlSpkMsg));
 
-	template_matching_2_kernel_spike_msgs = (TempMat2KrnlSpkMsg*)rtai_kmalloc(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME), sizeof(TempMat2KrnlSpkMsg));
+	template_matching_2_kernel_spike_msgs = (TempMat2KrnlSpkMsg*)rtai_kmalloc(SHM_NUM_TEMPLATE_MATCHING_2_KERNEL_SPIKE, sizeof(TempMat2KrnlSpkMsg));
 	if (template_matching_2_kernel_spike_msgs == NULL)
 		return -ENOMEM;
 	memset(template_matching_2_kernel_spike_msgs, 0, sizeof(TempMat2KrnlSpkMsg));
@@ -423,19 +423,19 @@ void __exit xcleanup_module(void)
 			comedi_close(ni6070_comedi_dev[i]);
 		}
 	}
-    	rtai_kfree(nam2num(KERNEL_SPIKE_DAQ_MWA_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_RECORDING_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTERED_RECORDING_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_THRESHOLDING_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_SPIKE_TIME_STAMP_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_TEMPLATE_MATCHING_SHM_NAME));	
-    	rtai_kfree(nam2num(KERNEL_SPIKE_FILTER_CTRL_SHM_NAME));	
-    	rtai_kfree(nam2num(RT_TASKS_DATA_SHM_NAME));	
-    	rtai_kfree(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME));
-	rtai_kfree(nam2num(FILTER_CTRL_2_KERNEL_SPIKE_SHM_NAME));
-	rtai_kfree(nam2num(SPIKE_THRES_2_KERNEL_SPIKE_SHM_NAME));
-	rtai_kfree(nam2num(TEMPLATE_MATCHING_2_KERNEL_SPIKE_SHM_NAME));
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_DAQ_MWA_DATA);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_RECORDING_DATA);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_FILTERED_RECORDING_DATA);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_SPIKE_THRESHOLDING);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_BLUE_SPIKE_TIME_STAMP);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_SPIKE_TIME_STAMP);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_TEMPLATE_MATCHING);	
+    	rtai_kfree(SHM_NUM_KERNEL_SPIKE_FILTER_CTRL);	
+    	rtai_kfree(SHM_NUM_RT_TASKS_DATA);	
+    	rtai_kfree(SHM_NUM_DAQ_CONFIG_2_KERNEL_SPIKE);
+	rtai_kfree(SHM_NUM_FILTER_CTRL_2_KERNEL_SPIKE);
+	rtai_kfree(SHM_NUM_SPIKE_THRES_2_KERNEL_SPIKE);
+	rtai_kfree(SHM_NUM_TEMPLATE_MATCHING_2_KERNEL_SPIKE);
     	printk("KernelSpike: rmmod KernelSpike\n");
 	return;
 }

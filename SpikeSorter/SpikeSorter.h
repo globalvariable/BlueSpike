@@ -32,7 +32,6 @@
 
 #include "../TemplateMatchingData.h"
 #include "../BlueSpikeTimeStamp.h"
-#include "../KernelSpike/KernelSpikeSharedMem.h"
 #include "../Library/Misc/Misc.h"
 #include "../DaqCard.h"
 #include "../Library/Messages/TempMat2KrnlSpk.h"

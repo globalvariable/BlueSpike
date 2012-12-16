@@ -8,7 +8,7 @@ DaqCon2KrnlSpkMsg* allocate_shm_client_daq_config_2_kernel_spike_msg_buffer(DaqC
 		msg_buffer = allocate_shm_client_daq_config_2_kernel_spike_msg_buffer(msg_buffer);
 		return msg_buffer;
 	}  
-	msg_buffer = rtai_malloc(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME), 0);
+	msg_buffer = rtai_malloc(SHM_NUM_DAQ_CONFIG_2_KERNEL_SPIKE, 0);
 	print_message(INFO_MSG ,"BlueSpike", "DaqCon2KrnlSpk", "allocate_shm_client_daq_config_2_kernel_spike_msg_buffer", "Created shm_client_daq_config_2_kernel_spike_msg_buffer.");
 	return msg_buffer;	
 }
@@ -16,7 +16,7 @@ DaqCon2KrnlSpkMsg* deallocate_shm_client_daq_config_2_kernel_spike_msg_buffer(Da
 {
 	if (msg_buffer == NULL)
 		return (DaqCon2KrnlSpkMsg*)print_message(INFO_MSG ,"BlueSpike", "DaqCon2KrnlSpk", "deallocate_shm_client_daq_config_2_kernel_spike_msg_buffer", "msg_buffer == NULL.");
-	rtai_free(nam2num(DAQ_CONFIG_2_KERNEL_SPIKE_SHM_NAME), msg_buffer);	
+	rtai_free(SHM_NUM_DAQ_CONFIG_2_KERNEL_SPIKE, msg_buffer);	
 	return NULL;
 }
 bool write_to_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgType msg_type, MwaNum	mwa_num, MwaChanNum mwa_chan_num, DaqCardNum	daq_card_num,  DaqCardChanNum daq_card_chan_num, DaqCon2KrnlSpkMsgAdditional	additional_data)
