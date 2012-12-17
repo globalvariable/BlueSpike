@@ -22,7 +22,7 @@
 #include "../SpikeTimeStamp.h"
 #include "../TemplateMatchingData.h"
 #include "../FilterCtrl.h"
-#include "../RtTasksData.h"
+#include "../System/RtTasksData/RtTasksData.h"
 #include "SpikeEndHandling.h"
 #include "../Library/Messages/DaqCon2KrnlSpk.h"
 #include "../Library/Messages/FiltCtrl2KrnlSpk.h"

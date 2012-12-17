@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <rtai_sched.h>
-#include "../../RtTasksData.h"
+#include "../../System/RtTasksData/RtTasksData.h"
 #include "../Misc/Misc.h"
 
 bool check_rt_task_specs_to_init(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, TimeStamp period);

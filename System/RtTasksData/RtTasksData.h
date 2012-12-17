@@ -1,9 +1,9 @@
 #ifndef RT_TASKS_DATA_H
 #define RT_TASKS_DATA_H
 
-#include "CpuInfo.h"
-#include "KernelTaskCtrl.h"
-#include "TimeStamp.h"
+#include "../Cpu/CpuInfo.h"
+#include "../KernelTaskCtrl/KernelTaskCtrl.h"
+#include "../TimeStamp/TimeStamp.h"
 
 #define MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD	10
 #define MAX_NUM_OF_RT_TASKS_NAME_LENGTH		40
