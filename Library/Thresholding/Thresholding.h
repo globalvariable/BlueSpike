@@ -2,6 +2,8 @@
 #define THRESHOLDING_H
 
 
+#include <stdbool.h>
+
 typedef struct
 {
 	double r_x;		

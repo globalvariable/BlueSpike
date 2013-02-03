@@ -6,8 +6,8 @@
 // NOTE:    SEMAPHORE AND SHARED MEMORY CANNOT USE THE SAME OBJECT NUMBER 
 
 ///////////////  SEMAPHORE /////////////////////////////////
-#define SEM_NUM_EXP_ENVI_RX_BUFFER			100
-#define SEM_NUM_EXP_ENVI_TX_BUFFER			101
+#define SEM_NUM_EXP_ENVI_RX_BUFFER			101
+#define SEM_NUM_EXP_ENVI_TX_BUFFER			102
 
 
 

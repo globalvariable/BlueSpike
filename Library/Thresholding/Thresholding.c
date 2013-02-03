@@ -8,7 +8,7 @@ bool apply_ellipsoid_threshold(EllipsoidThreshold *thres, double x, double y, do
 	z = z - center_r_z;
 	double res = ((x*x)/(thres->r_x*thres->r_x)) + ((y*y)/(thres->r_y*thres->r_y)) + ((z*z)/(thres->r_z*thres->r_z)) ;
 	if (res > 1)
-		return FALSE;
+		return false; // point out of elipsoid
 	else
-		return TRUE;   // surface belongs to ellipsoid
+		return true;   // surface belongs to ellipsoid
 }
