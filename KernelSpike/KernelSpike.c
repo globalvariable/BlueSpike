@@ -26,10 +26,6 @@ static double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];
 static bool static_in_spike[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 static int static_in_spike_sample_cntr[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 
-static int spike_time_stamp_buff_size = SPIKE_TIME_STAMP_BUFF_SIZE;
-static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
-static int spike_end_handling_buff_size = SPIKE_END_HANDLING_DATA_BUFF_SIZE;
-
 static DaqMwaData			*daq_mwa_data = NULL;
 static RecordingData			*recording_data = NULL;
 static RecordingData			*filtered_recording_data = NULL;
@@ -990,7 +986,7 @@ void find_spike_end(int mwa, int mwa_chan)
 				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = mwa_chan;
 				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = spike_end_idx;
 				(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
-				if ((spike_end_handling.buff_write_idx + 1) == spike_end_handling_buff_size)
+				if ((spike_end_handling.buff_write_idx + 1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 					spike_end_handling.buff_write_idx = 0;
 				else
 					spike_end_handling.buff_write_idx++;		
@@ -1043,14 +1039,14 @@ void handle_spike_end_handling_buffer(void)
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].chan = chan;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].end_of_spike_in_filtered_recording_data_buff = filtered_recording_data_buff_idx;
 			(*spike_end_handling_buff)[spike_end_handling.buff_write_idx].peak_time = peak_time;
-			if ((spike_end_handling.buff_write_idx + 1) == spike_end_handling_buff_size)
+			if ((spike_end_handling.buff_write_idx + 1) == SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 				spike_end_handling.buff_write_idx = 0;
 			else
 				spike_end_handling.buff_write_idx++;
 			spike_end_handling_buff_control_cntr++;
 		}
 		idx ++;
-		if (idx ==	spike_end_handling_buff_size)
+		if (idx ==	SPIKE_END_HANDLING_DATA_BUFF_SIZE)
 			idx = 0;
 	}
 	spike_end_handling.buff_start_idx = end_idx;  
@@ -1129,7 +1125,7 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 	blue_spike_time_stamp_item->unit = greatest_idx;
 	blue_spike_time_stamp_item->recording_data_buff_idx = filtered_recording_data_buff_idx;
 	blue_spike_time_stamp_item->include_unit = include_unit;
-	if ((blue_spike_time_stamp_buff_idx_write +1) ==  blue_spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+	if ((blue_spike_time_stamp_buff_idx_write +1) ==  BLUE_SPIKE_TIME_STAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		blue_spike_time_stamp->buff_idx_write = 0;
 	else
 		blue_spike_time_stamp->buff_idx_write++;	
@@ -1143,7 +1139,7 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 		spike_time_stamp_item->mwa_or_layer = mwa;
 		spike_time_stamp_item->channel_or_neuron_group = chan;
 		spike_time_stamp_item->unit_or_neuron = greatest_idx;	
-		if ((spike_time_stamp_buff_idx_write +1) ==  spike_time_stamp_buff_size )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+		if ((spike_time_stamp_buff_idx_write +1) ==  SPIKE_TIME_STAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 			spike_time_stamp->buff_idx_write = 0;
 		else
 			spike_time_stamp->buff_idx_write++;			
@@ -1159,46 +1155,46 @@ void print_warning_and_errors(void)
 		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;
 	}
-	if ((spike_end_handling_buff_size - spike_end_handling_buff_control_cntr) < 100)
+	if ((SPIKE_END_HANDLING_DATA_BUFF_SIZE - spike_end_handling_buff_control_cntr) < 100)
 	{
 		printk("KernelSpike: ------------------------------------------------------\n");
 		printk("KernelSpike: ------------   WARNING  !!!  -----------------\n");
 		printk("KernelSpike: ---- Spike End Buffer is getting full ----\n");
 		printk("KernelSpike: ---- Spike End Buffer is getting full ----\n");				
 		printk("KernelSpike: --Latest # of detected spikes is %d---\n", spike_end_handling_buff_control_cntr);	
-		printk("KernelSpike: -------Spike End buffer size  is %d------\n", spike_end_handling_buff_size);
+		printk("KernelSpike: -------Spike End buffer size  is %d------\n", SPIKE_END_HANDLING_DATA_BUFF_SIZE);
 		printk("KernelSpike: ------------------------------------------------------\n");					
 	}  
-	else if (spike_end_handling_buff_size <= spike_end_handling_buff_control_cntr)
+	else if (SPIKE_END_HANDLING_DATA_BUFF_SIZE <= spike_end_handling_buff_control_cntr)
 	{
 		printk("KernelSpike: ------------------------------------------------------\n");
 		printk("KernelSpike: ----------------   ERROR !!!  -----------------\n");
 		printk("KernelSpike: ---- Spike End Buffer is full ---------------\n");
 		printk("KernelSpike: ---- Spike End Buffer is full ---------------\n");				
 		printk("KernelSpike: --Latest # of detected spikes is %d ---\n", spike_end_handling_buff_control_cntr);	
-		printk("KernelSpike: -------Spike End buffer size  is %d------\n", spike_end_handling_buff_size);
+		printk("KernelSpike: -------Spike End buffer size  is %d------\n", SPIKE_END_HANDLING_DATA_BUFF_SIZE);
 		printk("KernelSpike: ------------------------------------------------------\n");
 		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
 	}  
-	if ((blue_spike_time_stamp_buff_size - blue_spike_time_stamp_buff_control_cntr) < 100)
+	if ((BLUE_SPIKE_TIME_STAMP_BUFF_SIZE - blue_spike_time_stamp_buff_control_cntr) < 100)
 	{
 		printk("KernelSpike: --------------------------------------------------------\n");
 		printk("KernelSpike: ------------   WARNING  !!!  -------------------\n");
 		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is getting full ------\n");
 		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is getting full ------\n");				
 		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", blue_spike_time_stamp_buff_control_cntr);	
-		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", blue_spike_time_stamp_buff_size);
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", BLUE_SPIKE_TIME_STAMP_BUFF_SIZE);
 		printk("KernelSpike: --------------------------------------------------------\n");					
 	}  
-	else if (blue_spike_time_stamp_buff_size <= blue_spike_time_stamp_buff_control_cntr)
+	else if (BLUE_SPIKE_TIME_STAMP_BUFF_SIZE <= blue_spike_time_stamp_buff_control_cntr)
 	{
 		printk("KernelSpike: ---------------------------------------------------------\n");
 		printk("KernelSpike: ----------------   ERROR  !!!  --------------------\n");
 		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is full -------\n");
 		printk("KernelSpike: ---- BlueSpikeTimestamp Buffer is full -------\n");				
 		printk("KernelSpike: --Latest # of Spike Timestamp is %d----\n", blue_spike_time_stamp_buff_control_cntr);	
-		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", blue_spike_time_stamp_buff_size);
+		printk("KernelSpike: ---Spike Timestamp buffer size  is %d--\n", BLUE_SPIKE_TIME_STAMP_BUFF_SIZE);
 		printk("KernelSpike: --------------------------------------------------------\n");
 		rt_tasks_data->kernel_task_ctrl.kill_all_rt_tasks = 1;
 		return;		
