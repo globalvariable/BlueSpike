@@ -10,6 +10,7 @@
 #define RECORDING_DATA_BUFF_SIZE_4 39996
 
 typedef double RecordingDataSample;
+typedef float RecordingDataSampleFloat;
 
 typedef RecordingDataSample RecordingDataChanBuff[RECORDING_DATA_BUFF_SIZE];
 

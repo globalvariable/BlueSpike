@@ -147,3 +147,20 @@ bool is_buffer_getting_full(unsigned int buffer_read_idx,  unsigned int buffer_w
 	}	
 	return FALSE;
 }
+
+unsigned int get_size_of_binary_file(FILE *fp)
+{
+	fseek(fp, 0L, SEEK_END);
+	return ftell(fp);
+}
+
+bool get_num_of_items_in_binary_file(FILE *fp, unsigned int size_of_item, unsigned int *num_of_items)
+{
+	unsigned int size_bin;
+	fseek(fp, 0L, SEEK_END);
+	size_bin = ftell(fp);	
+	if (size_bin%size_of_item)	
+		return print_message(ERROR_MSG, "BlueSpike", "Misc", "get_num_of_items_in_binary_file", "Size of binary file - size of file item mismatch.");
+	*num_of_items = size_bin/size_of_item;
+	return TRUE;
+}
