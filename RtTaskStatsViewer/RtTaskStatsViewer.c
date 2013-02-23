@@ -9,7 +9,7 @@ int main( int argc, char *argv[])
 	unsigned int cpu_num, cpu_thread;
 	unsigned int stay_alive = 1;
 	char arg_str[50];
-	rt_tasks_data = (RtTasksData*)rtai_malloc(nam2num(RT_TASKS_DATA_SHM_NAME), 0);
+	rt_tasks_data = (RtTasksData*)rtai_malloc(SHM_NUM_RT_TASKS_DATA, 0);
 	if (rt_tasks_data == NULL) 
 		return print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "rt_tasks_data == NULL.");
 
@@ -199,6 +199,6 @@ int main( int argc, char *argv[])
 			printf ("The command given is %s\n", arg_str);			
 		}
 	}
-	rtai_free(nam2num(RT_TASKS_DATA_SHM_NAME), rt_tasks_data);	
+	rtai_free(SHM_NUM_RT_TASKS_DATA, rt_tasks_data);	
 	return 0;
 }

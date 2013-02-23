@@ -14,7 +14,7 @@ typedef double TemplateProbabilityThres;
 
 
 
-typedef struct __TemplateMatchingData
+typedef struct __TemplateMatchingUnitData
 {
 	double 					template[NUM_OF_SAMP_PER_SPIKE];   //mean
 	double 					inv_S[NUM_OF_SAMP_PER_SPIKE][NUM_OF_SAMP_PER_SPIKE];  // inverted covariance
