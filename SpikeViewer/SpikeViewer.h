@@ -36,6 +36,7 @@
 #include "../Library/Messages/SpkThres2KrnlSpk.h"
 #include "../DaqCard.h"
 #include "FileHandler.h"
+#include "DataHandling/DataHandling.h"
 
 #define SPIKE_MEM_TO_DISPLAY 30 
 
@@ -69,6 +70,9 @@ GtkWidget *btn_load_spike_thresholds_file;
 
 GtkWidget *btn_select_folder_to_save_spike_thresholds_file;
 GtkWidget *btn_save_spike_thresholds_file; 
+GtkWidget *btn_select_folder_to_record_data;
+GtkWidget *btn_create_recording_folder;
+GtkWidget *btn_record_data;
 
 int blue_spike_time_stamp_buff_read_idx;
 
@@ -95,9 +99,14 @@ GdkColor color_bg_spike_shape;
 GdkColor color_spike_shape;
 
 
+bool recording;
+unsigned int recording_number;
+
+
 // Functions
 void create_gui(void);
 gboolean timeout_callback(gpointer user_data) ;
+gboolean recording_timeout_callback(gpointer user_data) ;
 gboolean filter_highpass_150Hz_button_func (GtkDatabox * box);
 gboolean filter_highpass_400Hz_button_func (GtkDatabox * box);
 gboolean filter_lowpass_8KHz_button_func (GtkDatabox * box);
@@ -109,6 +118,9 @@ gboolean threshold_but_func (GtkDatabox * box);
 gboolean clear_screen_but_func (GtkDatabox * box);
 gboolean load_spike_thresholds_file_button_func (GtkDatabox * box);
 gboolean save_spike_thresholds_file_button_func (GtkDatabox * box);
+gboolean create_recording_folder_button_func (GtkDatabox * box);
+gboolean record_data_button_func (GtkDatabox * box);
+
 void clear_spike_screen(void);
 void clear_raw_data_screen(void);
 bool set_directory_btn_select_directory_to_load(void);
