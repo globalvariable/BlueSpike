@@ -5,7 +5,6 @@
 #include <stdbool.h>
 
 #define MAX_NUM_OF_UNIT_PER_CHAN 4
-#define MAX_NUM_OF_UNIT_PER_CHAN_TO_HANDLE 2    // to decrease the number of synaptic connections to SNN simulators.
 #define NUM_OF_SAMP_PER_SPIKE 30
 
 #define TEMPLATE_PROBAB_THRES_NULL 0
