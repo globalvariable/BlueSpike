@@ -1289,6 +1289,7 @@ void close_daq_cards(void)
 	{
 		comedi_cancel(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
 		comedi_close(ni6070_comedi_dev[i]);
+		printk("KernelSpike: INFO: comedi_close for daq card: %d.\n", i);	
 	}
 }
 
