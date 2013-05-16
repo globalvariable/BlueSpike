@@ -30,6 +30,14 @@ static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 
 int main( int argc, char *argv[])
 {
+	cpu_set_t  mask;
+	CPU_ZERO(&mask);
+	CPU_SET(BLUE_SPIKE_USER_SPACE_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU+BLUE_SPIKE_USER_SPACE_CPU_THREAD_ID, &mask);
+	printf ("sched_getcpu() = %d (Before sched_setaffinity)\n", sched_getcpu());
+	if (sched_setaffinity(0, sizeof(mask), &mask))
+		return print_message(ERROR_MSG ,"SpikeViewer", "Gui", "main","! sched_setaffinity(0, sizeof(mask), &mask).");		
+	printf ("sched_getcpu() = %d (After sched_setaffinity)\n", sched_getcpu());
+
    	rt_tasks_data = rtai_malloc(SHM_NUM_RT_TASKS_DATA, 0);
 	if (rt_tasks_data == NULL) 
 		return print_message(ERROR_MSG ,"SpikeViewer", "SpikeViewer", "main", "rt_tasks_data == NULL.");
@@ -337,7 +345,7 @@ gboolean timeout_callback(gpointer user_data)
 	float *Y_temp_spike;
 	RecordingData	*handling_data;
 	RecordingDataChanBuff	*handling_data_chan_buff;
-	
+
 	if (filter_ctrl->highpass_150Hz_on || filter_ctrl->highpass_400Hz_on)
 	{
 		handling_data = filtered_recording_data;

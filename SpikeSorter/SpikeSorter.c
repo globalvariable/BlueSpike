@@ -24,6 +24,14 @@ static int blue_spike_time_stamp_buff_size = BLUE_SPIKE_TIME_STAMP_BUFF_SIZE;
 
 int main( int argc, char *argv[])
 {
+	cpu_set_t  mask;
+	CPU_ZERO(&mask);
+	CPU_SET(BLUE_SPIKE_USER_SPACE_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU+BLUE_SPIKE_USER_SPACE_CPU_THREAD_ID, &mask);
+	printf ("sched_getcpu() = %d (Before sched_setaffinity)\n", sched_getcpu());
+	if (sched_setaffinity(0, sizeof(mask), &mask))
+		return print_message(ERROR_MSG ,"SpikeViewer", "Gui", "main","! sched_setaffinity(0, sizeof(mask), &mask).");		
+	printf ("sched_getcpu() = %d (After sched_setaffinity)\n", sched_getcpu());
+
 	filtered_recording_data = (RecordingData*)rtai_malloc(SHM_NUM_KERNEL_SPIKE_FILTERED_RECORDING_DATA, 0);
 	if (filtered_recording_data == NULL) 
 		return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "main", "filtered_recording_data == NULL.");

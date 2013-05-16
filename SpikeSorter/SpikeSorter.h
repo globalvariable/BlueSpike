@@ -15,6 +15,8 @@
  ***************************************************************************/
 #ifndef SPIKESORTER_H
 #define SPIKESORTER_H
+
+#define _GNU_SOURCE	// for sched_setaffinity(0, sizeof(mask), &mask))
  
 #include <rtai_shm.h>
 #include <rtai_nam2num.h>
