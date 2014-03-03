@@ -22,7 +22,7 @@ typedef BlueSpikeTimeStampItem	BlueSpikeTimeStampBuff[BLUE_SPIKE_TIME_STAMP_BUFF
 typedef struct __BlueSpikeTimeStamp
 {
 	BlueSpikeTimeStampBuff		blue_spike_time_stamp_buff;
-	int						buff_idx_write;
+	unsigned int					buff_idx_write;
 } BlueSpikeTimeStamp;
 
 

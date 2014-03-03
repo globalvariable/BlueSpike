@@ -1106,11 +1106,23 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 
 			template_matching_g_x[unit] = 0 - (unit_template_data->log_det_S) - (template_matching_g_x[unit]);	
 			
-			if ((template_matching_g_x[unit] > greatest) && (template_matching_probabl[unit] > unit_template_data->probability_thres))    // assign spike to a unit.
+			if ((template_matching_g_x[unit] > greatest) && (template_matching_probabl[unit] >= unit_template_data->probability_thres))    // assign spike to a unit.
 			{
 				greatest = template_matching_g_x[unit];
 				greatest_idx = unit;
 			}	
+			if (unit_template_data->alarm_on)
+			{
+				if (template_matching_probabl[unit] < unit_template_data->alarm_thres)
+				{
+					if ((unit_template_data->alarm_count + 1) < 1000)   // increment up to 999.
+						unit_template_data->alarm_count++;
+				}
+			}
+			else
+			{
+				unit_template_data->alarm_count = 0;
+			}
 		}
 	}
 	
@@ -1491,6 +1503,7 @@ static bool get_next_spike_thres_2_kernel_spike_msg_buffer_item(SpkThres2KrnlSpk
 static bool handle_template_matching_2_kernel_spike_msgs(TempMat2KrnlSpkMsg* msg_buffer)
 {
 	TempMat2KrnlSpkMsgItem *msg_item;
+	unsigned int i, j, k;
 	while (get_next_template_matching_2_kernel_spike_msg_buffer_item(msg_buffer, &msg_item))
 	{
 		switch (msg_item->msg_type)
@@ -1517,6 +1530,40 @@ static bool handle_template_matching_2_kernel_spike_msgs(TempMat2KrnlSpkMsg* msg
 				{
 					(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].probability_thres = msg_item->threshold;
 				}
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_ALARM_THRES:
+				if (msg_item->threshold < 0)
+				{
+					printk("KernelSpike: WARNING: submitted template_matching_probability_threshold is lower than zero.\n");
+					(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].alarm_thres = 0; 
+				}
+				else
+				{
+					(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].alarm_thres = msg_item->threshold;
+				}
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_ALARM_ON:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].alarm_on = 1;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_ALARM_OFF:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].alarm_on = 0;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_RESET_UNIT_ALARM:
+				(*template_matching_data)[msg_item->mwa][msg_item->mwa_chan_num][msg_item->unit_num].alarm_count = 0;
+				break;
+			case TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_RESET_ALL_ALARM:
+				for (i = 0; i < MAX_NUM_OF_MWA; i++)
+				{
+					for (j = 0; j < MAX_NUM_OF_CHAN_PER_MWA; j++)
+					{
+						for (k = 0; k < (MAX_NUM_OF_UNIT_PER_CHAN+1); k++)
+						{
+							(*template_matching_data)[i][j][k].alarm_count = 0;
+						}
+					}
+				}
+
+
 				break;
 			default:
 				printk("KernelSpike: ERROR: Unknown template_matching_2_kernel_spike_msg %u.\n", msg_item->msg_type);

@@ -91,11 +91,23 @@ GtkWidget *btn_clear_unit_template;
 GtkWidget *btn_sorting_on_off;
 GtkWidget *btn_unit_sorting_on_off;
 GtkWidget *btn_include_unit_on_off;
+GtkWidget *btn_unit_alarm_on_off;
+GtkWidget *btn_reset_alarm;
 
 GtkWidget *btn_spike_filter_on_off;
 
+GtkWidget *btn_reset_all_alarm;
+
+GtkWidget *entry_alarm_probab_thres;
+GtkWidget *btn_submit_alarm_probab_thres;
+
 GtkWidget *entry_probability_thres;
 GtkWidget *btn_submit_probability_thres;
+
+GtkWidget *lbl_unit_alarm;
+GtkWidget *lbl_alarming_mwa;	
+GtkWidget *lbl_alarming_chan;
+GtkWidget *lbl_alarming_unit;
 
 GtkWidget *btn_pause;
 
@@ -130,8 +142,12 @@ void clear_nonsorted_unit_screen_button_func(void);
 void clear_unit_template_button_func(void);
 void unit_sorting_on_off_button_func(void);
 void include_unit_on_off_button_func(void);
+void unit_alarm_on_off_button_func(void);
+void reset_alarm_button_func(void);
 void spike_filter_on_off_button_func(void);
+void reset_all_alarm_button_func(void);
 void submit_probability_thres_button_func(void);
+void submit_alarm_probab_thres_button_func(void);
 void pause_button_func(void);
 void load_template_matching_file_button_func(void);
 void save_template_matching_file_button_func (void);

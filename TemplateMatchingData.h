@@ -22,6 +22,9 @@ typedef struct __TemplateMatchingUnitData
 	TemplateProbabilityThres 	probability_thres;
 	bool 					sorting_on;
 	bool 					include_unit;
+	TemplateProbabilityThres 	alarm_thres;
+	bool 					alarm_on;
+	unsigned int				alarm_count;
 } TemplateMatchingUnitData;
 
 

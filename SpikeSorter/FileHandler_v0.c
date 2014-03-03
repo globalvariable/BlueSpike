@@ -180,6 +180,7 @@ int read_template_matching_data_v0(int num, ...)
 				(*template_matching_data)[i][j][k].sqrt_det_S = (*local_template_matching_data)[i][j][k].sqrt_det_S;
 				(*template_matching_data)[i][j][k].log_det_S = (*local_template_matching_data)[i][j][k].log_det_S;
 				(*template_matching_data)[i][j][k].probability_thres = (*local_template_matching_data)[i][j][k].probability_thres;
+				(*template_matching_data)[i][j][k].alarm_thres = (*local_template_matching_data)[i][j][k].alarm_thres;
 			}
 		}
 	}
@@ -209,6 +210,17 @@ int read_template_matching_data_v0(int num, ...)
 				else
 				{
 					if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_EXCLUDE_UNIT, i, j, k, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+						return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "read_template_matching_data_v0", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
+				}
+
+				if ((*local_template_matching_data)[i][j][k].alarm_on)
+				{
+					if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_ALARM_ON, i, j, k, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+						return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "read_template_matching_data_v0", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
+				}
+				else
+				{
+					if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_ALARM_OFF, i, j, k, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 						return print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "read_template_matching_data_v0", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
 				}
 			}

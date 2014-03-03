@@ -276,11 +276,29 @@ void create_gui(void)
 	} 
 	gtk_box_pack_start (GTK_BOX (hbox), combo_unit, TRUE, TRUE, 0);
  	gtk_combo_box_set_active(GTK_COMBO_BOX(combo_unit), 0);
- 	
+
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5); 
   	
   	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
+  	
+  	btn_spike_filter_on_off = gtk_button_new_with_label("Spike Filtering Mode: OFF");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_spike_filter_on_off, TRUE, TRUE, 0);
+
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5); 
+  	  	
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
+  	
+  	btn_clear_spike_selection_screen = gtk_button_new_with_label("Clear Spike Selection Screen");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_clear_spike_selection_screen, TRUE, TRUE, 0);
+ 	
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5); 
+  	
+  	hbox = gtk_hbox_new(TRUE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
   	
   	btn_unit_sorting_on_off = gtk_button_new_with_label("Unit Sorting: OFF");
@@ -297,54 +315,53 @@ void create_gui(void)
 	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].include_unit)
 	{
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
-	}		
-	
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 
-  	
-  	hbox = gtk_hbox_new(FALSE, 0);
+	}	
+
+  	hbox = gtk_hbox_new(TRUE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
-  	
-  	btn_clear_unit_template = gtk_button_new_with_label("Clear Unit Template");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_clear_unit_template, TRUE, TRUE, 0);	
+
+  	btn_unit_alarm_on_off = gtk_button_new_with_label("Unit Alarm: OFF");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_unit_alarm_on_off, TRUE, TRUE, 0);
+
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_on)
+	{
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: ON");
+	}	
 	
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5); 
-  	
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
-  	
-  	btn_spike_filter_on_off = gtk_button_new_with_label("Spike Filtering Mode: OFF");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_spike_filter_on_off, TRUE, TRUE, 0);
+  	btn_reset_alarm = gtk_button_new_with_label("Reset Alarm");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_reset_alarm, TRUE, TRUE, 0);	
 	
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5); 	
-	
+
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);  	
-   	
+	
+        entry_alarm_probab_thres  = gtk_entry_new();
+        gtk_box_pack_start(GTK_BOX(hbox),entry_alarm_probab_thres , FALSE,FALSE,0);
+
+	char thres[40];
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_thres);
+	gtk_entry_set_text (GTK_ENTRY(entry_alarm_probab_thres), thres); 	
+ 	
+  	btn_submit_alarm_probab_thres = gtk_button_new_with_label("Alarm Prob Thres");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_submit_alarm_probab_thres, TRUE, TRUE, 0);
+
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);  	
+	
         entry_probability_thres  = gtk_entry_new();
         gtk_box_pack_start(GTK_BOX(hbox),entry_probability_thres , FALSE,FALSE,0);
 
-	char thres[40];
 	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres); 	
  	
-  	btn_submit_probability_thres = gtk_button_new_with_label("Submit Probabilty");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_submit_probability_thres, TRUE, TRUE, 0);			
-
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 20); 
+  	btn_submit_probability_thres = gtk_button_new_with_label("Probabilty Thres");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_submit_probability_thres, TRUE, TRUE, 0);		
 
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 
-  	  	
-  	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
-  	
-  	btn_clear_spike_selection_screen = gtk_button_new_with_label("Clear Spike Selection Screen");
-	gtk_box_pack_start (GTK_BOX (hbox), btn_clear_spike_selection_screen, TRUE, TRUE, 0);
-	
+
   	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
   	
@@ -357,8 +374,56 @@ void create_gui(void)
   	btn_clear_nonsorted_unit_screen = gtk_button_new_with_label("Clear Non-Sorted Unit Screen");
 	gtk_box_pack_start (GTK_BOX (hbox), btn_clear_nonsorted_unit_screen, TRUE, TRUE, 0);	
 
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 20); 
+  	
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
+  	
+  	btn_clear_unit_template = gtk_button_new_with_label("Clear Unit Template");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_clear_unit_template, TRUE, TRUE, 0);	
+
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 
+  	
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0);   
+  	
+  	btn_reset_all_alarm = gtk_button_new_with_label("Reset All Alarm");
+	gtk_box_pack_start (GTK_BOX (hbox), btn_reset_all_alarm, TRUE, TRUE, 0);
+
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10);   
+
+  	lbl = gtk_label_new("Num of Unit Alarms: \t");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl, FALSE,FALSE, 0);	
+
+  	lbl_unit_alarm = gtk_label_new("0");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl_unit_alarm, FALSE,FALSE, 0);
+
+  	hbox = gtk_hbox_new(FALSE, 0);
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 5);   
+
+  	lbl = gtk_label_new("Alarming: \t\t\t");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl, FALSE,FALSE, 0);	
+
+  	lbl_alarming_mwa = gtk_label_new("X");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl_alarming_mwa, FALSE,FALSE, 0);	
+
+  	lbl = gtk_label_new(" : ");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl, FALSE,FALSE, 0);	
+
+  	lbl_alarming_chan = gtk_label_new("X");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl_alarming_chan, FALSE,FALSE, 0);	
+
+  	lbl = gtk_label_new(" : ");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl, FALSE,FALSE, 0);	
+
+  	lbl_alarming_unit = gtk_label_new("X");
+        gtk_box_pack_start(GTK_BOX(hbox),lbl_alarming_unit, FALSE,FALSE, 0);	
+
 	hbox = gtk_hbox_new(FALSE, 0);
-  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 30); 	
+  	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 10); 	
 	
 	hbox = gtk_hbox_new(FALSE, 0);
   	gtk_box_pack_start (GTK_BOX (vbox), hbox, FALSE, FALSE, 0); 	
@@ -391,9 +456,13 @@ void create_gui(void)
 	g_signal_connect(G_OBJECT(btn_clear_unit_screen), "clicked", G_CALLBACK(clear_unit_screen_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_clear_nonsorted_unit_screen), "clicked", G_CALLBACK(clear_nonsorted_unit_screen_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_clear_unit_template), "clicked", G_CALLBACK(clear_unit_template_button_func), NULL);
+	g_signal_connect(G_OBJECT(btn_reset_all_alarm), "clicked", G_CALLBACK(reset_all_alarm_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_unit_sorting_on_off), "clicked", G_CALLBACK(unit_sorting_on_off_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_include_unit_on_off), "clicked", G_CALLBACK(include_unit_on_off_button_func), NULL);
+	g_signal_connect(G_OBJECT(btn_unit_alarm_on_off), "clicked", G_CALLBACK(unit_alarm_on_off_button_func), NULL);	
+	g_signal_connect(G_OBJECT(btn_reset_alarm), "clicked", G_CALLBACK(reset_alarm_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_spike_filter_on_off), "clicked", G_CALLBACK(spike_filter_on_off_button_func), NULL);
+	g_signal_connect(G_OBJECT(btn_submit_alarm_probab_thres), "clicked", G_CALLBACK(submit_alarm_probab_thres_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_submit_probability_thres), "clicked", G_CALLBACK(submit_probability_thres_button_func), NULL);
 	g_signal_connect(G_OBJECT(btn_pause), "clicked", G_CALLBACK(pause_button_func), NULL);	
 	g_signal_connect(G_OBJECT(btn_load_template_matching_file ), "clicked", G_CALLBACK(load_template_matching_file_button_func), NULL);
@@ -402,7 +471,7 @@ void create_gui(void)
 	
 	blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp->buff_idx_write;
 	
-	g_timeout_add(50, timeout_callback, NULL);
+	g_timeout_add(100, timeout_callback, NULL);
 	
 }
 
@@ -422,6 +491,9 @@ void combo_mwa_func (void)
 
 	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_thres);
+	gtk_entry_set_text (GTK_ENTRY(entry_alarm_probab_thres), thres);	
+
 	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	else
@@ -430,6 +502,11 @@ void combo_mwa_func (void)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_on)
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: ON");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: OFF");
+
 	clear_spikes_screen();
 	return;
 }
@@ -450,6 +527,9 @@ void combo_chan_func (void)
 	
 	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_thres);
+	gtk_entry_set_text (GTK_ENTRY(entry_alarm_probab_thres), thres);	
+
 	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	else
@@ -458,6 +538,10 @@ void combo_chan_func (void)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");	
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_on)
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: ON");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: OFF");
 	clear_spikes_screen();		
 	return;	
 }
@@ -478,6 +562,9 @@ void combo_unit_func (void)
 	
 	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].probability_thres);
 	gtk_entry_set_text (GTK_ENTRY(entry_probability_thres), thres);	
+	sprintf(thres, "%E" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_thres);
+	gtk_entry_set_text (GTK_ENTRY(entry_alarm_probab_thres), thres);	
+
 	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].sorting_on)
 		gtk_button_set_label (GTK_BUTTON(btn_unit_sorting_on_off),"Unit Sorting: ON");
 	else
@@ -486,6 +573,10 @@ void combo_unit_func (void)
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: ON");
 	else
 		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");	
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_on)
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: ON");
+	else
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: OFF");
 	return;	
 }
 
@@ -614,7 +705,6 @@ void submit_probability_thres_button_func(void)
 	{
 		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_PROBAB_THRES, disp_mwa, disp_chan, disp_unit, threshold, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
 			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "submit_probability_thres_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
-		gtk_button_set_label (GTK_BUTTON(btn_include_unit_on_off),"Include Unit: OFF");
 	}
 	else
 	{
@@ -724,8 +814,9 @@ gboolean timeout_callback(gpointer user_data)
 	int spike_idx;	
 	float *Y_temp;
 	double *dbl_Y_temp;
-	int i, j;
+	int i, j, k;
 	bool spike_in_range;
+	char temp[20];
 	
 	if (disp_paused)
 	{
@@ -851,6 +942,37 @@ gboolean timeout_callback(gpointer user_data)
 		gtk_databox_set_total_limits (GTK_DATABOX (box_units[i]), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 	}				
 	plotting_in_progress = 0;
+
+	sprintf(temp, "%u" , (*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_count);
+	gtk_label_set_text (GTK_LABEL (lbl_unit_alarm), temp);
+
+	for (i = 0; i < MAX_NUM_OF_MWA; i++)
+	{
+		for (j = 0; j < MAX_NUM_OF_CHAN_PER_MWA; j++)
+		{
+			for (k = 0; k < (MAX_NUM_OF_UNIT_PER_CHAN+1); k++)
+			{
+				if ((*template_matching_data)[i][j][k].alarm_count > 200)
+				{
+					sprintf(temp, "%d" , i);
+					gtk_label_set_text (GTK_LABEL (lbl_alarming_mwa), temp);
+					sprintf(temp, "%d" , j);
+					gtk_label_set_text (GTK_LABEL (lbl_alarming_chan), temp);
+					sprintf(temp, "%d" , k);
+					gtk_label_set_text (GTK_LABEL (lbl_alarming_unit), temp);
+					goto exit;	
+				}
+			}
+		}
+	}
+	exit:
+	if ((i == MAX_NUM_OF_MWA) && (j == MAX_NUM_OF_CHAN_PER_MWA) && (k == (MAX_NUM_OF_UNIT_PER_CHAN+1)))  /// No alarm from any channel
+	{
+		gtk_label_set_text (GTK_LABEL (lbl_alarming_mwa), "X");
+		gtk_label_set_text (GTK_LABEL (lbl_alarming_chan), "X");
+		gtk_label_set_text (GTK_LABEL (lbl_alarming_unit), "X");		
+	}
+
 	return TRUE; 	
 }
 
@@ -1158,4 +1280,48 @@ void save_template_matching_file_button_func (void)
 	if (! (*write_template_matching_data[DATA_FORMAT_VERSION])(2, path, template_matching_data))
 		return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "save_template_matching_file_button_func", "! *write_template_matching_data()."); 		
 	return (void)print_message(INFO_MSG ,"SpikeSorter", "SpikeSorter", "save_template_matching_file_button_func", "Succesuflly saved TemplateMatching data file."); 
+}
+
+void unit_alarm_on_off_button_func(void)
+{
+	if ((*template_matching_data)[disp_mwa][disp_chan][disp_unit].alarm_on)
+	{
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_ALARM_OFF, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "unit_sorting_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: OFF");
+	}
+	else
+	{
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_UNIT_ALARM_ON, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "unit_sorting_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
+		gtk_button_set_label (GTK_BUTTON(btn_unit_alarm_on_off),"Unit Alarm: ON");
+	}
+	return;
+}
+
+void submit_alarm_probab_thres_button_func(void)
+{
+	TemplateProbabilityThres threshold = atof(gtk_entry_get_text(GTK_ENTRY(entry_alarm_probab_thres)));
+	if (threshold >= 0.0)
+	{
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_SET_ALARM_THRES, disp_mwa, disp_chan, disp_unit, threshold, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "submit_probability_thres_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");		
+	}
+	else
+	{
+		printf("WARNING: Threshold cannot be less than 0.0\n");
+		printf("WARNING: Submit probability threshold cancelled\n");		
+	}
+}
+
+void reset_alarm_button_func(void)
+{
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_RESET_UNIT_ALARM, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "unit_sorting_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");	
+}
+
+void reset_all_alarm_button_func(void)
+{
+		if (! write_to_template_matching_2_kernel_spike_msg_buffer(template_matching_2_kernel_spike_msgs, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_RESET_ALL_ALARM, disp_mwa, disp_chan, disp_unit, TEMPLATE_PROBAB_THRES_NULL, TEMPLATE_MATCHING_2_KERNEL_SPIKE_MSG_ADDITIONAL_NULL))
+			return (void)print_message(ERROR_MSG ,"SpikeSorter", "SpikeSorter", "unit_sorting_on_off_button_func", "! write_to_template_matching_2_kernel_spike_msg_buffer().");	
 }
