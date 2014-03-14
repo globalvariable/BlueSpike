@@ -1111,21 +1111,31 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 				greatest = template_matching_g_x[unit];
 				greatest_idx = unit;
 			}	
-			if (unit_template_data->alarm_on)
-			{
-				if (template_matching_probabl[unit] < unit_template_data->alarm_thres)
-				{
-					if ((unit_template_data->alarm_count + 1) < 1000)   // increment up to 999.
-						unit_template_data->alarm_count++;
-				}
-			}
-			else
-			{
-				unit_template_data->alarm_count = 0;
-			}
 		}
 	}
 	
+	if (greatest_idx < MAX_NUM_OF_UNIT_PER_CHAN)
+	{
+		unit_template_data =  &(*template_matching_data)[mwa][chan][greatest_idx];
+		if (unit_template_data->alarm_on)
+		{
+			if (template_matching_probabl[greatest_idx] < unit_template_data->alarm_thres)
+			{
+				if (unit_template_data->alarm_count < 999)   // increment up to 999.
+					unit_template_data->alarm_count++;
+			}
+			else
+			{
+				if (unit_template_data->alarm_count > 0)
+					unit_template_data->alarm_count--;
+			}
+		}
+		else
+		{
+			unit_template_data->alarm_count = 0;
+		}		
+	}
+
 
 	//   Write spike time stamp into shared_memory->spike_time_stamp
 	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp->buff_idx_write;

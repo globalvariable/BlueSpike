@@ -952,7 +952,7 @@ gboolean timeout_callback(gpointer user_data)
 		{
 			for (k = 0; k < (MAX_NUM_OF_UNIT_PER_CHAN+1); k++)
 			{
-				if ((*template_matching_data)[i][j][k].alarm_count > 200)
+				if ((*template_matching_data)[i][j][k].alarm_count > 300)
 				{
 					sprintf(temp, "%d" , i);
 					gtk_label_set_text (GTK_LABEL (lbl_alarming_mwa), temp);
