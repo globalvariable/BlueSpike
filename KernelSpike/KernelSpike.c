@@ -133,7 +133,13 @@ void rt_handler(long int t)
 			
 		for (i=0; i < MAX_NUM_OF_DAQ_CARD; i++)
 		{	
-			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
+			comedi_poll(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);   // BUG. it does not poll all data in onboard buffer. onboard fifo buffer sends acquired data when it reaches a threshod.
+																// do get rid of this problem, ->  ni6070_comedi_cmd[card_number].flags = TRIG_RT | TRIG_WAKE_EOS;
+																// TRIG_WAKE_EOS leads to too mant interrupts. 
+																// to get rid of such high interrupt load:
+																// #define NUM_OF_SCANS_TO_SEND    10
+																// ni6070_comedi_cmd[card_number].scan_begin_arg = SAMPLING_INTERVAL*NUM_OF_SCANS_TO_SEND;
+																// this will decrease intertupt load 10X. (see next version for application.)
 			num_byte[i] = comedi_get_buffer_contents(ni6070_comedi_dev[i], COMEDI_SUBDEVICE_AI);
 			front[i] = front[i] + num_byte[i];
 			if (front[i] >= comedi_buff_size[i])
