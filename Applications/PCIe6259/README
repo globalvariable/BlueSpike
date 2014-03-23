@@ -1,0 +1,7 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+This application support utilization of NI PCIe-6259 daq card (32 Channel).
+
+In this application Bayesian template matching is applied for spike sorting.
+
+Callbacks (interrupts) of daq card drives the system timing. 

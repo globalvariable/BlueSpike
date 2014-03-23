@@ -38,8 +38,8 @@ typedef struct __RtTasksData
 {
 	unsigned int		num_of_total_rt_tasks;	
 	CpusRtData 		cpus_rt_task_data[MAX_NUM_OF_CPUS];
-	TimeStamp		current_system_time;		// shared clocking set by kernelspike and others read it. kernel_spike detects exact spike times and other tasks adjusts themselves according to kernelspike
-	TimeStamp		previous_system_time;
+	TimeStamp		current_daq_system_time;		// shared clocking set by kernelspike and others read it. kernel_spike detects exact spike times and other tasks adjusts themselves according to kernelspike
+	TimeStamp		previous_daq_system_time;
 	KernelTaskCtrl	kernel_task_ctrl;
 } RtTasksData;
 
@@ -47,17 +47,7 @@ typedef struct __RtTasksData
 #define START_RT_TIMER_PERIOD 				50000		// 50 us
 
 // KernelSpike
-#define KERNELSPIKE_PERIOD 							1000000		//1 ms
-#define KERNELSPIKE_TASK_PRIORITY 						1
-#define KERNELSPIKE_STACK_SIZE 						10000
-#define KERNELSPIKE_CPU_ID 							1
-#define KERNELSPIKE_CPU_THREAD_ID					0
-#define KERNELSPIKE_CPU_THREAD_TASK_ID				0
-#define KERNELSPIKE_PASS_DATA 						0
-#define KERNELSPIKE_SIGNAL 							0
-#define KERNELSPIKE_USES_FLOATING_POINT 				1
-#define KERNELSPIKE_POSITIVE_JITTER_THRES	 			100000		// 100 us
-#define KERNELSPIKE_NEGATIVE_JITTER_THRES	 		100000
+
 
 // TrialHandler
 #define TRIAL_HANDLER_PERIOD 						2000000		//2 ms
@@ -232,8 +222,8 @@ typedef struct __RtTasksData
 #define IZ_PS_NETWORK_SIM_USER_SPACE_CPU_ID	TRIAL_HANDLER_CPU_ID	
 #define IZ_PS_NETWORK_SIM_USER_SPACE_CPU_THREAD_ID	TRIAL_HANDLER_CPU_THREAD_ID
 
-#define BLUE_SPIKE_USER_SPACE_CPU_ID				TRIAL_HANDLER_CPU_ID	
-#define BLUE_SPIKE_USER_SPACE_CPU_THREAD_ID	TRIAL_HANDLER_CPU_THREAD_ID
+#define BLUESPIKE_USER_SPACE_CPU_ID				TRIAL_HANDLER_CPU_ID	
+#define BLUESPIKE_USER_SPACE_CPU_THREAD_ID		TRIAL_HANDLER_CPU_THREAD_ID
 
 
 #endif

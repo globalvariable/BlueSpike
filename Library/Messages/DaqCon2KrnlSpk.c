@@ -19,7 +19,7 @@ DaqCon2KrnlSpkMsg* deallocate_shm_client_daq_config_2_kernel_spike_msg_buffer(Da
 	rtai_free(SHM_NUM_DAQ_CONFIG_2_KERNEL_SPIKE, msg_buffer);	
 	return NULL;
 }
-bool write_to_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgType msg_type, MwaNum	mwa_num, MwaChanNum mwa_chan_num, DaqCardNum	daq_card_num,  DaqCardChanNum daq_card_chan_num, DaqCon2KrnlSpkMsgAdditional	additional_data)
+bool write_to_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgType msg_type, unsigned int mwa_num, unsigned int mwa_chan_num, unsigned int	daq_card_num,  unsigned int daq_card_chan_num, DaqCon2KrnlSpkMsgAdditional	additional_data)
 {
 	unsigned int *idx;
 	idx = &(msg_buffer->buff_write_idx);
@@ -37,5 +37,19 @@ bool write_to_daq_config_2_kernel_spike_msg_buffer(DaqCon2KrnlSpkMsg* msg_buffer
 	if (*idx == msg_buffer->buff_read_idx)
 		return print_message(INFO_MSG ,"BlueSpike", "DaqCon2KrnlSpk", "write_to_daq_config_2_kernel_spike_msg_buffer", "BUFFER IS FULL!!!.");    		
 	return TRUE;
+}
+
+bool get_next_daq_config_2_kernel_spike_msg_buffer_item( DaqCon2KrnlSpkMsg* msg_buffer, DaqCon2KrnlSpkMsgItem *msg_item)
+{
+	unsigned int *idx;
+	idx = &(msg_buffer->buff_read_idx);
+	if (*idx == msg_buffer->buff_write_idx)
+		return false;
+  	memcpy ( msg_item, &(msg_buffer->buff[*idx]), sizeof(DaqCon2KrnlSpkMsgItem) );
+	if ((*idx + 1) == DAQ_CONFIG_2_KERNEL_SPIKE_MSG_BUFFER_SIZE)
+		*idx = 0;
+	else
+		(*idx)++;
+	return true;
 }
 
