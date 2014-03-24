@@ -95,7 +95,7 @@ static void *rt_daq_handler(void *args)
 	unsigned int daq_num;
 	unsigned int period_occured;	
 	long int cb_val = 0, cb_retval = 0;
-	lsampl_t *daq_data;
+	lsampl_t daq_data[MAX_NUM_OF_CHANNEL_PER_DAQ_CARD*NUM_OF_SCAN];
 
         if (! (handler = rt_task_init_schmod(BLUESPIKE_DAQ_TASK_NAME, BLUESPIKE_DAQ_TASK_PRIORITY, BLUESPIKE_DAQ_STACK_SIZE, BLUESPIKE_DAQ_MSG_SIZE,BLUESPIKE_DAQ_POLICY, 1 << ((BLUESPIKE_DAQ_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU)+BLUESPIKE_DAQ_CPU_THREAD_ID)))) {
 		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_daq_handler", "handler = rt_task_init_schmod()."); exit(1); }
@@ -112,8 +112,6 @@ static void *rt_daq_handler(void *args)
 
 	if (! config_daq_card(daq_num))  {
 		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_daq_handler", "! config_daq_cards()."); exit(1); }		
-
-	daq_data = ni6259_data[daq_num];
 
 	prev_time = rt_get_cpu_time_ns();
 	

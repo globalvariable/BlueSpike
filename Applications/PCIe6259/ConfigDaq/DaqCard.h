@@ -41,7 +41,7 @@ comedi_t* ni6259_comedi_dev[MAX_NUM_OF_DAQ_CARD];
 comedi_cmd ni6259_comedi_cmd[MAX_NUM_OF_DAQ_CARD];
 unsigned ni6259_comedi_chanlist[MAX_NUM_OF_DAQ_CARD][MAX_NUM_OF_CHANNEL_PER_DAQ_CARD*NUM_OF_SCAN];
 unsigned int ni6259_comedi_dev_ids[MAX_NUM_OF_DAQ_CARD];
-lsampl_t ni6259_data[MAX_NUM_OF_DAQ_CARD][MAX_NUM_OF_CHANNEL_PER_DAQ_CARD*NUM_OF_SCAN];
+
 
 bool daq_cards_on;
 
