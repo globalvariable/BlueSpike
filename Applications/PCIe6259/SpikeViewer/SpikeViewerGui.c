@@ -693,7 +693,7 @@ static gboolean recording_timeout_callback(gpointer user_data)
 {
 	if (recording)
 	{
-		if (!(*write_to_data_files[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(2, recording_data, spike_time_stamp))	
+		if (!(*write_to_data_files[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(0))	
 		{
 			print_message(ERROR_MSG ,"SpikeViewer", "Gui", "recording_timeout_callback", " *write_to_data_files().");		
 			exit(1);

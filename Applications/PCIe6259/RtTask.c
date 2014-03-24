@@ -60,14 +60,11 @@ static void *rt_periodic_handler(void *args)
 	{
         	rt_task_wait_period();
 		curr_time = rt_get_cpu_time_ns();
-		if (! daq_cards_on)
-		{
-			evaluate_and_save_jitter(rt_tasks_data, TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_ID, TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_THREAD_ID, TRIAL_HAND_2_NEURAL_NET_MSGS_HANDLER_CPU_THREAD_TASK_ID, prev_time, curr_time);
-		}
+		evaluate_and_save_jitter(rt_tasks_data, BLUESPIKE_PERIODIC_CPU_ID, BLUESPIKE_PERIODIC_CPU_THREAD_ID, BLUESPIKE_PERIODIC_CPU_THREAD_TASK_ID, prev_time, curr_time);
 		prev_time = curr_time;
 		// routines
 
-
+		evaluate_and_save_period_run_time(rt_tasks_data, BLUESPIKE_PERIODIC_CPU_ID, BLUESPIKE_PERIODIC_CPU_THREAD_ID, BLUESPIKE_PERIODIC_CPU_THREAD_TASK_ID, curr_time, rt_get_cpu_time_ns());
 	}
 
 	rt_make_soft_real_time();
@@ -97,7 +94,7 @@ static void *rt_daq_handler(void *args)
 	unsigned int prev_time, curr_time;
 	unsigned int daq_num;
 	unsigned int period_occured;	
-	long int cb_val, cb_retval;
+	long int cb_val = 0, cb_retval = 0;
 	lsampl_t *daq_data;
 
         if (! (handler = rt_task_init_schmod(BLUESPIKE_DAQ_TASK_NAME, BLUESPIKE_DAQ_TASK_PRIORITY, BLUESPIKE_DAQ_STACK_SIZE, BLUESPIKE_DAQ_MSG_SIZE,BLUESPIKE_DAQ_POLICY, 1 << ((BLUESPIKE_DAQ_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU)+BLUESPIKE_DAQ_CPU_THREAD_ID)))) {
@@ -122,6 +119,7 @@ static void *rt_daq_handler(void *args)
 	
         while (daq_cards_on) 
 	{
+		cb_val = 0;
 		cb_retval += rt_comedi_wait(&cb_val);
 
 		curr_time = rt_get_cpu_time_ns();
@@ -141,7 +139,7 @@ static void *rt_daq_handler(void *args)
 
 		rt_comedi_command_data_read(ni6259_comedi_dev[daq_num], COMEDI_SUBDEVICE_AI, MAX_NUM_OF_CHANNEL_PER_DAQ_CARD*NUM_OF_SCAN, daq_data);
 
-		pthread_mutex_lock(&(daq_mwa_map[daq_num].mutex));   // do not allow mapping change in gui during processing retrieved data. 	
+		pthread_mutex_lock(&(daq_mwa_map[daq_num].mutex));   // do not allow mapping change by configdaqgui during processing retrieved data. 	
 	
 		handle_recording_data(daq_num, daq_data);
 		spike_sorting(daq_num, previous_daq_time_ns);

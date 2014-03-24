@@ -1,6 +1,10 @@
 #include "TemplateMatching.h"
 
-
+static double template_matching_g_x[MAX_NUM_OF_UNIT_PER_CHAN];
+static double template_matching_diff[NUM_OF_SAMP_PER_SPIKE];
+static double template_matching_diff_temporary[NUM_OF_SAMP_PER_SPIKE];
+static double template_matching_exponent;	
+static double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
 
 void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time)
 {
@@ -14,12 +18,6 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 	int blue_spike_time_stamp_buff_idx_write;
 	int include_unit;
 	int spike_time_stamp_buff_idx_write;
-
-	double template_matching_g_x[MAX_NUM_OF_UNIT_PER_CHAN];
-	double template_matching_diff[NUM_OF_SAMP_PER_SPIKE];
-	double template_matching_diff_temporary[NUM_OF_SAMP_PER_SPIKE];
-	double template_matching_exponent;	
-	double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
 
 
 	filtered_recording_data_chan_buff = &(recording_data.filtered_recording_data_buff[mwa][chan]);

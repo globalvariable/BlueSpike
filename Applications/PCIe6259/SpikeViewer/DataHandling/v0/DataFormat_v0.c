@@ -14,11 +14,11 @@ static int create_data_files(TimeStamp rec_start, char *data_directory_path);
 static int create_meta_data(TimeStamp rec_start, char *data_directory_path);
 static int create_recording_data(char *data_directory_path);
 static int create_spike_time_stamps_data(char *data_directory_path);
-static int write_to_recording_data(RecordingData *recording_data);
-static int write_to_spike_time_stamps_data(SpikeTimeStamp *spike_time_stamps);
+static int write_to_recording_data(void);
+static int write_to_spike_time_stamps_data(void);
 static int close_meta_data(TimeStamp rec_end);
-static int close_recording_data(RecordingData *recording_data);
-static int close_spike_time_stamps_data(SpikeTimeStamp *spike_time_stamps);
+static int close_recording_data(void);
+static int close_spike_time_stamps_data(void);
 static int delete_data_files(char *data_directory_path);
 static int delete_meta_data(char *data_directory_path);
 static int delete_recording_data(char *data_directory_path);
@@ -189,10 +189,10 @@ int fclose_all_data_files_v0(int num, ...)
 	if (! close_meta_data(recording_end_time))
 		return print_message(ERROR_MSG ,"BlueSpike", "DataFormat_v0", "create_data_directory_v0", "! close_meta_data");
 
-	if (! close_recording_data(recording_data))
+	if (! close_recording_data())
 		return print_message(ERROR_MSG ,"BlueSpike", "DataFormat_v0", "create_data_directory_v0", "! close_recording_data");
 
-	if (! close_spike_time_stamps_data(spike_time_stamps))
+	if (! close_spike_time_stamps_data())
 		return print_message(ERROR_MSG ,"BlueSpike", "DataFormat_v0", "create_data_directory_v0", "! close_spike_time_stamps_data");
 
 	return 1;
@@ -273,19 +273,14 @@ int delete_data_directory_v0(int num, ...)
 
 int write_to_data_files_v0(int num, ...)
 {
-	RecordingData *recording_data;
-	SpikeTimeStamp *spike_time_stamps;
-
   	va_list arguments;
 	va_start ( arguments, num );   
-    	recording_data = va_arg ( arguments, RecordingData*); 
-    	spike_time_stamps = va_arg ( arguments, SpikeTimeStamp*); 
 	va_end ( arguments );
 
-	if (! write_to_recording_data(recording_data))
+	if (! write_to_recording_data())
 		return print_message(ERROR_MSG ,"BlueSpike", "DataFormat_v0", "write_to_data_files_v0", "! write_to_recording_data()");
 
-	if (! write_to_spike_time_stamps_data(spike_time_stamps))
+	if (! write_to_spike_time_stamps_data())
 		return print_message(ERROR_MSG ,"BlueSpike", "DataFormat_v0", "write_to_data_files_v0", "! write_to_spike_time_stamps_data()");
 
 	return 1;
@@ -450,9 +445,9 @@ static int create_spike_time_stamps_data(char *data_directory_path)
 	return 1;	
 }
 
-static int write_to_recording_data(RecordingData *recording_data)
+static int write_to_recording_data(void)
 {
-	RecordingDataChanBuff	*recording_data_chan_buff;
+	RecordingDataSample	*recording_data_chan_buff;
 	FILE *fp;
 	unsigned int i,j, idx, end_idx;
 	RecordingDataSampleFloat sample;
@@ -460,13 +455,13 @@ static int write_to_recording_data(RecordingData *recording_data)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_chan_buff = &(recording_data->recording_data_buff[i][j]);
+			recording_data_chan_buff =recording_data.recording_data_buff[i][j];
 			idx = recording_data_buff_read_start_idx[i][j];
-			end_idx = recording_data->buff_idx_write[i][j];
+			end_idx = recording_data.buff_idx_write[i][j];
 			fp = recording_data_file_ptr_arr[i][j];
 			while (idx != end_idx)
 			{
-				sample = (RecordingDataSampleFloat)((*recording_data_chan_buff)[idx]);	// lower the precision for faster writing
+				sample = (RecordingDataSampleFloat)(recording_data_chan_buff[idx]);	// lower the precision for faster writing
 				fwrite(&sample, sizeof(RecordingDataSampleFloat), 1, fp);
 				idx++;	
 				if (idx ==	RECORDING_DATA_BUFF_SIZE)
@@ -478,16 +473,16 @@ static int write_to_recording_data(RecordingData *recording_data)
 	return 1;
 
 }
-static int write_to_spike_time_stamps_data(SpikeTimeStamp *spike_time_stamps)
+static int write_to_spike_time_stamps_data(void)
 {
 	unsigned int idx, end_idx;
 
 	idx = spike_time_stamp_buff_read_start_idx;
-	end_idx = spike_time_stamps->buff_idx_write;
+	end_idx = spike_time_stamp->buff_idx_write;
 
 	while (idx != end_idx)
 	{
-		fwrite(&(spike_time_stamps->spike_time_stamp_buff[idx]), sizeof(SpikeTimeStampItem), 1, spike_time_stamps_file_ptr);
+		fwrite(&(spike_time_stamp->spike_time_stamp_buff[idx]), sizeof(SpikeTimeStampItem), 1, spike_time_stamps_file_ptr);
 		idx++;	
 		if (idx ==	SPIKE_TIME_STAMP_BUFF_SIZE)
 			idx = 0;	
@@ -504,9 +499,9 @@ static int close_meta_data(TimeStamp rec_end)
 	return 1;
 }
 
-static int close_recording_data(RecordingData *recording_data)
+static int close_recording_data(void)
 {
-	RecordingDataChanBuff	*recording_data_chan_buff;
+	RecordingDataSample	*recording_data_chan_buff;
 	FILE *fp;
 	unsigned int i,j, idx, end_idx;
 	RecordingDataSampleFloat sample;
@@ -514,13 +509,13 @@ static int close_recording_data(RecordingData *recording_data)
 	{
 		for (j=0; j<MAX_NUM_OF_CHAN_PER_MWA; j++)
 		{
-			recording_data_chan_buff = &(recording_data->recording_data_buff[i][j]);
+			recording_data_chan_buff = recording_data.recording_data_buff[i][j];
 			idx = recording_data_buff_read_start_idx[i][j];
 			end_idx = recording_data_buff_read_end_idx[i][j];	// before closing the files, write data up to the write indexes of the buffers determined by fclose_all_data_files_v0()
 			fp = recording_data_file_ptr_arr[i][j];
 			while (idx != end_idx)
 			{
-				sample = (RecordingDataSampleFloat)((*recording_data_chan_buff)[idx]);	// lower the precision for faster writing
+				sample = (RecordingDataSampleFloat)(recording_data_chan_buff[idx]);	// lower the precision for faster writing
 				fwrite(&sample, sizeof(RecordingDataSampleFloat), 1, fp);
 				idx++;	
 				if (idx ==	RECORDING_DATA_BUFF_SIZE)
@@ -531,7 +526,7 @@ static int close_recording_data(RecordingData *recording_data)
 	}	
 	return 1;
 }
-static int close_spike_time_stamps_data(SpikeTimeStamp *spike_time_stamps)
+static int close_spike_time_stamps_data(void)
 {
 	unsigned int idx, end_idx;
 
@@ -540,7 +535,7 @@ static int close_spike_time_stamps_data(SpikeTimeStamp *spike_time_stamps)
 
 	while (idx != end_idx)
 	{
-		fwrite(&(spike_time_stamps->spike_time_stamp_buff[idx]), sizeof(SpikeTimeStampItem), 1, spike_time_stamps_file_ptr);
+		fwrite(&(spike_time_stamp->spike_time_stamp_buff[idx]), sizeof(SpikeTimeStampItem), 1, spike_time_stamps_file_ptr);
 		idx++;	
 		if (idx ==	SPIKE_TIME_STAMP_BUFF_SIZE)
 			idx = 0;	
