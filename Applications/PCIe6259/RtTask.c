@@ -19,11 +19,17 @@ bool start_periodic_task(void)
 	rt_tasks_data = rtai_malloc(SHM_NUM_RT_TASKS_DATA, sizeof(RtTasksData));
 	if (rt_tasks_data == NULL) 
 		return print_message(ERROR_MSG ,"PCIe6259", "RtTask", "start_periodic_task", "rt_tasks_data == NULL.");
+	memset(rt_tasks_data, 0, sizeof(RtTasksData));
 
-   	spike_time_stamp = rtai_malloc(SHM_NUM_KERNEL_SPIKE_SPIKE_TIME_STAMP, sizeof(SpikeTimeStamp));
-	if (spike_time_stamp == NULL) 
-		return print_message(ERROR_MSG ,"PCIe6259", "RtTask", "main", "spike_time_stamp == NULL.");
+   	recording_data = rtai_malloc(SHM_NUM_BLUESPIKE_RECORDING_DATA, sizeof(RecordingData));
+	if (recording_data == NULL) 
+		return print_message(ERROR_MSG ,"PCIe6259", "RtTask", "main", "recording_data == NULL.");
+	memset(recording_data, 0, sizeof(RecordingData));
 
+   	sorted_spikes = rtai_malloc(SHM_NUM_BLUESPIKE_SORTED_SPIKES, sizeof(SortedSpikes));
+	if (sorted_spikes == NULL) 
+		return print_message(ERROR_MSG ,"PCIe6259", "RtTask", "main", "sorted_spikes == NULL.");
+	memset(sorted_spikes, 0, sizeof(SortedSpikes));
 
 	rt_periodic_task_thread = rt_thread_create(rt_periodic_handler, NULL, 10000);
 

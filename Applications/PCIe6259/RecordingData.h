@@ -25,18 +25,16 @@
 typedef double RecordingDataSample;
 typedef float RecordingDataSampleFloat;
 
-typedef RecordingDataSample RecordingDataChanBuff[RECORDING_DATA_BUFF_SIZE];
-
-typedef RecordingDataChanBuff RecordingDataBuff[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
-
-typedef struct __RecordingData
+typedef struct __RecordingDataChan
 {
-	RecordingDataBuff	recording_data_buff;
-	RecordingDataBuff filtered_recording_data_buff;
-	unsigned int	buff_idx_write[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];      // Do not read data pointed by buff_idx_write. Read up to buff_idx_write by excluding buff_idx_write
-} RecordingData;
+	RecordingDataSample	rec_data_buff[RECORDING_DATA_BUFF_SIZE];
+	RecordingDataSample	filtered_recording_data_buff[RECORDING_DATA_BUFF_SIZE];
+	unsigned int			buff_idx_write;      // Do not read data pointed by buff_idx_write. Read up to buff_idx_write by excluding buff_idx_write
+} RecordingDataChan;
 
-RecordingData recording_data;
+typedef RecordingDataChan  RecordingData[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
+
+RecordingData *recording_data;
 
 
 bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data);

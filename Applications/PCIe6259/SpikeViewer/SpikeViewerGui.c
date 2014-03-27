@@ -50,7 +50,7 @@ static int previous_start_idx_to_plot = 0;
 static int disp_paused = 0;
 static int print_spike_end_buff = 0;
 
-static int blue_spike_time_stamp_buff_read_idx;
+static int blue_spike_time_stamp_buff_read_idx[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA] = {{0}};
 
 static bool filter_on = FALSE;
 
@@ -87,7 +87,7 @@ static gboolean record_data_button_func (GtkDatabox * box);
 bool create_spike_viewer_gui(GtkWidget *tabs)
 {
 	GtkWidget *frame, *frame_label, *table, *vbox, *hbox, *lbl;
-	int i;
+	int i,j;
 
         frame = gtk_frame_new ("");
         frame_label = gtk_label_new ("     SpikeViewer     ");      
@@ -313,7 +313,14 @@ bool create_spike_viewer_gui(GtkWidget *tabs)
 
 	spike_viewer_initialize_data_read_write_handlers();
 
-	blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp.buff_idx_write;
+	for (i = 0; i< MAX_NUM_OF_MWA; i++)
+	{
+		for (j = 0; j< MAX_NUM_OF_MWA; j++)		
+		{
+			blue_spike_time_stamp_buff_read_idx[i][j] = blue_spike_time_stamp[i][j].buff_idx_write;
+		}		
+	}
+
 
 	g_timeout_add(50, timeout_callback, box_signal);
 	g_timeout_add(50, recording_timeout_callback, box_signal);
@@ -327,23 +334,25 @@ static gboolean timeout_callback(gpointer user_data)
 {
 	int start_idx, i;
 	int blue_spike_time_stamp_buff_end_idx, idx;
-	int blue_spike_time_stamp_buff_mwa, blue_spike_time_stamp_buff_chan, blue_spike_time_stamp_buff_recording_data_idx; 
-	TimeStamp blue_spike_time_stamp_buff_peak_time;
+	int blue_spike_time_stamp_buff_recording_data_idx; 
 	int spike_idx;
 	float *Y_temp_spike;
 
 	RecordingDataSample	*handling_data_chan_buff;
+	RecordingDataChan	*recording_data_chan;
+
+	recording_data_chan = &((*recording_data)[display_mwa][display_mwa_chan]);
 
 	if (filter_on)
 	{
-		handling_data_chan_buff = recording_data.filtered_recording_data_buff[display_mwa][display_mwa_chan];
+		handling_data_chan_buff = recording_data_chan->filtered_recording_data_buff;
 	}
 	else
 	{
-		handling_data_chan_buff = recording_data.recording_data_buff[display_mwa][display_mwa_chan];
+		handling_data_chan_buff = recording_data_chan->rec_data_buff;
 	}
 
-	start_idx = recording_data.buff_idx_write[display_mwa][display_mwa_chan] / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
+	start_idx = recording_data_chan->buff_idx_write / NUM_OF_RAW_SAMPLE_TO_DISPLAY;   // Handle previous NUM_OF_RAW_SAMPLE_TO_DISPLAY
 
 	if (start_idx == 0)
 		 start_idx = RECORDING_DATA_BUFF_SIZE - NUM_OF_RAW_SAMPLE_TO_DISPLAY;    // read previous section
@@ -360,41 +369,37 @@ static gboolean timeout_callback(gpointer user_data)
 		gtk_databox_set_total_limits (GTK_DATABOX (box_signal), 0, RAW_DATA_DISP_DURATION_MS, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);	
 	}
 	
-	idx = blue_spike_time_stamp_buff_read_idx;
-	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp.buff_idx_write;
+	idx = blue_spike_time_stamp_buff_read_idx[display_mwa][display_mwa_chan];
+	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp[display_mwa][display_mwa_chan].buff_idx_write;
 	if (!disp_paused)
 	{
-		handling_data_chan_buff = recording_data.filtered_recording_data_buff[display_mwa][display_mwa_chan];
+		handling_data_chan_buff = recording_data_chan->filtered_recording_data_buff;
 		while (idx != blue_spike_time_stamp_buff_end_idx)
 		{
-			blue_spike_time_stamp_buff_recording_data_idx = blue_spike_time_stamp.blue_spike_time_stamp_buff[idx].recording_data_buff_idx;
-			blue_spike_time_stamp_buff_mwa = blue_spike_time_stamp.blue_spike_time_stamp_buff[idx].mwa;
-			blue_spike_time_stamp_buff_chan = blue_spike_time_stamp.blue_spike_time_stamp_buff[idx].channel;
-			blue_spike_time_stamp_buff_peak_time = blue_spike_time_stamp.blue_spike_time_stamp_buff[idx].peak_time;			
+			blue_spike_time_stamp_buff_recording_data_idx = blue_spike_time_stamp[display_mwa][display_mwa_chan].buffer[idx].recording_data_buff_idx;
 			spike_idx = blue_spike_time_stamp_buff_recording_data_idx;
-			if ((blue_spike_time_stamp_buff_mwa == display_mwa) && (blue_spike_time_stamp_buff_chan == display_mwa_chan))
+
+			Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
+			Y_spikes_idx ++;
+			if (Y_spikes_idx == SPIKE_MEM_TO_DISPLAY)
+				Y_spikes_idx = 0;
+			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
 			{
-				Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
-				Y_spikes_idx ++;
-				if (Y_spikes_idx == SPIKE_MEM_TO_DISPLAY)
-					Y_spikes_idx = 0;
-				for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
-				{
-					Y_temp_spike[i] = handling_data_chan_buff[spike_idx];
-					spike_idx--;
-					if (spike_idx < 0)
-						spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
-				}
+				Y_temp_spike[i] = handling_data_chan_buff[spike_idx];
+				spike_idx--;
+				if (spike_idx < 0)
+					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
 			}
+
 			if (print_spike_end_buff)
-				printf ("%d %d %llu %d\n", blue_spike_time_stamp_buff_mwa, blue_spike_time_stamp_buff_chan, blue_spike_time_stamp_buff_peak_time, blue_spike_time_stamp_buff_recording_data_idx);	
+				printf ("%d %d %llu %d\n", display_mwa, display_mwa_chan, blue_spike_time_stamp[display_mwa][display_mwa_chan].buffer[idx].peak_time, blue_spike_time_stamp_buff_recording_data_idx);	
 			idx++;	
-			if (idx == BLUE_SPIKE_TIME_STAMP_BUFF_SIZE)
+			if (idx == BLUESPIKE_SORTED_SPIKE_BUFF_SIZE)
 				idx = 0;	
 		}
 		gtk_databox_set_total_limits (GTK_DATABOX (box_spike_shape), 0, NUM_OF_SAMP_PER_SPIKE-1, HIGHEST_VOLTAGE_MV , LOWEST_VOLTAGE_MV);
 	}
-	blue_spike_time_stamp_buff_read_idx = blue_spike_time_stamp_buff_end_idx;
+	blue_spike_time_stamp_buff_read_idx[display_mwa][display_mwa_chan] = blue_spike_time_stamp_buff_end_idx;
 	return TRUE;  
 
 }
@@ -474,6 +479,7 @@ static gboolean combo_mwa_func (GtkDatabox * box)
 		idx = 0;
 	}
 	display_mwa = idx;
+	blue_spike_time_stamp_buff_read_idx[display_mwa][display_mwa_chan] = blue_spike_time_stamp[display_mwa][display_mwa_chan].buff_idx_write;
 
 	sprintf(thres, "%.2f" , spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
@@ -494,6 +500,7 @@ static gboolean combo_chan_func (GtkDatabox * box)
 		idx = 0;
 	}
 	display_mwa_chan = idx;	
+	blue_spike_time_stamp_buff_read_idx[display_mwa][display_mwa_chan] = blue_spike_time_stamp[display_mwa][display_mwa_chan].buff_idx_write;
 
 	sprintf(thres, "%.2f" , spike_thresholding.amplitude_thres[display_mwa][display_mwa_chan]);
 	gtk_entry_set_text (GTK_ENTRY(entryThreshold), thres);	
@@ -606,6 +613,7 @@ static gboolean pause_button_func (GtkDatabox * box)
 {
 	if (disp_paused)
 	{
+		blue_spike_time_stamp_buff_read_idx[display_mwa][display_mwa_chan] = blue_spike_time_stamp[display_mwa][display_mwa_chan].buff_idx_write;
 		disp_paused = 0;
 		gtk_button_set_label (GTK_BUTTON(pause_button),"Pause");
 	}
@@ -663,7 +671,7 @@ static gboolean record_data_button_func (GtkDatabox * box)
 	path_temp = NULL; path = NULL;
 	if (recording)
 	{
-		if (! (*fclose_all_data_files[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(3, &rt_tasks_data->current_daq_system_time, recording_data, spike_time_stamp))	
+		if (! (*fclose_all_data_files[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(3, &rt_tasks_data->current_daq_system_time, recording_data, sorted_spikes))	
 		{
 			print_message(ERROR_MSG ,"SpikeViewer", "Gui", "timeout_callback", " *fclose_all_data_file().");		
 			exit(1);
@@ -676,7 +684,7 @@ static gboolean record_data_button_func (GtkDatabox * box)
 	{
 		path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_folder_to_record_data));
 		path = &path_temp[7];   // since     uri returns file:///home/....	
-		if (!(*create_data_directory[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(5, path, &rt_tasks_data->current_daq_system_time, recording_number, recording_data, spike_time_stamp))	
+		if (!(*create_data_directory[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(5, path, &rt_tasks_data->current_daq_system_time, recording_number, recording_data, sorted_spikes))	
 		{
 			print_message(ERROR_MSG ,"SpikeViewer", "Gui", "timeout_callback", " *create_data_directory().");		
 			exit(1);

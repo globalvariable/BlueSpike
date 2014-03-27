@@ -12,7 +12,7 @@
 
 #include "../../../../../Library/Misc/Misc.h"
 #include "../../../RecordingData.h"
-#include "../../../SpikeTimeStamp.h"
+#include "../../../SortedSpikes.h"
 #include "../../../ConfigDaq/MicroWireArray.h"
 #include "../../../TemplateMatching.h"
 #include "../../../ConfigDaq/DaqCard.h"

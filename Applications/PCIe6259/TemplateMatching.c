@@ -10,17 +10,17 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 {
 
 	TemplateMatchingUnitData *unit_template_data;	
-	RecordingDataChanBuff	*filtered_recording_data_chan_buff;
-	BlueSpikeTimeStampItem *blue_spike_time_stamp_item;
-	SpikeTimeStampItem *spike_time_stamp_item;		
+	RecordingDataSample	*filtered_recording_data_chan_buff;
+	BlueSpikeTimeStampItem *blue_spike_time_chan_buff;
+	SortedSpikeItem	*sorted_spike_chan_buff;
+
 	double greatest;	
 	int i, j, unit, greatest_idx;
 	int blue_spike_time_stamp_buff_idx_write;
-	int include_unit;
-	int spike_time_stamp_buff_idx_write;
+	int sorted_spike_buff_idx_write;
 
 
-	filtered_recording_data_chan_buff = &(recording_data.filtered_recording_data_buff[mwa][chan]);
+	filtered_recording_data_chan_buff = (*recording_data)[mwa][chan].filtered_recording_data_buff;
 
 	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
@@ -35,9 +35,9 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 			{
 				{
 					if (filtered_recording_data_buff_idx < i)   //  spike_end_idx_in_filtered_recording - i  < 0
-						template_matching_diff[i] = (*filtered_recording_data_chan_buff)[filtered_recording_data_buff_idx-i+RECORDING_DATA_BUFF_SIZE] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+						template_matching_diff[i] = filtered_recording_data_chan_buff[filtered_recording_data_buff_idx-i+RECORDING_DATA_BUFF_SIZE] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 					else
-						template_matching_diff[i] = (*filtered_recording_data_chan_buff)[filtered_recording_data_buff_idx-i] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+						template_matching_diff[i] = filtered_recording_data_chan_buff[filtered_recording_data_buff_idx-i] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 				}
 			}
 			for (i=0; i <NUM_OF_SAMP_PER_SPIKE;i++)
@@ -92,32 +92,30 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 
 
 	//   Write spike time stamp into shared_memory->spike_time_stamp
-	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp.buff_idx_write;
-	include_unit = template_matching_data[mwa][chan][greatest_idx].include_unit;   /// cannot include non_sorted unit. so no problem for spike_time_stamp_buff
-	blue_spike_time_stamp_item = &(blue_spike_time_stamp.blue_spike_time_stamp_buff[blue_spike_time_stamp_buff_idx_write]);
-	blue_spike_time_stamp_item->peak_time = peak_time;
-	blue_spike_time_stamp_item->mwa = mwa;
-	blue_spike_time_stamp_item->channel = chan;
-	blue_spike_time_stamp_item->unit = greatest_idx;
-	blue_spike_time_stamp_item->recording_data_buff_idx = filtered_recording_data_buff_idx;
-	blue_spike_time_stamp_item->include_unit = include_unit;
-	if ((blue_spike_time_stamp_buff_idx_write +1) ==  BLUE_SPIKE_TIME_STAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
-		blue_spike_time_stamp.buff_idx_write = 0;
+	blue_spike_time_stamp_buff_idx_write = blue_spike_time_stamp[mwa][chan].buff_idx_write;
+	blue_spike_time_chan_buff = blue_spike_time_stamp[mwa][chan].buffer;
+
+	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].peak_time = peak_time;
+	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].unit = greatest_idx;
+	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
+
+	if ((blue_spike_time_stamp_buff_idx_write +1) ==  BLUESPIKE_SORTED_SPIKE_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+		blue_spike_time_stamp[mwa][chan].buff_idx_write = 0;
 	else
-		blue_spike_time_stamp.buff_idx_write++;	
+		blue_spike_time_stamp[mwa][chan].buff_idx_write++;	
 	
-	if (include_unit)	// fill in spike time stamp buff
+	if (template_matching_data[mwa][chan][greatest_idx].include_unit)	// fill in spike time stamp buff
 	{
-		spike_time_stamp_buff_idx_write = spike_time_stamp->buff_idx_write;
-		spike_time_stamp_item = &(spike_time_stamp->spike_time_stamp_buff[spike_time_stamp_buff_idx_write]);
-		spike_time_stamp_item->peak_time = peak_time;
-		spike_time_stamp_item->mwa_or_layer = mwa;
-		spike_time_stamp_item->channel_or_neuron_group = chan;
-		spike_time_stamp_item->unit_or_neuron = greatest_idx;	
-		if ((spike_time_stamp_buff_idx_write +1) ==  SPIKE_TIME_STAMP_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
-			spike_time_stamp->buff_idx_write = 0;
+		sorted_spike_chan_buff = (*sorted_spikes)[mwa][chan].buffer;
+		sorted_spike_buff_idx_write = (*sorted_spikes)[mwa][chan].buff_idx_write;
+
+		sorted_spike_chan_buff[sorted_spike_buff_idx_write].peak_time = peak_time;
+		sorted_spike_chan_buff[sorted_spike_buff_idx_write].unit = greatest_idx;
+
+		if ((sorted_spike_buff_idx_write +1) ==  BLUESPIKE_SORTED_SPIKE_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
+			(*sorted_spikes)[mwa][chan].buff_idx_write = 0;
 		else
-			spike_time_stamp->buff_idx_write++;			
+			((*sorted_spikes)[mwa][chan].buff_idx_write)++;			
 	}
 }
 

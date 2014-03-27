@@ -8,7 +8,7 @@
 #include <rtai_nam2num.h>
 #include "ConfigDaq/DaqCard.h"
 #include "RecordingData.h"
-#include "SpikeTimeStamp.h"
+#include "SortedSpikes.h"
 #include "SpikeSorting.h"
 #include "../../../BlueSpike/Library/Misc/Misc.h"
 #include "../../../BlueSpike/System/RtTasksData/RtTasksData.h"

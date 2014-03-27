@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <math.h>
 #include "ConfigDaq/MicroWireArray.h"
-#include "SpikeTimeStamp.h"
+#include "SortedSpikes.h"
 #include "BlueSpikeTimeStamp.h"
 #include "RecordingData.h"
 

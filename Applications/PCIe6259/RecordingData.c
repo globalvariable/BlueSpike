@@ -9,6 +9,7 @@ bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data)
 	unsigned int write_idx;
 	RecordingDataSample	*recording_data_chan_buff;
 	RecordingDataSample	*filtered_recording_data_chan_buff;
+	RecordingDataChan	*recording_data_chan;
 
 	for (i = 0; i < MAX_NUM_OF_CHANNEL_PER_DAQ_CARD*NUM_OF_SCAN; i++)
 	{
@@ -20,10 +21,11 @@ bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data)
 		if (mwa == MAX_NUM_OF_MWA)   // this daq channel not mapped. skip this channel.
 			continue;
 
-		write_idx = recording_data.buff_idx_write[mwa][mwa_chan];
+		recording_data_chan = &((*recording_data)[mwa][mwa_chan]);
+		write_idx = recording_data_chan->buff_idx_write; 
 
-		recording_data_chan_buff = recording_data.recording_data_buff[mwa][mwa_chan];
-		filtered_recording_data_chan_buff = recording_data.filtered_recording_data_buff[mwa][mwa_chan];
+		recording_data_chan_buff = recording_data_chan->rec_data_buff;
+		filtered_recording_data_chan_buff = recording_data_chan->filtered_recording_data_buff;
 
 		recording_data_chan_buff[write_idx] = (daq_data[i] - BASELINE_QUANT_6259) / VOLTAGE_MULTIPLIER_MV_6259;
 
@@ -33,7 +35,7 @@ bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data)
 		if (write_idx == RECORDING_DATA_BUFF_SIZE)
  			write_idx = 0;
 
-		recording_data.buff_idx_write[mwa][mwa_chan] = write_idx;
+		recording_data_chan->buff_idx_write = write_idx;
 
 	}
 
