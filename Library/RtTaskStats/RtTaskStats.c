@@ -6,8 +6,6 @@ bool check_rt_task_specs_to_init(RtTasksData *rt_tasks_data, unsigned int cpu_id
 		return print_message(ERROR_MSG ,"BlueSpike", "RtTaskStats", "check_rt_task_specs_to_init", "rt_tasks_data == NULL.");		
 	if ((rt_tasks_data->cpus_rt_task_data[cpu_id].rt_task_period != 0) && (rt_tasks_data->cpus_rt_task_data[cpu_id].rt_task_period != period)) 
 		return print_message(ERROR_MSG ,"BlueSpike", "RtTaskStats", "check_rt_task_specs_to_init", "Inconvenient period submitted for rt_task.");
-	if (bluespike_rt_task & (rt_tasks_data->num_of_total_rt_tasks != 0))
-		return print_message(ERROR_MSG ,"BlueSpike", "RtTaskStats", "check_rt_task_specs_to_init", "bluespike_rt_task & (rt_tasks_data->num_of_total_rt_tasks != 0).");
 	if ((!bluespike_rt_task) & (rt_tasks_data->num_of_total_rt_tasks == 0))
 		return print_message(ERROR_MSG ,"BlueSpike", "RtTaskStats", "check_rt_task_specs_to_init", "(!bluespike_rt_task) & (rt_tasks_data->num_of_total_rt_tasks == 0).");
 	if (rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].task_name[0] != 0)

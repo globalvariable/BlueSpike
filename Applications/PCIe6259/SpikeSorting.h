@@ -8,7 +8,7 @@
 
 #define SPIKE_END_HANDLING_DATA_BUFF_SIZE 	1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
 
-#define SPIKE_MIN_END_SAMP_NUM   (NUM_OF_SAMP_PER_SPIKE / 2)
+#define SPIKE_MIN_END_SAMP_NUM   ((NUM_OF_SAMP_PER_SPIKE *3)/ 5)
 
 #define IN_SPIKE_SAMPLE_CNTR_MAX	((1000000/SAMPLING_INTERVAL)/3)		// not a spike if lasts longer than  ~320 us  
 

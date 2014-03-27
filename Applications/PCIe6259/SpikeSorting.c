@@ -120,11 +120,11 @@ static void find_spike_end(unsigned int mwa,  unsigned int mwa_chan, TimeStamp p
 			else		
 				spike_end_idx = min_idx+SPIKE_MIN_END_SAMP_NUM;
 			
-			peak_time = previous_daq_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);  // SAMPLING_INTERVAL = 25000 nanoseconds;
+			peak_time = previous_daq_time_ns + (previous_acquisition_time_cntr * SAMPLING_INTERVAL);
 				
 			if (is_index_between_indexes(filtered_recording_data_buff_idx_prev[mwa][mwa_chan], recording_data_chan->buff_idx_write, spike_end_idx))
 			{
-				run_template_matching(mwa, mwa_chan, spike_end_idx, peak_time);  // SAMPLING_INTERVAL = 25000 nanoseconds;
+				run_template_matching(mwa, mwa_chan, spike_end_idx, peak_time); 
 			}			
 			else 	//   Write spike end into shared_memory->spike_end_handing
 			{

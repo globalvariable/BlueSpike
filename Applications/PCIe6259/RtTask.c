@@ -1,9 +1,6 @@
 #include "RtTask.h"
 
 
-static TimeStamp current_daq_time_ns = 0;
-static TimeStamp previous_daq_time_ns = 0;
-
 static int rt_daq_threads[MAX_NUM_OF_DAQ_CARD];
 static int rt_periodic_task_thread;
 
@@ -103,10 +100,15 @@ static void *rt_daq_handler(void *args)
 	long int cb_val = 0, cb_retval = 0;
 	lsampl_t daq_data[MAX_NUM_OF_CHANNEL_PER_DAQ_CARD*NUM_OF_SCAN];
 
+	daq_num = *((unsigned int*)args);
+
+	if (! check_rt_task_specs_to_init(rt_tasks_data, BLUESPIKE_DAQ_CPU_ID, BLUESPIKE_DAQ_CPU_THREAD_ID, BLUESPIKE_DAQ_CPU_THREAD_TASK_ID+daq_num, BLUESPIKE_DAQ_PERIOD, TRUE))  {
+		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_periodic_handler", "! check_rt_task_specs_to_init()."); exit(1); }
         if (! (handler = rt_task_init_schmod(BLUESPIKE_DAQ_TASK_NAME, BLUESPIKE_DAQ_TASK_PRIORITY, BLUESPIKE_DAQ_STACK_SIZE, BLUESPIKE_DAQ_MSG_SIZE,BLUESPIKE_DAQ_POLICY, 1 << ((BLUESPIKE_DAQ_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU)+BLUESPIKE_DAQ_CPU_THREAD_ID)))) {
 		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_daq_handler", "handler = rt_task_init_schmod()."); exit(1); }
+	if (! write_rt_task_specs_to_rt_tasks_data(rt_tasks_data, BLUESPIKE_DAQ_CPU_ID, BLUESPIKE_DAQ_CPU_THREAD_ID, BLUESPIKE_DAQ_CPU_THREAD_TASK_ID+daq_num, BLUESPIKE_DAQ_PERIOD, BLUESPIKE_DAQ_POSITIVE_JITTER_THRES, BLUESPIKE_DAQ_NEGATIVE_JITTER_THRES, "BlueSpike", TRUE) ) {
+		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_periodic_handler", "! write_rt_task_specs_to_rt_tasks_data()."); exit(1); }	
 
-	daq_num = *((unsigned int*)args);
 
         mlockall(MCL_CURRENT | MCL_FUTURE);
 	rt_make_hard_real_time();		// do not forget this // check the task by nano /proc/rtai/scheduler (HD/SF) 
@@ -128,9 +130,10 @@ static void *rt_daq_handler(void *args)
 
 		curr_time = rt_get_cpu_time_ns();
 		period_occured = curr_time - prev_time;
-		current_daq_time_ns += period_occured;
+
+		rt_tasks_data->current_daq_system_time += (SAMPLING_INTERVAL*NUM_OF_SCAN);
 		evaluate_and_save_jitter(rt_tasks_data, BLUESPIKE_DAQ_CPU_ID, BLUESPIKE_DAQ_CPU_THREAD_ID, BLUESPIKE_DAQ_CPU_THREAD_TASK_ID+daq_num, prev_time, curr_time);
-		previous_daq_time_ns = current_daq_time_ns;	   ///   carefully handle 	previous_daq_time_ns. spike_sorting fnction handles peak_time according to previous_daq_time_ns.
+
 		prev_time = curr_time;
 
 
@@ -146,10 +149,11 @@ static void *rt_daq_handler(void *args)
 		pthread_mutex_lock(&(daq_mwa_map[daq_num].mutex));   // do not allow mapping change by configdaqgui during processing retrieved data. 	
 	
 		handle_recording_data(daq_num, daq_data);
-		spike_sorting(daq_num, previous_daq_time_ns);
+		spike_sorting(daq_num, rt_tasks_data->previous_daq_system_time);
 
 		pthread_mutex_unlock(&(daq_mwa_map[daq_num].mutex)); 
 		// routines	
+		rt_tasks_data->previous_daq_system_time = rt_tasks_data->current_daq_system_time;	   ///   carefully handle 	previous_daq_time_ns. spike_sorting fnction handles peak_time according to previous_daq_time_ns.
 		evaluate_and_save_period_run_time(rt_tasks_data, BLUESPIKE_DAQ_CPU_ID, BLUESPIKE_DAQ_CPU_THREAD_ID, BLUESPIKE_DAQ_CPU_THREAD_TASK_ID+daq_num, curr_time, rt_get_cpu_time_ns());		
         }
 	close_daq_cards(daq_num);
