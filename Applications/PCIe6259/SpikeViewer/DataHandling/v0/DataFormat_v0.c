@@ -487,8 +487,6 @@ static int create_spike_time_stamps_data(char *data_directory_path)
 	}
 
 	return 1;
-
-	return 1;	
 }
 
 static int write_to_recording_data(void)

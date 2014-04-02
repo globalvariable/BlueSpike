@@ -40,9 +40,6 @@ static void *rt_periodic_handler(void *args)
         RTIME period;
 	unsigned int prev_time, curr_time;
 	
-   	rt_tasks_data = rtai_malloc(SHM_NUM_RT_TASKS_DATA, sizeof(RtTasksData));
-	if (rt_tasks_data == NULL)  {
-		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_periodic_handler", "rt_tasks_data == NULL."); exit(1); }
 	if (! check_rt_task_specs_to_init(rt_tasks_data, BLUESPIKE_PERIODIC_CPU_ID, BLUESPIKE_PERIODIC_CPU_THREAD_ID, BLUESPIKE_PERIODIC_CPU_THREAD_TASK_ID, BLUESPIKE_PERIODIC_PERIOD, TRUE))  {
 		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_periodic_handler", "! check_rt_task_specs_to_init()."); exit(1); }	
         if (! (handler = rt_task_init_schmod(BLUESPIKE_PERIODIC_TASK_NAME, BLUESPIKE_PERIODIC_TASK_PRIORITY, BLUESPIKE_PERIODIC_STACK_SIZE, BLUESPIKE_PERIODIC_MSG_SIZE,BLUESPIKE_PERIODIC_POLICY, 1 << ((BLUESPIKE_PERIODIC_CPU_ID*MAX_NUM_OF_CPU_THREADS_PER_CPU)+BLUESPIKE_PERIODIC_CPU_THREAD_ID)))) {
@@ -63,10 +60,13 @@ static void *rt_periodic_handler(void *args)
 	{
         	rt_task_wait_period();
 		curr_time = rt_get_cpu_time_ns();
+		rt_tasks_data->current_periodic_system_time += (curr_time-prev_time);
 		evaluate_and_save_jitter(rt_tasks_data, BLUESPIKE_PERIODIC_CPU_ID, BLUESPIKE_PERIODIC_CPU_THREAD_ID, BLUESPIKE_PERIODIC_CPU_THREAD_TASK_ID, prev_time, curr_time);
 		prev_time = curr_time;
 		// routines
 
+
+		rt_tasks_data->previous_periodic_system_time = rt_tasks_data->current_periodic_system_time;
 		evaluate_and_save_period_run_time(rt_tasks_data, BLUESPIKE_PERIODIC_CPU_ID, BLUESPIKE_PERIODIC_CPU_THREAD_ID, BLUESPIKE_PERIODIC_CPU_THREAD_TASK_ID, curr_time, rt_get_cpu_time_ns());
 	}
 
