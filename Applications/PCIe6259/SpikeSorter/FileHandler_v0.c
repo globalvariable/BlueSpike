@@ -197,11 +197,13 @@ int read_template_matching_data_v0(int num, ...)
 
 				if (local_template_matching_data[i][j][k].include_unit)
 				{
-					template_matching_data[i][j][k].include_unit = TRUE;		
+					template_matching_data[i][j][k].include_unit = TRUE;	
+					(*sorted_spikes)[i][j].included_units[k] = TRUE;	
 				}
 				else
 				{
-					template_matching_data[i][j][k].include_unit = FALSE;		
+					template_matching_data[i][j][k].include_unit = FALSE;	
+					(*sorted_spikes)[i][j].included_units[k] = FALSE;		
 				}
 
 				if (local_template_matching_data[i][j][k].alarm_on)

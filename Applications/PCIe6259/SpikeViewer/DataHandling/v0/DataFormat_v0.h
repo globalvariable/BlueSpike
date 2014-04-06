@@ -16,6 +16,7 @@
 #include "../../../ConfigDaq/MicroWireArray.h"
 #include "../../../TemplateMatching.h"
 #include "../../../ConfigDaq/DaqCard.h"
+#include "../../../BlueSpikeData.h"
 
 int create_main_directory_v0(int num, ...);
 int create_data_directory_v0(int num, ...);

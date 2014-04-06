@@ -4,12 +4,11 @@
 
 #include <stdbool.h>
 #include <math.h>
-#include "ConfigDaq/MicroWireArray.h"
-#include "SortedSpikes.h"
-#include "BlueSpikeTimeStamp.h"
-#include "RecordingData.h"
+#include "BlueSpikeConfig.h"
+#include "../../System/TimeStamp/TimeStamp.h"
 
-#define NUM_OF_SAMP_PER_SPIKE 	18    // adjusted according to 31.25 KHz sampling rate
+
+
 
 #define TEMPLATE_PROBAB_THRES_NULL 0
 typedef unsigned int UnitNum;

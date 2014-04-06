@@ -21,8 +21,7 @@
 
 #include "FileHandler.h"
 #include "../../../../BlueSpike/Library/Misc/Misc.h"
-#include "../ConfigDaq/MicroWireArray.h"
-#include "../TemplateMatching.h"
+#include "../BlueSpikeData.h"
 
 
 #define SPIKE_MEM_TO_DISPLAY_UNIT 30

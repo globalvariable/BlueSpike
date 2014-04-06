@@ -1,16 +1,8 @@
 #ifndef SPIKE_SORTING_H
 #define SPIKE_SORTING_H
 
-#include "ConfigDaq/MicroWireArray.h"
-#include "ConfigDaq/DaqMwaData.h"
-#include "TemplateMatching.h"
-#include "SpikeThresholding.h"
+#include "BlueSpikeConfig.h"
 
-#define SPIKE_END_HANDLING_DATA_BUFF_SIZE 	1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
-
-#define SPIKE_MIN_END_SAMP_NUM   ((NUM_OF_SAMP_PER_SPIKE *3)/ 5)
-
-#define IN_SPIKE_SAMPLE_CNTR_MAX	((1000000/SAMPLING_INTERVAL)/3)		// not a spike if lasts longer than  ~320 us  
 
 typedef struct __SpikeEndHandlingItem
 {
@@ -29,7 +21,7 @@ typedef struct __SpikeEndHandling
 
 typedef SpikeEndHandlingChan	SpikeEndHandling[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 
-SpikeEndHandling	spike_end_handling;
+
 
 void spike_sorting(unsigned int daq_num, TimeStamp previous_daq_time_ns);
 

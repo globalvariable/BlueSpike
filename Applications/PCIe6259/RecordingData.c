@@ -1,5 +1,6 @@
-#include "RecordingData.h"
+#include "BlueSpikeData.h"
 #include "ButterFilter.h"
+
 
 bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data)
 {

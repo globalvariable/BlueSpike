@@ -1,4 +1,4 @@
-#include "SpikeSorting.h"
+#include "BlueSpikeData.h"
 
 
 static bool is_index_between_indexes(int start_idx, int end_idx, int this_idx);
@@ -15,6 +15,8 @@ void spike_sorting(unsigned int daq_num, TimeStamp previous_daq_time_ns)
 	for (i = 0; i < MAX_NUM_OF_CHANNEL_PER_DAQ_CARD; i++)
 	{
 		map_item = &(daq_mwa_map[daq_num].map[i]);
+		if (map_item->mwa == MAX_NUM_OF_MWA)   // this daq channel not mapped. skip this channel.
+			continue;
 		handle_spike_end_handling_buffer(map_item->mwa, map_item->channel);
 		find_spike_end(map_item->mwa, map_item->channel, previous_daq_time_ns);	
 	}

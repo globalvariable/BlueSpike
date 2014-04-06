@@ -24,6 +24,6 @@ typedef struct __BlueSpikeTimeStampChan
 
 typedef BlueSpikeTimeStampChan  BlueSpikeTimeStamp[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 
-BlueSpikeTimeStamp blue_spike_time_stamp;
+
 
 #endif

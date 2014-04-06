@@ -27,10 +27,8 @@ bool write_rt_task_specs_to_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned i
 	return TRUE;
 }
 
-bool delete_rt_task_from_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, TimeStamp period, bool bluespike_rt_task)
+bool delete_rt_task_from_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, bool bluespike_rt_task)
 {
-	if (!check_rt_task_specs_to_init(rt_tasks_data, cpu_id, cpu_thread_id, cpu_thread_task_id, period, bluespike_rt_task))
-		return print_message(ERROR_MSG ,"BlueSpike", "RtTaskStats", "delete_rt_task_from_rt_tasks_data", "! check_rt_task_specs_to_init().");
 	rt_tasks_data->num_of_total_rt_tasks--;
 	rt_tasks_data->cpus_rt_task_data[cpu_id].num_of_rt_tasks_at_cpu--;
 	if (rt_tasks_data->cpus_rt_task_data[cpu_id].num_of_rt_tasks_at_cpu == 0)		// no task remained at cpu

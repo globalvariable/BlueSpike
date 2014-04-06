@@ -34,7 +34,7 @@ typedef struct __RecordingDataChan
 
 typedef RecordingDataChan  RecordingData[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 
-RecordingData *recording_data;
+
 
 
 bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data);

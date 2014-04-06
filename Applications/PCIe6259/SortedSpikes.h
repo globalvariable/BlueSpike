@@ -2,7 +2,7 @@
 #define SORTED_SPIKES_H
 
 #include "../../System/TimeStamp/TimeStamp.h"
-#include "ConfigDaq/MicroWireArray.h"
+#include "BlueSpikeConfig.h"
 
 #define BLUESPIKE_SORTED_SPIKE_BUFF_SIZE 1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
 
@@ -18,11 +18,12 @@ typedef struct __SortedSpikeChan
 {
 	SortedSpikeBuff			buffer;
 	unsigned int				buff_idx_write;
+	bool					included_units[MAX_NUM_OF_UNIT_PER_CHAN];
 } SortedSpikeChan;
 
 typedef SortedSpikeChan  SortedSpikes[MAX_NUM_OF_MWA][MAX_NUM_OF_CHAN_PER_MWA];
 
-SortedSpikes *sorted_spikes;
+
 
 
 #endif

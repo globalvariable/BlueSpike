@@ -1,4 +1,4 @@
-#include "RtTask.h"
+#include "BlueSpikeData.h"
 
 
 static int rt_daq_threads[MAX_NUM_OF_DAQ_CARD];
@@ -159,6 +159,8 @@ static void *rt_daq_handler(void *args)
 	close_daq_cards(daq_num);
 	rt_make_soft_real_time();
         rt_task_delete(handler);
+	if (! delete_rt_task_from_rt_tasks_data(rt_tasks_data, BLUESPIKE_DAQ_CPU_ID, BLUESPIKE_DAQ_CPU_THREAD_ID, BLUESPIKE_DAQ_CPU_THREAD_TASK_ID+daq_num, TRUE)) {
+		print_message(ERROR_MSG ,"PCIe6259", "RtTask", "rt_daq_handler", "! delete_rt_task_from_rt_tasks_data()."); exit(1); }	
 	print_message(INFO_MSG ,"PCIe6259", "RtTask", "rt_daq_handler", "rt_task_delete().");	
 
         return 0; 

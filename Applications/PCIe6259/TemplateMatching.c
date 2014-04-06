@@ -1,4 +1,5 @@
 #include "TemplateMatching.h"
+#include "BlueSpikeData.h"
 
 static double template_matching_g_x[MAX_NUM_OF_UNIT_PER_CHAN];
 static double template_matching_diff[NUM_OF_SAMP_PER_SPIKE];
