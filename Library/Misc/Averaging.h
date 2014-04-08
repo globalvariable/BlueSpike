@@ -1,0 +1,32 @@
+#ifndef AVERAGING_H
+#define AVERAGING_H
+
+
+#include <gtk/gtk.h>
+#include "../Misc/Misc.h"
+
+typedef struct 
+{
+	double				*elements;
+	unsigned int			size;
+	unsigned int			write_idx;
+} AveragingStruct;
+
+
+AveragingStruct* allocate_averaging_struct(AveragingStruct *avg_struct, unsigned int size);
+AveragingStruct* deallocate_averaging_struct(AveragingStruct *avg_struct);
+void write_to_averaging_struct(AveragingStruct *avg_struct, double element);
+double write_to_averaging_struct_and_get_mean(AveragingStruct *avg_struct, double element);
+
+
+
+
+
+
+
+
+
+
+
+
+#endif
