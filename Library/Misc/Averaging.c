@@ -65,3 +65,17 @@ double write_to_averaging_struct_and_get_mean(AveragingStruct *avg_struct, doubl
 	return temp / size;
 }
 
+void reset_averaging_struct_elements(AveragingStruct *avg_struct, double value)
+{
+	unsigned int i, size;
+	double *elements;
+
+	elements = avg_struct->elements;
+	size = avg_struct->size;
+
+	for (i = 0; i < size; i++)
+	{
+		elements[i] = value;
+	}
+	return;
+}
