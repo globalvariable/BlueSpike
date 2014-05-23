@@ -6,7 +6,7 @@
 
 typedef struct __SpikeEndHandlingItem
 {
-	int 			end_of_spike_in_filtered_recording_data_buff;    // index of SpikeEndData in filtered recording data buffer 
+	int 			end_of_spike_in_interpolated_data_buff;    // index of SpikeEndData in filtered recording data buffer 
 	TimeStamp	peak_time;
 } SpikeEndHandlingItem;
 

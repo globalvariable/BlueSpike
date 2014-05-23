@@ -1,6 +1,6 @@
 #include "BlueSpikeData.h"
 #include "ButterFilter.h"
-
+#include "CubicInterpolation.h"
 
 bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data)
 {
@@ -32,11 +32,15 @@ bool handle_recording_data(unsigned int daq_num, lsampl_t *daq_data)
 
 		butter_bandpass_filter_31250hz_4th_400hz_8000hz(recording_data_chan_buff, filtered_recording_data_chan_buff, write_idx);
 
+		cubic_interpolation(&(interpolated_data[mwa][mwa_chan]), filtered_recording_data_chan_buff, write_idx);  // do it before incrementing write_idx to save computation.
+
 		write_idx++;
 		if (write_idx == RECORDING_DATA_BUFF_SIZE)
  			write_idx = 0;
 
 		recording_data_chan->buff_idx_write = write_idx;
+
+
 
 	}
 

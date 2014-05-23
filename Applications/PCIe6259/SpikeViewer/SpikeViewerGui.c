@@ -334,12 +334,14 @@ static gboolean timeout_callback(gpointer user_data)
 {
 	int start_idx, i;
 	int blue_spike_time_stamp_buff_end_idx, idx;
-	int blue_spike_time_stamp_buff_recording_data_idx; 
+	int blue_spike_time_stamp_buff_interpolated_data_idx; 
 	int spike_idx;
 	float *Y_temp_spike;
 
 	RecordingDataSample	*handling_data_chan_buff;
 	RecordingDataChan	*recording_data_chan;
+
+	InterpolatedDataSample	*interpolated_data_chan_buff;
 
 	recording_data_chan = &((*recording_data)[display_mwa][display_mwa_chan]);
 
@@ -373,11 +375,12 @@ static gboolean timeout_callback(gpointer user_data)
 	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp[display_mwa][display_mwa_chan].buff_idx_write;
 	if (!disp_paused)
 	{
-		handling_data_chan_buff = recording_data_chan->filtered_recording_data_buff;
+		interpolated_data_chan_buff = interpolated_data[display_mwa][display_mwa_chan].data_buff;
+
 		while (idx != blue_spike_time_stamp_buff_end_idx)
 		{
-			blue_spike_time_stamp_buff_recording_data_idx = blue_spike_time_stamp[display_mwa][display_mwa_chan].buffer[idx].recording_data_buff_idx;
-			spike_idx = blue_spike_time_stamp_buff_recording_data_idx;
+			blue_spike_time_stamp_buff_interpolated_data_idx = blue_spike_time_stamp[display_mwa][display_mwa_chan].buffer[idx].interpolated_data_buff_idx;
+			spike_idx = blue_spike_time_stamp_buff_interpolated_data_idx;
 
 			Y_temp_spike = g_ptr_array_index(Y_spikes_ptr,Y_spikes_idx);
 			Y_spikes_idx ++;
@@ -385,14 +388,14 @@ static gboolean timeout_callback(gpointer user_data)
 				Y_spikes_idx = 0;
 			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
 			{
-				Y_temp_spike[i] = handling_data_chan_buff[spike_idx];
-				spike_idx--;
+				Y_temp_spike[i] = interpolated_data_chan_buff[spike_idx];
+				spike_idx -= 2;		// -= 2 due to interpolation
 				if (spike_idx < 0)
-					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+					spike_idx	= INTERPOLATED_DATA_BUFF_SIZE + spike_idx;
 			}
 
 			if (print_spike_end_buff)
-				printf ("%d %d %llu %d\n", display_mwa, display_mwa_chan, blue_spike_time_stamp[display_mwa][display_mwa_chan].buffer[idx].peak_time, blue_spike_time_stamp_buff_recording_data_idx);	
+				printf ("%d %d %llu %d\n", display_mwa, display_mwa_chan, blue_spike_time_stamp[display_mwa][display_mwa_chan].buffer[idx].peak_time, blue_spike_time_stamp_buff_interpolated_data_idx);	
 			idx++;	
 			if (idx == BLUESPIKE_SORTED_SPIKE_BUFF_SIZE)
 				idx = 0;	

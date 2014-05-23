@@ -7,11 +7,11 @@ static double template_matching_diff_temporary[NUM_OF_SAMP_PER_SPIKE];
 static double template_matching_exponent;	
 static double template_matching_probabl[MAX_NUM_OF_UNIT_PER_CHAN];	
 
-void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_idx, TimeStamp peak_time)
+void run_template_matching(int mwa, int chan, int interpolated_data_buff_idx, TimeStamp peak_time)
 {
 
 	TemplateMatchingUnitData *unit_template_data;	
-	RecordingDataSample	*filtered_recording_data_chan_buff;
+	InterpolatedDataSample	*interpolated_data_chan_buff;
 	BlueSpikeTimeStampItem *blue_spike_time_chan_buff;
 	SortedSpikeItem	*sorted_spike_chan_buff;
 
@@ -21,7 +21,7 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 	int sorted_spike_buff_idx_write;
 
 
-	filtered_recording_data_chan_buff = (*recording_data)[mwa][chan].filtered_recording_data_buff;
+	interpolated_data_chan_buff = interpolated_data[mwa][chan].data_buff;
 
 	greatest = -DBL_MAX;
 	greatest_idx = MAX_NUM_OF_UNIT_PER_CHAN;   // If doesnt match any one it will be classified as unsorted (MAX_NUM_OF_UNIT_PER_CHAN)
@@ -32,13 +32,13 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 		if (unit_template_data->sorting_on)
 		{
 			template_matching_g_x[unit] = 0.0;
-			for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)
+			for (i=0; i<NUM_OF_SAMP_PER_SPIKE; i++)   // i+=2 due to interpolation  // no need to handle every sample of interpolated data. interpolation is important for spike alignment
 			{
 				{
-					if (filtered_recording_data_buff_idx < i)   //  spike_end_idx_in_filtered_recording - i  < 0
-						template_matching_diff[i] = filtered_recording_data_chan_buff[filtered_recording_data_buff_idx-i+RECORDING_DATA_BUFF_SIZE] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+					if (interpolated_data_buff_idx < (2*i))   //  spike_end_idx_in_interpolated_data - i  < 0
+						template_matching_diff[i] = interpolated_data_chan_buff[interpolated_data_buff_idx-(2*i)+INTERPOLATED_DATA_BUFF_SIZE] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 					else
-						template_matching_diff[i] = filtered_recording_data_chan_buff[filtered_recording_data_buff_idx-i] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
+						template_matching_diff[i] = interpolated_data_chan_buff[interpolated_data_buff_idx-(2*i)] - unit_template_data->template[NUM_OF_SAMP_PER_SPIKE-i-1];
 				}
 			}
 			for (i=0; i <NUM_OF_SAMP_PER_SPIKE;i++)
@@ -98,7 +98,7 @@ void run_template_matching(int mwa, int chan, int filtered_recording_data_buff_i
 
 	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].peak_time = peak_time;
 	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].unit = greatest_idx;
-	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].recording_data_buff_idx = filtered_recording_data_buff_idx;
+	blue_spike_time_chan_buff[blue_spike_time_stamp_buff_idx_write].interpolated_data_buff_idx = interpolated_data_buff_idx;
 
 	if ((blue_spike_time_stamp_buff_idx_write +1) ==  BLUESPIKE_SORTED_SPIKE_BUFF_SIZE )	   // first check then increment. if first increment and check end of buffer might lead to problem during reading.
 		blue_spike_time_stamp[mwa][chan].buff_idx_write = 0;

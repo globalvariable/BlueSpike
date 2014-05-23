@@ -12,6 +12,7 @@
 #include "TemplateMatching.h"
 #include "ConfigDaq/DaqMwaData.h"
 #include "RtTask.h"
+#include "InterpolatedData.h"
 
 RtTasksData *rt_tasks_data;
 SortedSpikes *sorted_spikes;
@@ -19,6 +20,7 @@ RecordingData *recording_data;
 BlueSpikeTimeStamp blue_spike_time_stamp;
 SpikeThresholding spike_thresholding;
 SpikeEndHandling	spike_end_handling;
+InterpolatedData interpolated_data;
 
 
 

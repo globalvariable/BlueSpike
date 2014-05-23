@@ -1240,9 +1240,9 @@ static void save_template_matching_file_button_func (void)
 
 gboolean timeout_callback(gpointer user_data) 
 {
-	RecordingDataSample	*filtered_recording_data_chan_buff;
+	InterpolatedDataSample	*interpolated_data_chan_buff;
 	int idx, blue_spike_time_stamp_buff_end_idx;
-	int blue_spike_time_stamp_buff_unit, blue_spike_time_stamp_buff_recording_data_idx;	
+	int blue_spike_time_stamp_buff_unit, blue_spike_time_stamp_buff_interpolated_data_idx;	
 	int spike_idx;	
 	float *Y_temp;
 	double *dbl_Y_temp;
@@ -1260,15 +1260,15 @@ gboolean timeout_callback(gpointer user_data)
 
 	pthread_mutex_lock(&(disp_mutex));  
 
-	filtered_recording_data_chan_buff = (*recording_data)[disp_mwa][disp_chan].filtered_recording_data_buff;
+	interpolated_data_chan_buff = interpolated_data[disp_mwa][disp_chan].data_buff;
 		
 	idx = blue_spike_time_stamp_buff_read_idx[disp_mwa][disp_chan];			// spike_time_stamp_buff_read_idx first initialized in create_gui() to be shared_memory->spike_time_stamp.buff_idx_write
 	blue_spike_time_stamp_buff_end_idx = blue_spike_time_stamp[disp_mwa][disp_chan].buff_idx_write;
 	while (idx != blue_spike_time_stamp_buff_end_idx)
 	{
-		blue_spike_time_stamp_buff_recording_data_idx = blue_spike_time_stamp[disp_mwa][disp_chan].buffer[idx].recording_data_buff_idx;
+		blue_spike_time_stamp_buff_interpolated_data_idx = blue_spike_time_stamp[disp_mwa][disp_chan].buffer[idx].interpolated_data_buff_idx;
 		blue_spike_time_stamp_buff_unit = blue_spike_time_stamp[disp_mwa][disp_chan].buffer[idx].unit;		
-		spike_idx = blue_spike_time_stamp_buff_recording_data_idx;
+		spike_idx = blue_spike_time_stamp_buff_interpolated_data_idx;
 
 		if (blue_spike_time_stamp_buff_unit == MAX_NUM_OF_UNIT_PER_CHAN)    // not sorted spike
 		{
@@ -1278,10 +1278,10 @@ gboolean timeout_callback(gpointer user_data)
 				Y_non_sorted_spike_last_g_ptr_array_idx = 0;
 			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
 			{
-				Y_temp[i] = filtered_recording_data_chan_buff[spike_idx];
-				spike_idx--;
+				Y_temp[i] = interpolated_data_chan_buff[spike_idx];
+				spike_idx -= 2;   // -= 2 due to interpolation
 				if (spike_idx < 0)
-					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+					spike_idx	= INTERPOLATED_DATA_BUFF_SIZE + spike_idx;
 			}
 		}
 		else
@@ -1292,23 +1292,23 @@ gboolean timeout_callback(gpointer user_data)
 				Y_sorted_spikes_last_g_ptr_array_idx[blue_spike_time_stamp_buff_unit] = 0;
 			for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
 			{
-				Y_temp[i] = filtered_recording_data_chan_buff[spike_idx];
-				spike_idx--;
+				Y_temp[i] = interpolated_data_chan_buff[spike_idx];
+				spike_idx -= 2;   // -= 2 due to interpolation
 				if (spike_idx < 0)
-					spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+					spike_idx	= INTERPOLATED_DATA_BUFF_SIZE + spike_idx;
 			}
 		}
 		//    Plot all non sorted spikes
-		spike_idx = blue_spike_time_stamp_buff_recording_data_idx;			
+		spike_idx = blue_spike_time_stamp_buff_interpolated_data_idx;			
 		Y_temp = g_ptr_array_index(Y_non_sorted_all_spikes,Y_non_sorted_all_spikes_last_g_ptr_array_idx);
 		dbl_Y_temp = g_ptr_array_index(dbl_Y_non_sorted_all_spikes,dbl_Y_non_sorted_all_spikes_last_g_ptr_array_idx);
 		for (i = NUM_OF_SAMP_PER_SPIKE -1; i >= 0; i--)
 		{
-			Y_temp[i] = filtered_recording_data_chan_buff[spike_idx];
-			dbl_Y_temp[i] = filtered_recording_data_chan_buff[spike_idx];
-			spike_idx--;
+			Y_temp[i] = interpolated_data_chan_buff[spike_idx];
+			dbl_Y_temp[i] = interpolated_data_chan_buff[spike_idx];
+			spike_idx -= 2;   // -= 2 due to interpolation
 			if (spike_idx < 0)
-				spike_idx	= RECORDING_DATA_BUFF_SIZE - 1;
+				spike_idx	= INTERPOLATED_DATA_BUFF_SIZE + spike_idx;
 		}
 		if (spike_filter_mode_on)
 		{

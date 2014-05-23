@@ -11,7 +11,7 @@ typedef struct __BlueSpikeTimeStampItem
 {
 	TimeStamp 	peak_time;	// spike peak time
 	int 			unit;			// channel from which spike sorted
-	int			recording_data_buff_idx;   // end of spike at filtered recording data
+	int			interpolated_data_buff_idx;   // end of spike at interpolated data
 } BlueSpikeTimeStampItem;
 
 typedef BlueSpikeTimeStampItem	BlueSpikeTimeStampBuff[BLUESPIKE_SORTED_SPIKE_BUFF_SIZE];
