@@ -79,3 +79,18 @@ void reset_averaging_struct_elements(AveragingStruct *avg_struct, double value)
 	}
 	return;
 }
+
+double averaging_struct_get_mean(AveragingStruct *avg_struct)
+{
+	unsigned int i, size;
+	double temp = 0;
+	double *elements;
+
+	elements = avg_struct->elements;
+	size = avg_struct->size;	
+
+	for (i = 0; i < size; i++)
+		temp += elements[i];
+
+	return temp / size;
+}
