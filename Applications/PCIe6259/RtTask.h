@@ -11,7 +11,14 @@
 #include "../../../BlueSpike/System/RtTasksData/RtTasksData.h"
 #include "../../../BlueSpike/Library/RtTaskStats/RtTaskStats.h"
 #include "../../../BlueSpike/System/ShmSemNum/ShmSemNum.h"
+#include "../../../BlueSpike/Library/Misc/Averaging.h"
 
+typedef struct __BlueSpikeRT
+{
+	TimeStamp		curr_system_time;
+	unsigned int		curr_cpu_time;
+	pthread_mutex_t 	mutex;
+} BlueSpikeRT;
 
 
 

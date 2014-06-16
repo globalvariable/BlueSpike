@@ -674,7 +674,7 @@ static gboolean record_data_button_func (GtkDatabox * box)
 	path_temp = NULL; path = NULL;
 	if (recording)
 	{
-		if (! (*fclose_all_data_files[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(3, &rt_tasks_data->current_daq_system_time, recording_data, sorted_spikes))	
+		if (! (*fclose_all_data_files[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(3, &blue_spike_time.curr_system_time, recording_data, sorted_spikes))	
 		{
 			print_message(ERROR_MSG ,"SpikeViewer", "Gui", "timeout_callback", " *fclose_all_data_file().");		
 			exit(1);
@@ -687,7 +687,7 @@ static gboolean record_data_button_func (GtkDatabox * box)
 	{
 		path_temp = gtk_file_chooser_get_uri (GTK_FILE_CHOOSER (btn_select_folder_to_record_data));
 		path = &path_temp[7];   // since     uri returns file:///home/....	
-		if (!(*create_data_directory[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(5, path, &rt_tasks_data->current_daq_system_time, recording_number, recording_data, sorted_spikes))	
+		if (!(*create_data_directory[MAX_NUMBER_OF_RECORDING_DATA_FORMAT_VER-1])(5, path, &blue_spike_time.curr_system_time, recording_number, recording_data, sorted_spikes))	
 		{
 			print_message(ERROR_MSG ,"SpikeViewer", "Gui", "timeout_callback", " *create_data_directory().");		
 			exit(1);

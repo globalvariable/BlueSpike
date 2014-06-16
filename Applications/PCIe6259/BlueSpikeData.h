@@ -21,7 +21,7 @@ BlueSpikeTimeStamp blue_spike_time_stamp;
 SpikeThresholding spike_thresholding;
 SpikeEndHandling	spike_end_handling;
 InterpolatedData interpolated_data;
-
+BlueSpikeRT blue_spike_time;
 
 
 

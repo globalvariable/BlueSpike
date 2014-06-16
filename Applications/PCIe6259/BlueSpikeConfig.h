@@ -79,6 +79,9 @@
 #define NUM_OF_MWA_NULL				MAX_NUM_OF_MWA
 #define NUM_OF_CHAN_PER_MWA_NULL	MAX_NUM_OF_CHAN_PER_MWA
 
+//   TEMPLATE MATCHING
+#define NUM_OF_SAMP_PER_SPIKE 	18    // adjusted according to 31.25 KHz sampling rate
+
 /////////////// SPIKE_END_HANDLING
 
 #define SPIKE_END_HANDLING_DATA_BUFF_SIZE 	1000      // 1 seconds of buffer at worst scenario (if each channel spikes every millisecond )
@@ -87,8 +90,5 @@
 
 #define IN_SPIKE_SAMPLE_CNTR_MAX	((1000000/(SAMPLING_INTERVAL/2))/3)		// not a spike if lasts longer than  ~320 us  	(SAMPLING_INTERVAL/2) due to interpolation
 
-
-//   TEMPLATE MATCHING
-#define NUM_OF_SAMP_PER_SPIKE 	18    // adjusted according to 31.25 KHz sampling rate
 
 #endif
