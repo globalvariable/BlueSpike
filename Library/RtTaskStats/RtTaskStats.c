@@ -50,38 +50,40 @@ bool delete_rt_task_from_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int 
 	return TRUE;
 }
 
-void evaluate_and_save_jitter(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, unsigned int previous_period_end_time, unsigned int current_period_end_time)
+void evaluate_and_save_jitter(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, RTIME occurred_time_count, RTIME expected_time_count)
 {
-	unsigned int period, jitter, submitted_period;
+	int jitter;
+	unsigned int jitter_ns;
 	CpuThreadTasksRtData *cpu_thread_tasks_rt_data = &(rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id]) ; 
-
-	period = current_period_end_time - previous_period_end_time;	
-	submitted_period = rt_tasks_data->cpus_rt_task_data[cpu_id].rt_task_period;
-	if (period > submitted_period)
+	jitter = occurred_time_count - expected_time_count;
+	if (jitter > 0)
 	{
-		jitter = period - submitted_period;
-		if (jitter > cpu_thread_tasks_rt_data->max_positive_jitter)
-			cpu_thread_tasks_rt_data->max_positive_jitter = jitter;
-		if (jitter > cpu_thread_tasks_rt_data->positive_jitter_threshold)
-			cpu_thread_tasks_rt_data->num_of_positive_jitter_exceeding_threshold++;
+		jitter_ns = count2nano(jitter);
+		if (jitter_ns > cpu_thread_tasks_rt_data->max_positive_jitter)
+			cpu_thread_tasks_rt_data->max_positive_jitter = jitter_ns;
+		if (jitter_ns > cpu_thread_tasks_rt_data->positive_jitter_threshold)
+			cpu_thread_tasks_rt_data->num_of_positive_jitter_exceeding_threshold++;		
 	}
 	else
 	{
-		jitter = submitted_period - period;
-		if (jitter > cpu_thread_tasks_rt_data->max_negative_jitter)
-			cpu_thread_tasks_rt_data->max_negative_jitter = jitter;
-		if (jitter > cpu_thread_tasks_rt_data->negative_jitter_threshold)
+		jitter_ns = count2nano((unsigned int)(-jitter));
+		if (jitter_ns > cpu_thread_tasks_rt_data->max_negative_jitter)
+			cpu_thread_tasks_rt_data->max_negative_jitter = jitter_ns;
+		if (jitter_ns > cpu_thread_tasks_rt_data->negative_jitter_threshold)
 			cpu_thread_tasks_rt_data->num_of_negative_jitter_exceeding_threshold++;
 	}
+	
+
 	return;
 }
 
-void evaluate_and_save_period_run_time(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, unsigned int process_start_time, unsigned int process_end_time)
+void evaluate_and_save_period_run_time(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, RTIME process_start_time, RTIME process_end_time)
 {
 	unsigned int task_run_time;
 	CpuThreadTasksRtData *cpu_thread_tasks_rt_data = &(rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id]) ; 
 
 	task_run_time = process_end_time - process_start_time;
+	task_run_time = count2nano(task_run_time);
 
 	if (task_run_time > cpu_thread_tasks_rt_data->max_task_run_time)
 		cpu_thread_tasks_rt_data->max_task_run_time = task_run_time;

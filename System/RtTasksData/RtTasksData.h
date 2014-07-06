@@ -4,6 +4,7 @@
 #include "../Cpu/CpuInfo.h"
 #include "../KernelTaskCtrl/KernelTaskCtrl.h"
 #include "../TimeStamp/TimeStamp.h"
+#include <rtai_shm.h>
 
 #define MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD	10
 #define MAX_NUM_OF_RT_TASKS_NAME_LENGTH		40
@@ -36,11 +37,10 @@ typedef struct __CpusRtData
 
 typedef struct __RtTasksData
 {
+	TimeStamp		current_system_time;	// periodic task of HybridNetwork determines it. 	
+	RTIME			current_cpu_time;		// the cpu_time when current_system_time was evaluated. then other tasks can get exact system_time by   (  (rt_get_cpu_ns() - curr_cpu_time) + current_system_time  )
 	unsigned int		num_of_total_rt_tasks;	
 	CpusRtData 		cpus_rt_task_data[MAX_NUM_OF_CPUS];
-	TimeStamp		current_periodic_system_time;		
-	TimeStamp		previous_periodic_system_time;
-	KernelTaskCtrl	kernel_task_ctrl;
 } RtTasksData;
 
 

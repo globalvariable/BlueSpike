@@ -20,8 +20,7 @@ int main( int argc, char *argv[])
 		if ((strcmp(arg_str, "list" ) == 0))
 		{
 			printf("-----------------------------------------  RT_TASK_STATS ----------------------------------------\n");
-			printf("DAQ_SYSTEM_TIME:		 	%llu\n", (long long unsigned int)rt_tasks_data->current_daq_system_time);
-			printf("PERIODIC_SYSTEM_TIME:		 	%llu\n", (long long unsigned int)rt_tasks_data->current_periodic_system_time);
+			printf("SYSTEM_TIME:		 	%llu\n", (long long unsigned int)rt_tasks_data->current_system_time);
 			printf("MAX_NUM_OF_CPUS: 		%u\n", MAX_NUM_OF_CPUS);	
 			printf("MAX_NUM_OF_CPU_THREADS_PER_CPU: 	%u\n", MAX_NUM_OF_CPU_THREADS_PER_CPU);	
 			printf("MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD: 	%u\n", MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD);	
