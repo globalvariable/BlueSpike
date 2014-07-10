@@ -40,11 +40,11 @@ int main( int argc, char *argv[])
 					{
 						printf("---------------------  CPU %u  THREAD %u TASK %u -----------------\n", i, j, k);
 			       		 	printf("TASK_NAME: 			%s\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].task_name);		
-			       		 	printf("TASK_RUN_TIME - MAX: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);		
-			       		 	printf("JITTER - MAX_POSITIVE: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_positive_jitter);		
-				 		printf("JITTER - MAX_NEGATIVE: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_negative_jitter);	
-			       		 	printf("JITTER - POSITIVE_THRES:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].positive_jitter_threshold);		
-				 		printf("JITTER - NEGATIVE_THRES:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].negative_jitter_threshold);	
+			       		 	printf("TASK_RUN_TIME - MAX: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);		
+			       		 	printf("JITTER - MAX_POSITIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_positive_jitter);		
+				 		printf("JITTER - MAX_NEGATIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_negative_jitter);	
+			       		 	printf("JITTER - POSITIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].positive_jitter_threshold);		
+				 		printf("JITTER - NEGATIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].negative_jitter_threshold);	
 			       		 	printf("JITTER - POSITIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_positive_jitter_exceeding_threshold);		
 				 		printf("JITTER - NEGATIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_negative_jitter_exceeding_threshold);
 					}					
@@ -88,11 +88,11 @@ int main( int argc, char *argv[])
 							continue;
 						printf("---------------------  CPU %u  THREAD %u TASK %u -----------------\n", i, j, k);
 						printf("TASK_NAME: 			%s\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].task_name);		
-				       	 	printf("TASK_RUN_TIME - MAX: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);		
-				       	 	printf("JITTER - MAX_POSITIVE: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_positive_jitter);		
-					 	printf("JITTER - MAX_NEGATIVE: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_negative_jitter);	
-				 		printf("JITTER - POSITIVE_THRES:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].positive_jitter_threshold);		
-					 	printf("JITTER - NEGATIVE_THRES:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].negative_jitter_threshold);	
+				       	 	printf("TASK_RUN_TIME - MAX: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);		
+				       	 	printf("JITTER - MAX_POSITIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_positive_jitter);		
+					 	printf("JITTER - MAX_NEGATIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_negative_jitter);	
+				 		printf("JITTER - POSITIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].positive_jitter_threshold);		
+					 	printf("JITTER - NEGATIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].negative_jitter_threshold);	
 				       		printf("JITTER - POSITIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_positive_jitter_exceeding_threshold);		
 					 	printf("JITTER - NEGATIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_negative_jitter_exceeding_threshold);
 					}		
