@@ -6,16 +6,20 @@ int main( int argc, char *argv[])
 {
 	unsigned int i, j, k;
 	unsigned int sink;
-	unsigned int cpu_num, cpu_thread;
+	unsigned int cpu_num, cpu_thread, task_num;
 	unsigned int stay_alive = 1;
 	char arg_str[50];
+	RTIME sum;
+	unsigned int cntr;
+	CpuThreadTasksRtData *cpu_thread_tasks_rt_data; 
+
 	rt_tasks_data = (RtTasksData*)rtai_malloc(SHM_NUM_RT_TASKS_DATA, 0);
 	if (rt_tasks_data == NULL) 
 		return print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "rt_tasks_data == NULL.");
 
 	while (stay_alive)
 	{
-		printf("Enter command(list / clear_all / kill / task / clear_cpu / clear_cpus_023 / clear_cpu_thread) :\n");		
+		printf("Enter command(list / clear_all / kill / task / clear_cpu / clear_cpus_023 / clear_cpu_thread/ clear_task_stats) :\n");		
 		sink = scanf("%s", arg_str);
 		if ((strcmp(arg_str, "list" ) == 0))
 		{
@@ -40,7 +44,9 @@ int main( int argc, char *argv[])
 					{
 						printf("---------------------  CPU %u  THREAD %u TASK %u -----------------\n", i, j, k);
 			       		 	printf("TASK_NAME: 			%s\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].task_name);		
-			       		 	printf("TASK_RUN_TIME - MAX: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);		
+			       		 	printf("TASK_RUN_TIME - MAX: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);	
+				       	 	printf("TASK_RUN_TIME - THRES: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].task_run_time_threshold);	
+				       		printf("TASK_RUN_TIME - ALARM: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_run_time_exceeding_threshold);	
 			       		 	printf("JITTER - MAX_POSITIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_positive_jitter);		
 				 		printf("JITTER - MAX_NEGATIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_negative_jitter);	
 			       		 	printf("JITTER - POSITIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].positive_jitter_threshold);		
@@ -88,13 +94,21 @@ int main( int argc, char *argv[])
 							continue;
 						printf("---------------------  CPU %u  THREAD %u TASK %u -----------------\n", i, j, k);
 						printf("TASK_NAME: 			%s\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].task_name);		
-				       	 	printf("TASK_RUN_TIME - MAX: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);		
+						cpu_thread_tasks_rt_data = &(rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k]) ; 
+						sum = 0;
+						for (cntr = 0; cntr < RUN_TIME_BUFFER_SIZE; cntr++)
+							sum += cpu_thread_tasks_rt_data->run_time_buff[cntr];
+						printf("TASK_RUN_TIME - MEAN:	%lld\n", sum/RUN_TIME_BUFFER_SIZE);
+				       	 	printf("TASK_RUN_TIME - MAX: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_task_run_time);	
+				       	 	printf("TASK_RUN_TIME - THRES: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].task_run_time_threshold);	
+				       		printf("TASK_RUN_TIME - ALARM: 		%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_run_time_exceeding_threshold);	
 				       	 	printf("JITTER - MAX_POSITIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_positive_jitter);		
 					 	printf("JITTER - MAX_NEGATIVE: 		%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].max_negative_jitter);	
 				 		printf("JITTER - POSITIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].positive_jitter_threshold);		
 					 	printf("JITTER - NEGATIVE_THRES:	%lld\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].negative_jitter_threshold);	
 				       		printf("JITTER - POSITIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_positive_jitter_exceeding_threshold);		
 					 	printf("JITTER - NEGATIVE_ALARM:	%u\n", rt_tasks_data->cpus_rt_task_data[i].cpu_threads_rt_data[j].cpu_thread_tasks_rt_data[k].num_of_negative_jitter_exceeding_threshold);
+
 					}		
 				}
 			}
@@ -193,11 +207,45 @@ int main( int argc, char *argv[])
 				print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "Inconvenient cpu num.\n");					
 			}			
 		}
+		else if  (strcmp(arg_str, "clear_task_stats" ) == 0)
+		{
+			printf("Enter CPU number:\n");
+			sink = scanf("%s", arg_str);
+			cpu_num = atoi(arg_str);
+			printf("Enter CPU thread number:\n");
+			sink = scanf("%s", arg_str);
+			cpu_thread = atoi(arg_str);	
+			printf("Enter task number:\n");
+			sink = scanf("%s", arg_str);
+			task_num = atoi(arg_str);
+			if ((cpu_num >= MAX_NUM_OF_CPUS) || (cpu_num < 0))
+			{
+				print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "Invalid CPU num.\n");
+			}
+			else if ((cpu_thread >= MAX_NUM_OF_CPU_THREADS_PER_CPU) || (cpu_thread < 0))
+			{
+				print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "Invalid CPU thread num.\n");
+			}
+			else if ((task_num >= MAX_NUM_OF_RT_TASKS_PER_CPU_THREAD) || (task_num < 0))
+			{
+				print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "Invalid task num.\n");
+			}
+			else
+			{
+			       	rt_tasks_data->cpus_rt_task_data[cpu_num].cpu_threads_rt_data[cpu_thread].cpu_thread_tasks_rt_data[task_num].max_task_run_time = 0;		
+			       	rt_tasks_data->cpus_rt_task_data[cpu_num].cpu_threads_rt_data[cpu_thread].cpu_thread_tasks_rt_data[task_num].num_of_run_time_exceeding_threshold = 0;		
+			       	rt_tasks_data->cpus_rt_task_data[cpu_num].cpu_threads_rt_data[cpu_thread].cpu_thread_tasks_rt_data[task_num].max_positive_jitter = 0;		
+				rt_tasks_data->cpus_rt_task_data[cpu_num].cpu_threads_rt_data[cpu_thread].cpu_thread_tasks_rt_data[task_num].max_negative_jitter = 0;	
+			 	rt_tasks_data->cpus_rt_task_data[cpu_num].cpu_threads_rt_data[cpu_thread].cpu_thread_tasks_rt_data[task_num].num_of_positive_jitter_exceeding_threshold = 0;		
+		 		rt_tasks_data->cpus_rt_task_data[cpu_num].cpu_threads_rt_data[cpu_thread].cpu_thread_tasks_rt_data[task_num].num_of_negative_jitter_exceeding_threshold = 0;
+			}
+		}
 		else
 		{
 			print_message(ERROR_MSG ,"RtTaskStatsViewer", "RtTaskStatsViewer", "main", "Unknown argument.\n");
 			printf ("The command given is %s\n", arg_str);			
 		}
+
 	}
 	rtai_free(SHM_NUM_RT_TASKS_DATA, rt_tasks_data);	
 	return 0;

@@ -13,7 +13,7 @@ bool check_rt_task_specs_to_init(RtTasksData *rt_tasks_data, unsigned int cpu_id
 	return TRUE;
 }
 
-bool write_rt_task_specs_to_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, TimeStamp period, unsigned int positive_jitter_threshold, unsigned int negative_jitter_threshold, char *task_name, bool bluespike_rt_task)
+bool write_rt_task_specs_to_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, TimeStamp period, unsigned int positive_jitter_threshold, unsigned int negative_jitter_threshold, unsigned int run_time_threshold, char *task_name, bool bluespike_rt_task)
 {
 	if (!check_rt_task_specs_to_init(rt_tasks_data, cpu_id, cpu_thread_id, cpu_thread_task_id, period, bluespike_rt_task))
 		return print_message(ERROR_MSG ,"BlueSpike", "RtTaskStats", "write_rt_task_specs_to_rt_tasks_data", "! check_rt_task_specs_to_init().");
@@ -24,6 +24,7 @@ bool write_rt_task_specs_to_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned i
 	strcpy(rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].task_name, task_name);
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].positive_jitter_threshold = positive_jitter_threshold;
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].negative_jitter_threshold = negative_jitter_threshold;
+	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].task_run_time_threshold = run_time_threshold;
 	return TRUE;
 }
 
@@ -36,7 +37,9 @@ bool delete_rt_task_from_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int 
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].num_of_rt_tasks_at_cpu_thread--;	
 
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].task_name[0] = 0;		
-	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].max_task_run_time = 0;		
+	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].max_task_run_time = 0;
+	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].task_run_time_threshold = 0;
+	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].num_of_run_time_exceeding_threshold = 0;		
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].max_positive_jitter = 0;	
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].max_negative_jitter = 0;	
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].positive_jitter_threshold = 0;		
@@ -45,7 +48,7 @@ bool delete_rt_task_from_rt_tasks_data(RtTasksData *rt_tasks_data, unsigned int 
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].max_negative_jitter = 0;		
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].num_of_positive_jitter_exceeding_threshold = 0;		
 	rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id].num_of_negative_jitter_exceeding_threshold = 0;
-		
+
 
 	return TRUE;
 }
@@ -87,5 +90,17 @@ void evaluate_and_save_period_run_time(RtTasksData *rt_tasks_data, unsigned int 
 
 	if (task_run_time > cpu_thread_tasks_rt_data->max_task_run_time)
 		cpu_thread_tasks_rt_data->max_task_run_time = task_run_time;
+	if (task_run_time > cpu_thread_tasks_rt_data->task_run_time_threshold)
+		cpu_thread_tasks_rt_data->num_of_run_time_exceeding_threshold++;
 	return;
 }
+
+void write_run_time_to_averaging_buffer(RtTasksData *rt_tasks_data, unsigned int cpu_id, unsigned int cpu_thread_id, unsigned int cpu_thread_task_id, RTIME process_start_time, RTIME process_end_time)
+{
+	CpuThreadTasksRtData *cpu_thread_tasks_rt_data = &(rt_tasks_data->cpus_rt_task_data[cpu_id].cpu_threads_rt_data[cpu_thread_id].cpu_thread_tasks_rt_data[cpu_thread_task_id]) ; 
+	cpu_thread_tasks_rt_data->run_time_buff[cpu_thread_tasks_rt_data->run_time_buff_cntr] = count2nano(process_end_time - process_start_time);
+	cpu_thread_tasks_rt_data->run_time_buff_cntr++;
+	if (cpu_thread_tasks_rt_data->run_time_buff_cntr == RUN_TIME_BUFFER_SIZE)
+		cpu_thread_tasks_rt_data->run_time_buff_cntr = 0;	
+}
+
